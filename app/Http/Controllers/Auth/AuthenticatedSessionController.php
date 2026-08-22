@@ -36,7 +36,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('tournaments.index'));
+        $message = $request->user()?->isAdmin()
+            ? __('ui.admin_login_success')
+            : __('ui.viewer_login_success');
+
+        return redirect()->intended(route('tournaments.index'))->with('success', $message);
     }
 
     public function destroy(Request $request): RedirectResponse

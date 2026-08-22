@@ -59,8 +59,12 @@ class Tournament extends Model
         });
     }
 
-    public function publicShareUrl(): string
+    public function publicShareUrl(): ?string
     {
+        if (! is_string($this->public_token) || $this->public_token === '') {
+            return null;
+        }
+
         return route('public.tournaments.show', ['tournament' => $this->public_token]);
     }
 

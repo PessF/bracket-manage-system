@@ -3,6 +3,7 @@
 @php
     $isPublicView = request()->routeIs('public.tournaments.*');
     $isAdmin = !$isPublicView && (auth()->user()?->isAdmin() ?? false);
+    $shareUrl = $isAdmin ? $tournament->publicShareUrl() : null;
     $rosterEditable = in_array($tournament->status, [App\Enums\TournamentStatus::DRAFT, App\Enums\TournamentStatus::READY], true);
 @endphp
 @push('styles')
@@ -32,7 +33,11 @@
 @if($isAdmin)
 <section class="card">
     <div class="actions" style="justify-content:space-between;margin-bottom:10px"><div><h2 style="margin:0 0 3px">{{ __('ui.share_view_link') }}</h2><div class="muted">{{ __('ui.share_link_help') }}</div></div><span class="badge {{ $tournament->status->value }}">{{ $tournament->status === App\Enums\TournamentStatus::LIVE ? __('ui.available_now') : __('ui.available_when_live') }}</span></div>
-    <div class="share-link-row"><input id="share-link" readonly value="{{ $tournament->publicShareUrl() }}" aria-label="{{ __('ui.share_view_link') }}"><button class="btn secondary" type="button" data-copy-target="#share-link" data-copied="{{ __('ui.share_link_copied') }}">{{ __('ui.copy_share_link') }}</button>@if($tournament->status === App\Enums\TournamentStatus::LIVE)<a class="btn secondary" href="{{ $tournament->publicShareUrl() }}" target="_blank" rel="noopener">{{ __('ui.open_view_page') }}</a>@else<span class="btn secondary" aria-disabled="true" style="opacity:.5;cursor:not-allowed">{{ __('ui.waiting_for_live') }}</span>@endif</div>
+    @if($shareUrl)
+    <div class="share-link-row"><input id="share-link" readonly value="{{ $shareUrl }}" aria-label="{{ __('ui.share_view_link') }}"><button class="btn secondary" type="button" data-copy-target="#share-link" data-copied="{{ __('ui.share_link_copied') }}">{{ __('ui.copy_share_link') }}</button>@if($tournament->status === App\Enums\TournamentStatus::LIVE)<a class="btn secondary" href="{{ $shareUrl }}" target="_blank" rel="noopener">{{ __('ui.open_view_page') }}</a>@else<span class="btn secondary" aria-disabled="true" style="opacity:.5;cursor:not-allowed">{{ __('ui.waiting_for_live') }}</span>@endif</div>
+    @else
+    <div class="alert error" style="margin:12px 0 0"><strong>{{ __('ui.share_link_not_ready') }}</strong><div>{{ __('ui.run_migrations_help') }}</div></div>
+    @endif
 </section>
 @endif
 

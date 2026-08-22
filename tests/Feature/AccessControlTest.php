@@ -40,8 +40,9 @@ class AccessControlTest extends TestCase
         $admin = User::factory()->create(['role' => UserRole::ADMIN]);
 
         $this->actingAs($viewer)->get(route('tournaments.index'))->assertOk()->assertDontSee(route('tournaments.create'));
-        $this->actingAs($viewer)->get(route('tournaments.create'))->assertForbidden();
+        $this->actingAs($viewer)->get(route('tournaments.create'))->assertForbidden()->assertSee('ต้องใช้สิทธิ์ผู้ดูแลระบบ');
         $this->actingAs($admin)->get(route('tournaments.create'))->assertOk();
+        $this->actingAs($admin)->get(route('tournaments.index'))->assertOk()->assertSee('หน้าจัดการสำหรับผู้ดูแล')->assertSee('จัดการการแข่งขัน');
         $this->actingAs($admin)->get(route('admin.users.index'))->assertOk()->assertSee($viewer->email);
     }
 
@@ -56,7 +57,8 @@ class AccessControlTest extends TestCase
         $this->post(route('login.store'), ['email' => $admin->email, 'password' => 'wrong'])
             ->assertSessionHasErrors('email');
         $this->post(route('login.store'), ['email' => strtoupper($admin->email), 'password' => 'SecurePassword123!'])
-            ->assertRedirect(route('tournaments.index'));
+            ->assertRedirect(route('tournaments.index'))
+            ->assertSessionHas('success', 'เข้าสู่ระบบในฐานะผู้ดูแลแล้ว สามารถจัดการการแข่งขันได้ทุกรายการ');
         $this->assertAuthenticatedAs($admin);
     }
 

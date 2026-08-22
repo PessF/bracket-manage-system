@@ -78,6 +78,19 @@ class LiveViewerTest extends TestCase
         $this->assertArrayNotHasKey('public_token', $first->toArray());
     }
 
+    public function test_admin_can_open_a_competition_even_when_share_token_is_not_ready(): void
+    {
+        $draft = Tournament::factory()->create(['status' => TournamentStatus::DRAFT]);
+        $draft->forceFill(['public_token' => null])->save();
+        $admin = User::factory()->create(['role' => UserRole::ADMIN]);
+
+        $this->actingAs($admin)->get(route('tournaments.show', $draft))
+            ->assertOk()
+            ->assertSee($draft->name)
+            ->assertSee('ลิงก์สำหรับผู้ชมยังไม่พร้อมใช้งาน')
+            ->assertSee('php artisan migrate --force');
+    }
+
     public function test_public_api_only_reads_live_competitions_while_admin_token_reads_all(): void
     {
         $live = Tournament::factory()->create(['name' => 'API Live', 'status' => TournamentStatus::LIVE]);
