@@ -44,6 +44,7 @@ return [
         'coach_name' => 'ชื่อโค้ช', 'seed_number' => 'อันดับ Seed', 'status' => 'สถานะ', 'csv_file' => 'ไฟล์ CSV',
         'competition' => 'ชื่อการแข่งขัน', 'division' => 'รุ่นการแข่งขัน', 'format' => 'รูปแบบการแข่งขัน',
         'seeding_method' => 'วิธีจัด Seed', 'score_a' => 'คะแนนฝ่าย A', 'score_b' => 'คะแนนฝ่าย B',
+        'grand_final_matches' => 'จำนวนแมตช์ Grand Final',
         'attempt_number' => 'ครั้งที่', 'attempt_value' => 'ค่า', 'is_valid' => 'การใช้คำนวณ',
     ],
 ];

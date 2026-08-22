@@ -1,6 +1,6 @@
 # EasyKids Competition Tournament Management System
 
-Laravel 12 + PHP 8.3 + MySQL 8 implementation of the EasyKids tournament engine. It supports Ranking, Round Robin, Single Elimination, and Double Elimination, including BYEs, winner/loser dependency propagation, a runtime Grand Final reset, ranking attempts, and Round Robin standings.
+Laravel 12 + PHP 8.3 + MySQL 8 implementation of the EasyKids tournament engine. It supports Ranking, Round Robin, Single Elimination, and Double Elimination, including BYEs, winner/loser dependency propagation, configurable one-match or bracket-reset Grand Finals, ranking attempts, and Round Robin standings.
 
 ## Start on Linux with Docker
 
@@ -28,7 +28,7 @@ Thai is the default interface language and the application timezone defaults to 
 
 ## Access control
 
-Viewer accounts and public visitors can see only competitions with `LIVE` status. Their tournament lists, brackets, matches, participants, and standings are read-only. Draft, ready, completed, and archived competitions return a not-found response unless opened by an administrator. Administrators sign in to create and configure tournaments, manage users and participants, import CSV files, control tournament status, and record results.
+Viewer accounts and public visitors do not receive a public competition list. They can open only a private `/view/{token}` link shared by an administrator, and that link works only while its competition is `LIVE`. The shared overview, bracket, matches, participants, and standings are read-only. Administrators sign in to see every competition and manage users, participants, CSV imports, lifecycle, and results.
 
 Each competition has a private viewer link in its administrator overview. This `/view/{token}` URL opens only that competition, preserves the read-only mode across Overview, Bracket, Matches, and Results, and is available only while the competition is `LIVE`. It can be copied before starting so it is ready to distribute when the competition goes live.
 
@@ -81,7 +81,7 @@ MySQL data is kept in the `mysql-data` Docker volume. `docker compose down` pres
 
 Open `/api/docs` for the complete endpoint list and request examples.
 
-Public read endpoints include health plus live tournaments, participants, matches, and standings. Supplying an administrator bearer token also allows GET requests to read non-live competitions. Administrator write endpoints cover tournament CRUD, participant CRUD and CSV import, lifecycle changes, match results, and ranking attempts. Create or revoke a bearer token from **API access** in the administrator navigation. API messages can be selected with `?lang=th` / `?lang=en` or the `Accept-Language` header.
+The health endpoint is public. Every competition REST endpoint requires an administrator bearer token and covers tournament CRUD, participant CRUD and CSV import, lifecycle changes, match results, and ranking attempts. Viewer access uses the private web share link instead of the API. Create or revoke a bearer token from **API access** in the administrator navigation. API messages can be selected with `?lang=th` / `?lang=en` or the `Accept-Language` header.
 
 Responses use a consistent `{ "success": true, "data": ... }` envelope.
 

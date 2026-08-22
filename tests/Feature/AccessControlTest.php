@@ -24,12 +24,16 @@ class AccessControlTest extends TestCase
         $this->withoutMiddleware(ValidateCsrfToken::class);
     }
 
-    public function test_public_visitors_can_view_but_cannot_open_or_submit_admin_pages(): void
+    public function test_public_visitors_need_a_share_link_and_cannot_open_admin_pages(): void
     {
         $tournament = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
 
-        $this->get(route('tournaments.index'))->assertOk()->assertSee($tournament->name);
-        $this->get(route('tournaments.show', $tournament))->assertOk()->assertDontSee(route('tournaments.settings', $tournament));
+        $this->get(route('tournaments.index'))
+            ->assertOk()
+            ->assertDontSee($tournament->name)
+            ->assertSee(__('ui.share_link_required'));
+        $this->get(route('tournaments.show', $tournament))->assertNotFound();
+        $this->get($tournament->publicShareUrl())->assertOk()->assertSee($tournament->name);
         $this->get(route('tournaments.create'))->assertRedirect(route('login'));
         $this->post(route('tournaments.start', $tournament))->assertRedirect(route('login'));
     }
@@ -83,10 +87,10 @@ class AccessControlTest extends TestCase
         $this->get(route('admin.setup'))->assertRedirect(route('login'));
     }
 
-    public function test_api_reads_are_public_and_writes_require_an_admin_token(): void
+    public function test_api_competition_resources_require_an_admin_token(): void
     {
         $tournament = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
-        $this->getJson('/api/tournaments/'.$tournament->id)->assertOk()->assertJsonPath('success', true);
+        $this->getJson('/api/tournaments/'.$tournament->id)->assertUnauthorized()->assertJsonPath('success', false);
 
         $payload = [
             'name' => 'API Tournament',
@@ -96,7 +100,7 @@ class AccessControlTest extends TestCase
             'seeding_method' => 'REGISTRATION_ORDER',
         ];
         $this->postJson('/api/tournaments', $payload)->assertUnauthorized()->assertJsonPath('success', false);
-        $this->getJson('/api/tournaments/not-a-real-id')->assertNotFound()->assertJsonPath('success', false);
+        $this->getJson('/api/tournaments/not-a-real-id')->assertUnauthorized()->assertJsonPath('success', false);
 
         $viewerToken = str_repeat('v', 64);
         User::factory()->create(['role' => UserRole::VIEWER, 'api_token_hash' => hash('sha256', $viewerToken)]);
@@ -104,6 +108,12 @@ class AccessControlTest extends TestCase
 
         $adminToken = str_repeat('a', 64);
         User::factory()->create(['role' => UserRole::ADMIN, 'api_token_hash' => hash('sha256', $adminToken)]);
+        $this->withToken($adminToken)->getJson('/api/tournaments/'.$tournament->id)
+            ->assertOk()
+            ->assertJsonPath('success', true);
+        $this->withToken($adminToken)->getJson('/api/tournaments/not-a-real-id')
+            ->assertNotFound()
+            ->assertJsonPath('success', false);
         $this->withToken($adminToken)->postJson('/api/tournaments', $payload)
             ->assertCreated()
             ->assertJsonPath('success', true)

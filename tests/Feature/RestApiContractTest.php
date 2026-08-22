@@ -25,6 +25,10 @@ class RestApiContractTest extends TestCase
             ->assertUnprocessable()->assertJsonStructure(['error' => ['fields']]);
         $this->withToken($token)->patchJson('/api/tournaments/'.$tournament->id, ['name' => 'Patched name'])
             ->assertOk()->assertJsonPath('data.name', 'Patched name');
+        $this->withToken($token)->patchJson('/api/tournaments/'.$tournament->id, [
+            'format' => 'DOUBLE_ELIMINATION',
+            'grand_final_matches' => 1,
+        ])->assertOk()->assertJsonPath('data.double_elimination_config.grand_final_matches', 1);
 
         $participant = Participant::factory()->create(['tournament_id' => $tournament->id]);
         $this->withToken($token)->putJson("/api/tournaments/{$tournament->id}/participants/{$participant->id}", [])
@@ -49,6 +53,8 @@ class RestApiContractTest extends TestCase
 
     public function test_individual_standing_is_available_for_a_live_competition(): void
     {
+        $token = str_repeat('s', 64);
+        User::factory()->create(['role' => UserRole::ADMIN, 'api_token_hash' => hash('sha256', $token)]);
         $tournament = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
         $participant = Participant::factory()->create(['tournament_id' => $tournament->id]);
         Standing::query()->create([
@@ -59,7 +65,7 @@ class RestApiContractTest extends TestCase
             'synced_at' => now(),
         ]);
 
-        $this->getJson("/api/tournaments/{$tournament->id}/standings/{$participant->id}")
+        $this->withToken($token)->getJson("/api/tournaments/{$tournament->id}/standings/{$participant->id}")
             ->assertOk()->assertJsonPath('data.rank_number', 1)->assertJsonPath('data.participant.id', $participant->id);
     }
 

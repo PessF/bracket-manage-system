@@ -131,7 +131,10 @@ class MatchResultService
                 );
             }
 
-            if ($currentMatch->tournament->format === TournamentFormat::DOUBLE_ELIMINATION) {
+            if (
+                $currentMatch->tournament->format === TournamentFormat::DOUBLE_ELIMINATION
+                && (int) ($currentMatch->tournament->double_elimination_config['grand_final_matches'] ?? 2) === 2
+            ) {
                 $this->createGrandFinalResetWhenRequired($currentMatch, $winnerId);
             }
 

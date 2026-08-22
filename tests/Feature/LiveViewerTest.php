@@ -15,28 +15,33 @@ class LiveViewerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_public_and_viewer_lists_only_show_live_competitions(): void
+    public function test_public_and_viewer_lists_do_not_reveal_competitions(): void
     {
         $live = Tournament::factory()->create(['name' => 'Live Event', 'status' => TournamentStatus::LIVE]);
         $draft = Tournament::factory()->create(['name' => 'Secret Draft', 'status' => TournamentStatus::DRAFT]);
         $completed = Tournament::factory()->create(['name' => 'Past Event', 'status' => TournamentStatus::COMPLETED]);
 
         $this->get(route('tournaments.index'))
-            ->assertOk()->assertSee($live->name)->assertDontSee($draft->name)->assertDontSee($completed->name);
+            ->assertOk()->assertDontSee($live->name)->assertDontSee($draft->name)->assertDontSee($completed->name)
+            ->assertSee(__('ui.share_link_required'));
 
         $viewer = User::factory()->create(['role' => UserRole::VIEWER]);
         $this->actingAs($viewer)->get(route('tournaments.index'))
-            ->assertOk()->assertSee($live->name)->assertDontSee($draft->name)->assertDontSee($completed->name);
+            ->assertOk()->assertDontSee($live->name)->assertDontSee($draft->name)->assertDontSee($completed->name)
+            ->assertSee(__('ui.share_link_required'));
     }
 
     public function test_non_live_competitions_are_hidden_from_viewers_but_available_to_admins(): void
     {
         $draft = Tournament::factory()->create(['status' => TournamentStatus::DRAFT]);
+        $live = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
 
         $this->get(route('tournaments.show', $draft))->assertNotFound();
+        $this->get(route('tournaments.show', $live))->assertNotFound();
 
         $viewer = User::factory()->create(['role' => UserRole::VIEWER]);
         $this->actingAs($viewer)->get(route('tournaments.show', $draft))->assertNotFound();
+        $this->actingAs($viewer)->get(route('tournaments.show', $live))->assertNotFound();
 
         $admin = User::factory()->create(['role' => UserRole::ADMIN]);
         $this->actingAs($admin)->get(route('tournaments.show', $draft))->assertOk();
@@ -91,14 +96,14 @@ class LiveViewerTest extends TestCase
             ->assertSee('php artisan migrate --force');
     }
 
-    public function test_public_api_only_reads_live_competitions_while_admin_token_reads_all(): void
+    public function test_competition_api_is_private_and_admin_token_reads_all(): void
     {
         $live = Tournament::factory()->create(['name' => 'API Live', 'status' => TournamentStatus::LIVE]);
         $draft = Tournament::factory()->create(['name' => 'API Draft', 'status' => TournamentStatus::DRAFT]);
 
         $this->getJson('/api/tournaments')
-            ->assertOk()->assertJsonFragment(['name' => $live->name])->assertJsonMissing(['name' => $draft->name]);
-        $this->getJson('/api/tournaments/'.$draft->id)->assertNotFound();
+            ->assertUnauthorized()->assertJsonMissing(['name' => $live->name])->assertJsonMissing(['name' => $draft->name]);
+        $this->getJson('/api/tournaments/'.$draft->id)->assertUnauthorized();
 
         $token = str_repeat('z', 64);
         User::factory()->create([

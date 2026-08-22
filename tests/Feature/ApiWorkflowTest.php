@@ -45,9 +45,9 @@ class ApiWorkflowTest extends TestCase
 
         $this->withToken($token)->patchJson("/api/tournaments/{$tournamentId}/status", ['status' => 'LIVE'])
             ->assertOk()->assertJsonPath('data.status', 'LIVE');
-        $matchId = $this->getJson("/api/tournaments/{$tournamentId}/matches")
+        $matchId = $this->withToken($token)->getJson("/api/tournaments/{$tournamentId}/matches")
             ->assertOk()->json('data.0.id');
-        $this->getJson("/api/tournaments/{$tournamentId}/matches/{$matchId}")
+        $this->withToken($token)->getJson("/api/tournaments/{$tournamentId}/matches/{$matchId}")
             ->assertOk()->assertJsonPath('data.id', $matchId);
 
         $resultUrl = "/api/tournaments/{$tournamentId}/matches/{$matchId}/result";

@@ -5,40 +5,37 @@
 @push('styles')
 <style>
     .bracket-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
-    .bracket-hint { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12px; }
+    .bracket-hint { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:14px; }
     .bracket-hint svg { width:15px; height:15px; }
     .bracket-section { margin:0 0 30px; }
     .bracket-section-head { display:flex; align-items:center; gap:10px; margin:0 0 10px; }
-    .bracket-section-head h2 { margin:0; font-size:14px; }
-    .bracket-count { color:var(--muted); font-size:11px; }
+    .bracket-section-head h2 { margin:0; font-size:17px; }
+    .bracket-count { color:var(--muted); font-size:13px; }
     .bracket-viewport { position:relative; overflow:auto; min-height:190px; border:1px solid var(--line); border-radius:10px; background-color:#fff; background-image:radial-gradient(#e4e4e7 .7px, transparent .7px); background-size:18px 18px; box-shadow:inset 0 1px 0 rgb(255 255 255 / .6); scrollbar-color:#d4d4d8 transparent; }
     .bracket-canvas { position:relative; min-width:100%; }
     .bracket-connectors { position:absolute; inset:0; z-index:1; overflow:visible; pointer-events:none; }
     .bracket-connector { fill:none; stroke:#cbd5e1; stroke-width:2; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
-    .bracket-round-title { position:absolute; top:0; height:44px; display:flex; align-items:center; color:#71717a; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.065em; }
-    .bracket-match-node { position:absolute; z-index:2; width:244px; min-height:132px; padding:10px; border:1px solid #dfe1e5; border-radius:8px; background:#fff; box-shadow:0 1px 3px rgb(15 23 42 / .08), 0 1px 1px rgb(15 23 42 / .03); transition:border-color .16s, box-shadow .16s, transform .16s; }
+    .bracket-round-title { position:absolute; top:0; height:44px; display:flex; align-items:center; color:#71717a; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.055em; }
+    .bracket-match-node { position:absolute; z-index:2; width:270px; min-height:150px; padding:12px; border:1px solid #dfe1e5; border-radius:8px; background:#fff; box-shadow:0 1px 3px rgb(15 23 42 / .08), 0 1px 1px rgb(15 23 42 / .03); transition:border-color .16s, box-shadow .16s, transform .16s; }
     .bracket-match-node:hover { z-index:4; border-color:#a1a1aa; box-shadow:0 8px 22px rgb(15 23 42 / .11); transform:translateY(-1px); }
-    .bracket-match-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; height:21px; margin-bottom:6px; color:var(--muted); font-size:10px; }
+    .bracket-match-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:25px; margin-bottom:7px; color:var(--muted); font-size:12px; }
     .bracket-match-number { font-weight:700; color:#52525b; }
-    .bracket-team { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center; min-height:31px; padding:6px 7px; background:#fafafa; border:1px solid transparent; }
+    .bracket-team { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center; min-height:39px; padding:8px 9px; background:#fafafa; border:1px solid transparent; }
     .bracket-team + .bracket-team { margin-top:3px; }
     .bracket-team.winner { background:#f0fdf4; border-color:#dcfce7; color:#166534; font-weight:650; }
-    .bracket-team.waiting { color:#a1a1aa; font-size:11px; }
+    .bracket-team.waiting { color:#a1a1aa; font-size:14px; }
     .bracket-team-name { display:flex; align-items:center; gap:7px; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-    .bracket-seed { display:inline-flex; flex:0 0 auto; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 4px; border-radius:4px; background:#e4e4e7; color:#52525b; font:700 10px ui-monospace,monospace; }
-    .bracket-score { min-width:22px; text-align:center; font:700 13px ui-monospace,SFMono-Regular,monospace; }
-    .bracket-score-entry { display:grid; grid-template-columns:1fr 1fr auto; gap:5px; margin-top:7px; }
-    .bracket-score-entry input { height:27px; padding:3px 5px; text-align:center; font-size:12px; }
-    .bracket-score-entry .btn { min-height:27px; padding:3px 7px; font-size:11px; }
-    .bracket-destinations { display:flex; align-items:center; gap:9px; margin-top:6px; color:#a1a1aa; font-size:9px; }
+    .bracket-seed { display:inline-flex; flex:0 0 auto; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 5px; border-radius:4px; background:#e4e4e7; color:#52525b; font:700 12px ui-monospace,monospace; }
+    .bracket-score { min-width:24px; text-align:center; font:700 15px ui-monospace,SFMono-Regular,monospace; }
+    .bracket-destinations { display:flex; align-items:center; gap:9px; margin-top:7px; color:#71717a; font-size:12px; }
     .bracket-destinations span { white-space:nowrap; }
-    .bracket-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(245px,1fr)); gap:12px; padding:14px; }
+    .bracket-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px; padding:14px; }
     .bracket-grid .bracket-match-node { position:relative; width:auto; height:auto !important; min-height:118px; left:auto !important; top:auto !important; }
-    .bracket-legend { display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--muted); }
+    .bracket-legend { display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:13px; color:var(--muted); }
     .bracket-legend span { display:inline-flex; align-items:center; gap:5px; }
     .legend-line { display:inline-block; width:22px; border-top:2px solid #cbd5e1; }
     .legend-win { display:inline-block; width:12px; height:12px; border-radius:3px; background:#f0fdf4; border:1px solid #dcfce7; }
-    @media(max-width:680px){.bracket-viewport{margin-left:-14px;margin-right:-14px;border-radius:0;border-left:0;border-right:0}.bracket-toolbar{align-items:flex-start;flex-direction:column}.bracket-match-node{width:220px}.bracket-round-title{font-size:10px}}
+    @media(max-width:680px){.bracket-viewport{margin-left:-14px;margin-right:-14px;border-radius:0;border-left:0;border-right:0}.bracket-toolbar{align-items:flex-start;flex-direction:column}.bracket-match-node{width:260px}.bracket-round-title{font-size:12px}}
 </style>
 @endpush
 
@@ -68,7 +65,7 @@
 @endphp
 <section class="bracket-section">
     <div class="bracket-section-head"><h2>{{ __('ui.bracket_labels.'.$type) }}</h2><span class="bracket-count">{{ trans_choice('ui.match_count', $group->count(), ['count' => $group->count()]) }}</span></div>
-    <div class="bracket-viewport {{ $isGrid ? 'bracket-grid' : '' }}" data-bracket-section>
+    <div class="bracket-viewport {{ $isGrid ? 'bracket-grid' : '' }}" data-bracket-section data-bracket-type="{{ $type }}">
         @if(!$isGrid)<div class="bracket-canvas" data-bracket-canvas></div>@endif
         @foreach($group as $match)
         @php
@@ -82,7 +79,7 @@
         <article class="bracket-match-node"
             data-match-id="{{ $match->id }}" data-round="{{ $match->round_number }}" data-number="{{ $match->match_number }}"
             data-winner-next="{{ $match->winner_next_match_id }}" data-loser-next="{{ $match->loser_next_match_id }}">
-            <div class="bracket-match-meta"><span class="bracket-match-number">{{ __('ui.match') }} #{{ $match->match_number }}</span><span class="badge {{ $match->status->value }}">{{ $match->is_bye ? __('ui.bye') : __('ui.match_status_labels.'.$match->status->value) }}</span></div>
+            <div class="bracket-match-meta"><span class="bracket-match-number">{{ $type === 'GRAND_FINAL' ? __('ui.grand_final_match_number', ['number' => $loop->iteration]) : __('ui.match').' #'.$match->match_number }}</span><span class="badge {{ $match->status->value }}">{{ $match->is_bye ? __('ui.bye') : __('ui.match_status_labels.'.$match->status->value) }}</span></div>
             <div class="bracket-team {{ $match->winner_id && $match->winner_id === $match->participant_a_id ? 'winner' : '' }} {{ !$match->participant_a_id ? 'waiting' : '' }}">
                 <span class="bracket-team-name">@if($match->participantA?->seed_number)<i class="bracket-seed">{{ $match->participantA->seed_number }}</i>@endif<span title="{{ $nameA }}">{{ $nameA }}</span></span><span class="bracket-score">{{ $match->score_a !== null ? (float)$match->score_a : '—' }}</span>
             </div>
@@ -156,7 +153,9 @@
             title.className = 'bracket-round-title';
             title.style.left = `${index * columnWidth + 14}px`;
             title.style.width = `${cardWidth}px`;
-            title.textContent = rounds.length === 1 ? FINAL_LABEL : (index === rounds.length - 1 ? FINAL_LABEL : `${ROUND_LABEL} ${index + 1}`);
+            title.textContent = viewport.dataset.bracketType === 'GRAND_FINAL'
+                ? `${FINAL_LABEL} ${index + 1}`
+                : (rounds.length === 1 ? FINAL_LABEL : (index === rounds.length - 1 ? FINAL_LABEL : `${ROUND_LABEL} ${index + 1}`));
             canvas.appendChild(title);
         });
 

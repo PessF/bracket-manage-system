@@ -3,6 +3,7 @@
     $editing = $tournament->exists;
     $structureLocked = $editing && !in_array($tournament->status, [App\Enums\TournamentStatus::DRAFT, App\Enums\TournamentStatus::READY], true);
     $selectedFormat = old('format', $tournament->format?->value ?? App\Enums\TournamentFormat::RANKING->value);
+    $grandFinalMatches = (string) old('grand_final_matches', $tournament->double_elimination_config['grand_final_matches'] ?? 2);
 @endphp
 @section('title', ($editing ? __('ui.title_settings') : __('ui.title_new_tournament')).' · EasyKids')
 @section('content')
@@ -51,8 +52,12 @@
     <div class="format-config-head"><span class="format-config-icon">1×</span><div><strong>{{ __('ui.single_elimination_settings') }}</strong><span>{{ __('ui.single_elimination_format_help') }}</span></div></div>
 </div>
 
-<div class="format-config-panel full compact" data-format-panel="DOUBLE_ELIMINATION" @if($selectedFormat !== 'DOUBLE_ELIMINATION') hidden @endif>
+<div class="format-config-panel full" data-format-panel="DOUBLE_ELIMINATION" @if($selectedFormat !== 'DOUBLE_ELIMINATION') hidden @endif>
     <div class="format-config-head"><span class="format-config-icon">2×</span><div><strong>{{ __('ui.double_elimination_settings') }}</strong><span>{{ __('ui.double_elimination_format_help') }}</span></div></div>
+    <fieldset class="choice-grid" style="border:0;padding:0" aria-label="{{ __('ui.grand_final_matches') }}">
+        <label class="choice-card"><input type="radio" name="grand_final_matches" value="1" @checked($grandFinalMatches === '1') @disabled($structureLocked)><span><strong>{{ __('ui.grand_final_one_match') }}</strong><small>{{ __('ui.grand_final_one_match_help') }}</small></span></label>
+        <label class="choice-card"><input type="radio" name="grand_final_matches" value="2" @checked($grandFinalMatches === '2') @disabled($structureLocked)><span><strong>{{ __('ui.grand_final_two_matches') }}</strong><small>{{ __('ui.grand_final_two_matches_help') }}</small></span></label>
+    </fieldset>
 </div>
 </div></section>
 
@@ -71,13 +76,19 @@
     .format-config-panel.compact { padding: 14px 15px; }
     .format-config-head { display: flex; gap: 11px; align-items: flex-start; }
     .format-config-head > div { display: flex; flex-direction: column; min-width: 0; }
-    .format-config-head strong { font-size: 13px; }
-    .format-config-head span:not(.format-config-icon) { margin-top: 1px; color: var(--muted); font-size: 12px; }
+    .format-config-head strong { font-size: 15px; }
+    .format-config-head span:not(.format-config-icon) { margin-top: 2px; color: var(--muted); font-size: 14px; }
     .format-config-icon { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; color: #475569; font-size: 12px; font-weight: 800; }
     .format-settings-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 14px; }
     .format-settings-grid.three { grid-template-columns: repeat(3,minmax(0,1fr)); }
     .format-settings-grid .field { margin: 0; }
-    @media (max-width: 680px) { .format-settings-grid, .format-settings-grid.three { grid-template-columns: 1fr; } }
+    .choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:15px; }
+    .choice-card { display:flex; align-items:flex-start; gap:10px; min-height:76px; margin:0; padding:13px; border:1px solid #d4d4d8; border-radius:9px; background:#fff; cursor:pointer; }
+    .choice-card:has(input:checked) { border-color:#2563eb; background:#eff6ff; box-shadow:0 0 0 2px rgb(37 99 235 / .12); }
+    .choice-card input { flex:0 0 auto; width:20px; height:20px; margin:1px 0 0; }
+    .choice-card span { display:flex; flex-direction:column; }
+    .choice-card small { margin-top:3px; color:var(--muted); font-weight:500; }
+    @media (max-width: 680px) { .format-settings-grid, .format-settings-grid.three, .choice-grid { grid-template-columns: 1fr; } .choice-card { min-height:86px; padding:16px; } }
 </style>
 @endpush
 

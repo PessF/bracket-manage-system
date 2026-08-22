@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\BracketType;
 use App\Models\Tournament;
 use Illuminate\View\View;
 
@@ -25,8 +26,12 @@ class TournamentWorkspaceController extends Controller
     public function matches(Tournament $tournament): View
     {
         $matches = $tournament->matches()->with(['participantA', 'participantB', 'winner'])->orderBy('match_number')->get();
+        $grandFinalRounds = $matches
+            ->where('bracket_type', BracketType::GRAND_FINAL)
+            ->values()
+            ->mapWithKeys(fn ($match, int $index): array => [$match->id => $index + 1]);
 
-        return view('tournaments.matches', compact('tournament', 'matches'));
+        return view('tournaments.matches', compact('tournament', 'matches', 'grandFinalRounds'));
     }
 
     public function results(Tournament $tournament): View

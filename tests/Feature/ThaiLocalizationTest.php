@@ -21,7 +21,7 @@ class ThaiLocalizationTest extends TestCase
         $live = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
 
         $this->get(route('tournaments.index'))
-            ->assertOk()->assertSee('<html lang="th">', false)->assertSee('โหมดผู้ชมแสดงเฉพาะการแข่งขันที่กำลังแข่งขัน');
+            ->assertOk()->assertSee('<html lang="th">', false)->assertSee('ระบบไม่แสดงรายการแข่งขันต่อสาธารณะ');
         $this->get(route('login'))->assertOk()->assertSee('เข้าสู่ระบบผู้ดูแล');
         $this->get(route('admin.setup'))->assertOk()->assertSee('สร้างผู้ดูแลระบบคนแรก');
         $this->get(route('api.docs'))->assertOk()->assertSee('คู่มือ REST API ภาษาไทย');
@@ -52,7 +52,10 @@ class ThaiLocalizationTest extends TestCase
         $this->withHeader('Accept-Language', 'th-TH')->postJson('/api/tournaments', [])
             ->assertUnauthorized()->assertJsonPath('error.message', 'ต้องใช้ Bearer Token ที่ถูกต้อง');
 
-        $this->getJson('/api/tournaments/not-found?lang=th')
+        $token = str_repeat('l', 64);
+        User::factory()->create(['role' => UserRole::ADMIN, 'api_token_hash' => hash('sha256', $token)]);
+
+        $this->withToken($token)->getJson('/api/tournaments/not-found?lang=th')
             ->assertNotFound()->assertJsonPath('error.message', 'ไม่พบข้อมูลที่ต้องการ');
     }
 

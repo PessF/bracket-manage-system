@@ -35,6 +35,9 @@ class TournamentHttpTest extends TestCase
             ->assertSee('data-format-panel="ROUND_ROBIN"', false)
             ->assertSee('data-format-panel="SINGLE_ELIMINATION"', false)
             ->assertSee('data-format-panel="DOUBLE_ELIMINATION"', false)
+            ->assertSee('name="grand_final_matches"', false)
+            ->assertSee(__('ui.grand_final_one_match'))
+            ->assertSee(__('ui.grand_final_two_matches'))
             ->assertSee('updateFormatFields', false);
     }
 
@@ -51,9 +54,39 @@ class TournamentHttpTest extends TestCase
         $tournament = Tournament::query()->firstOrFail();
         $response->assertRedirect(route('tournaments.show', $tournament));
         $this->get('/tournaments')->assertOk()->assertSee('HTTP Tournament');
-        $this->getJson('/api/tournaments/'.$tournament->id)->assertOk()
+        $token = str_repeat('h', 64);
+        auth()->user()->forceFill(['api_token_hash' => hash('sha256', $token)])->save();
+        $this->withToken($token)->getJson('/api/tournaments/'.$tournament->id)->assertOk()
             ->assertJsonPath('success', true)->assertJsonPath('data.name', 'HTTP Tournament');
         $this->assertDatabaseHas('external_stages', ['tournament_id' => $tournament->id]);
+    }
+
+    public function test_double_elimination_grand_final_setting_is_saved_before_start(): void
+    {
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+
+        $this->post(route('tournaments.store'), [
+            'name' => 'Double Final Test',
+            'competition' => 'EasyKids',
+            'division' => 'Open',
+            'format' => 'DOUBLE_ELIMINATION',
+            'seeding_method' => 'REGISTRATION_ORDER',
+            'grand_final_matches' => 1,
+        ])->assertSessionHasNoErrors();
+
+        $tournament = Tournament::query()->where('name', 'Double Final Test')->firstOrFail();
+        $this->assertSame(1, $tournament->double_elimination_config['grand_final_matches']);
+
+        $this->put(route('tournaments.update', $tournament), [
+            'name' => $tournament->name,
+            'competition' => $tournament->competition,
+            'division' => $tournament->division,
+            'format' => 'DOUBLE_ELIMINATION',
+            'seeding_method' => 'REGISTRATION_ORDER',
+            'grand_final_matches' => 2,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(2, $tournament->refresh()->double_elimination_config['grand_final_matches']);
     }
 
     public function test_live_competition_and_participant_information_can_be_corrected_without_changing_bracket_settings(): void

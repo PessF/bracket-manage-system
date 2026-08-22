@@ -126,7 +126,7 @@ class MatchResultServiceTest extends TestCase
 
     public function test_losers_bracket_finalist_winning_first_grand_final_creates_reset(): void
     {
-        [$tournament, $stage] = $this->createTournament(TournamentFormat::DOUBLE_ELIMINATION);
+        [$tournament, $stage] = $this->createTournament(TournamentFormat::DOUBLE_ELIMINATION, 2);
         [$winnersFinalist, $losersFinalist] = $this->createParticipants($tournament, 2);
         $grandFinal = $this->createMatch($tournament, $stage, [
             'bracket_type' => BracketType::GRAND_FINAL,
@@ -145,6 +145,29 @@ class MatchResultServiceTest extends TestCase
         $this->assertSame(MatchStatus::READY, $reset->status);
         $this->assertSame($winnersFinalist->id, $reset->participant_a_id);
         $this->assertSame($losersFinalist->id, $reset->participant_b_id);
+    }
+
+    public function test_single_grand_final_mode_does_not_create_a_reset_match(): void
+    {
+        [$tournament, $stage] = $this->createTournament(TournamentFormat::DOUBLE_ELIMINATION, 1);
+        [$winnersFinalist, $losersFinalist] = $this->createParticipants($tournament, 2);
+        $grandFinal = $this->createMatch($tournament, $stage, [
+            'bracket_type' => BracketType::GRAND_FINAL,
+            'round_number' => 100,
+            'status' => MatchStatus::READY,
+            'participant_a_id' => $winnersFinalist->id,
+            'participant_a_label' => $winnersFinalist->team_name,
+            'participant_b_id' => $losersFinalist->id,
+            'participant_b_label' => $losersFinalist->team_name,
+        ]);
+
+        app(MatchResultService::class)->confirm($grandFinal, 1, 2);
+
+        $this->assertSame(1, $tournament->matches()->where('bracket_type', BracketType::GRAND_FINAL)->count());
+        $this->assertDatabaseMissing('external_matches', [
+            'tournament_id' => $tournament->id,
+            'match_number' => 2,
+        ]);
     }
 
     public function test_a_propagation_conflict_rolls_back_the_confirmed_result(): void
@@ -186,7 +209,7 @@ class MatchResultServiceTest extends TestCase
     /**
      * @return array{Tournament, Stage}
      */
-    private function createTournament(TournamentFormat $format): array
+    private function createTournament(TournamentFormat $format, int $grandFinalMatches = 2): array
     {
         $now = now();
         $tournament = Tournament::query()->create([
@@ -196,6 +219,9 @@ class MatchResultServiceTest extends TestCase
             'format' => $format,
             'seeding_method' => SeedingMethod::MANUAL,
             'status' => TournamentStatus::LIVE,
+            'double_elimination_config' => $format === TournamentFormat::DOUBLE_ELIMINATION
+                ? ['grand_final_matches' => $grandFinalMatches]
+                : null,
             'source_created_at' => $now,
             'source_updated_at' => $now,
         ]);

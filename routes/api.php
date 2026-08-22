@@ -16,7 +16,7 @@ Route::get('/', fn () => [
     ],
 ]);
 Route::get('/health', fn () => ['success' => true, 'data' => ['status' => 'ok']]);
-Route::middleware(['throttle:60,1', 'api.admin:optional'])->group(function (): void {
+Route::middleware(['throttle:60,1', 'api.admin'])->group(function (): void {
     Route::get('/tournaments', [TournamentController::class, 'index']);
     Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
     Route::get('/tournaments/{tournament}/participants', [TournamentController::class, 'participants']);

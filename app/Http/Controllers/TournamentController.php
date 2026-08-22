@@ -22,7 +22,7 @@ class TournamentController extends Controller
     {
         $isAdmin = $request->user()?->isAdmin() ?? false;
         $tournaments = Tournament::query()->withCount(['participants', 'matches'])
-            ->when(! $isAdmin, fn ($query) => $query->where('status', TournamentStatus::LIVE))
+            ->when(! $isAdmin, fn ($query) => $query->whereRaw('1 = 0'))
             ->when($isAdmin && $request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
             ->orderByDesc('source_created_at')->paginate(12)->withQueryString();
 
@@ -43,6 +43,7 @@ class TournamentController extends Controller
                 'status' => TournamentStatus::DRAFT, 'participant_count' => 0,
                 'ranking_config' => $this->rankingConfig($data),
                 'round_robin_config' => $this->roundRobinConfig($data),
+                'double_elimination_config' => $this->doubleEliminationConfig($data),
                 'source_created_at' => $now, 'source_updated_at' => $now, 'synced_at' => $now,
             ]);
             Stage::query()->create([
@@ -78,6 +79,7 @@ class TournamentController extends Controller
             $data = array_merge($data, $configuration, [
                 'ranking_config' => $this->rankingConfig($configuration),
                 'round_robin_config' => $this->roundRobinConfig($configuration),
+                'double_elimination_config' => $this->doubleEliminationConfig($configuration),
             ]);
         }
 
@@ -124,6 +126,7 @@ class TournamentController extends Controller
             'win_points' => ['nullable', 'integer', 'between:0,100'],
             'draw_points' => ['nullable', 'integer', 'between:0,100'],
             'loss_points' => ['nullable', 'integer', 'between:0,100'],
+            'grand_final_matches' => ['nullable', 'integer', Rule::in([1, 2])],
         ]);
     }
 
@@ -139,6 +142,14 @@ class TournamentController extends Controller
     {
         return $data['format'] === TournamentFormat::ROUND_ROBIN->value
             ? ['win_points' => (int) ($data['win_points'] ?? 3), 'draw_points' => (int) ($data['draw_points'] ?? 1), 'loss_points' => (int) ($data['loss_points'] ?? 0)] : null;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function doubleEliminationConfig(array $data): ?array
+    {
+        return $data['format'] === TournamentFormat::DOUBLE_ELIMINATION->value
+            ? ['grand_final_matches' => (int) ($data['grand_final_matches'] ?? 2)]
+            : null;
     }
 
     private function editable(Tournament $tournament): bool

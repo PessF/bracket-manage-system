@@ -26,6 +26,7 @@
         <div class="detail-item"><small>{{ __('ui.competition_date') }}</small><strong>{{ $tournament->competition_date?->translatedFormat('j M Y · H:i') ?? __('ui.not_specified') }}</strong></div>
         <div class="detail-item"><small>{{ __('ui.venue') }}</small><strong>{{ $tournament->venue ?: __('ui.not_specified') }}</strong></div>
         <div class="detail-item"><small>{{ __('ui.division') }}</small><strong>{{ $tournament->division }}</strong></div>
+        @if($tournament->format === App\Enums\TournamentFormat::DOUBLE_ELIMINATION)<div class="detail-item"><small>{{ __('ui.grand_final_setting') }}</small><strong>{{ (int) ($tournament->double_elimination_config['grand_final_matches'] ?? 2) === 1 ? __('ui.grand_final_one_match') : __('ui.grand_final_two_matches') }}</strong></div>@endif
         @if($tournament->notes)<div class="detail-item full"><small>{{ __('ui.notes') }}</small><span>{!! nl2br(e($tournament->notes)) !!}</span></div>@endif
     </div>
 </section>
