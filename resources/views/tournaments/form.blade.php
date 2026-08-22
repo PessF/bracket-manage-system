@@ -71,7 +71,7 @@
 
 @push('styles')
 <style>
-    .format-config-panel { padding: 15px; border: 1px solid #dbe3ee; border-radius: 9px; background: #f8fafc; }
+    .format-config-panel { min-width:0; padding: 15px; border: 1px solid #dbe3ee; border-radius: 9px; background: #f8fafc; }
     .format-config-panel[hidden] { display: none; }
     .format-config-panel.compact { padding: 14px 15px; }
     .format-config-head { display: flex; gap: 11px; align-items: flex-start; }
@@ -82,11 +82,11 @@
     .format-settings-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 14px; }
     .format-settings-grid.three { grid-template-columns: repeat(3,minmax(0,1fr)); }
     .format-settings-grid .field { margin: 0; }
-    .choice-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:15px; }
+    .choice-grid { display:grid; min-width:0; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:15px 0 0; }
     .choice-card { display:flex; align-items:flex-start; gap:10px; min-height:76px; margin:0; padding:13px; border:1px solid #d4d4d8; border-radius:9px; background:#fff; cursor:pointer; }
     .choice-card:has(input:checked) { border-color:#2563eb; background:#eff6ff; box-shadow:0 0 0 2px rgb(37 99 235 / .12); }
-    .choice-card input { flex:0 0 auto; width:20px; height:20px; margin:1px 0 0; }
-    .choice-card span { display:flex; flex-direction:column; }
+    .choice-card input { flex:0 0 auto; width:20px; height:20px; min-height:20px; margin:1px 0 0; }
+    .choice-card span { display:flex; min-width:0; flex-direction:column; }
     .choice-card small { margin-top:3px; color:var(--muted); font-weight:500; }
     @media (max-width: 820px) { .format-settings-grid.three { grid-template-columns: 1fr; } }
     @media (max-width: 680px) { .format-settings-grid, .choice-grid { grid-template-columns: 1fr; } .choice-card { min-height:86px; padding:16px; } }
