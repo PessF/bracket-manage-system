@@ -116,7 +116,7 @@ return [
     'share_view_link' => 'Share live competition', 'share_link_help' => 'Anyone with this link can view only this competition while it is live. They cannot edit scores or settings.',
     'copy_share_link' => 'Copy link', 'share_link_copied' => 'Link copied', 'open_view_page' => 'Open viewer page',
     'short_viewer_link' => 'Short viewer link', 'short_viewer_link_help' => 'Use 4–36 lowercase letters, numbers, or hyphens. Saving disables the previous link; choose a name that is not easy to guess.',
-    'share_slug' => 'Link name', 'save_short_link' => 'Save short link', 'share_link_updated' => 'The viewer link was updated. Share the new URL with viewers.',
+    'share_slug' => 'Link name', 'short_viewer_link_placeholder' => 'e.g. easykids-final', 'save_short_link' => 'Save short link', 'saving' => 'Saving…', 'processing' => 'Processing…', 'share_link_updated' => 'The viewer link was updated. Share the new URL with viewers.',
     'read_only' => 'Read only', 'shared_view_notice' => 'Live viewer page · This page cannot edit competition data.',
     'live_only_notice' => 'Viewer mode shows live competitions only. Results and brackets update as administrators enter scores.',
     'live_match_results' => 'Live match status and scores', 'tournament_navigation' => 'Competition pages',

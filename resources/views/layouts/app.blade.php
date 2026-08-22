@@ -70,6 +70,8 @@
         .stat strong { display: block; overflow-wrap:anywhere; font-size: 21px; line-height: 1.3; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; border: 1px solid transparent; border-radius: 8px; background: var(--brand); color: #fff; padding: 10px 16px; font: inherit; font-weight: 650; cursor: pointer; touch-action:manipulation; }
         .btn:hover { opacity: .86; }
+        .btn:disabled, .btn[aria-disabled="true"] { opacity:.55; cursor:not-allowed; }
+        .btn.is-submitting::before { content:""; width:14px; height:14px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:button-spin .7s linear infinite; }
         .btn.secondary { background: #fff; border-color: var(--line); color: var(--ink); }
         .btn.danger { background: var(--bad); }
         .btn.small { min-height: 38px; padding: 7px 12px; font-size: 14px; }
@@ -81,6 +83,7 @@
         .badge.DRAFT, .badge.PENDING { background: #f8fafc; color: #64748b; }
         .badge.ARCHIVED { background: #e5e7eb; color: #4b5563; }
         .alert { padding: 11px 14px; border: 1px solid; border-radius: 8px; margin-bottom: 16px; }
+        .alert ul { margin:6px 0 0; padding-left:20px; }
         .alert.success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
         .alert.error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
         .view-only-banner { background:#eff6ff; border-color:#bfdbfe; color:#1e40af; }
@@ -113,6 +116,8 @@
         select:hover:not(:disabled) { border-color: #a1a1aa; background-color: #fafafa; }
         select:disabled { background-color: #f4f4f5; color: #71717a; cursor: not-allowed; opacity: 1; }
         input:focus, select:focus, textarea:focus { border-color: #a1a1aa; box-shadow: 0 0 0 3px rgb(161 161 170 / .15); }
+        input[readonly] { background:#fafafa; color:#52525b; }
+        input:user-invalid, select:user-invalid, textarea:user-invalid { border-color:#ef4444; }
         select.native-select-enhanced { position: absolute !important; width: 1px !important; height: 1px !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; opacity: 0 !important; pointer-events: none !important; }
         .smart-select { position: relative; width: 100%; }
         .smart-select-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 44px; padding: 9px 11px; border: 1px solid #d4d4d8; border-radius: 8px; background: #fff; color: var(--ink); font: inherit; text-align: left; cursor: pointer; outline: none; transition: border-color .15s, box-shadow .15s, background-color .15s; }
@@ -173,6 +178,10 @@
         .checkbox-row { display: flex; align-items: center; gap: 8px; margin: 0 0 17px; font-weight: 500; }
         .checkbox-row input { width: auto; }
         .auth-submit { width: 100%; }
+        @keyframes button-spin { to { transform:rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+        }
         @media (max-width: 960px) {
             .top .inner { padding-right:24px; padding-left:24px; }
             .desktop-only { display: none !important; }
@@ -216,7 +225,10 @@
             .share-link-row { grid-template-columns:1fr; }
             .short-link-form { grid-template-columns:1fr; }
             .short-link-form .btn { width:100%; }
-            .short-link-input span { max-width:45%; overflow:hidden; text-overflow:ellipsis; }
+            .short-link-input { display:grid; grid-template-columns:1fr; align-items:stretch; }
+            .short-link-input span { max-width:none; overflow-x:auto; padding:7px 11px; border-bottom:1px solid var(--line); background:var(--soft); font-size:12px; scrollbar-width:none; }
+            .short-link-input span::-webkit-scrollbar { display:none; }
+            .short-link-input input { width:100%; min-width:0; }
             .tabs { position:sticky; top:var(--top-height); z-index:70; margin-right:-14px; margin-left:-14px; padding:0 7px; background:rgb(250 250 250 / .96); backdrop-filter:blur(9px); scrollbar-width:none; }
             .tabs::-webkit-scrollbar { display:none; }
             .tabs a { min-height:44px; padding:12px 11px; }
@@ -238,7 +250,7 @@
     </style>
     @stack('styles')
 </head>
-<body>
+<body data-processing-label="{{ __('ui.processing') }}">
 @php($isAdmin = auth()->user()?->isAdmin() ?? false)
 <header class="top">
     <div class="inner">
@@ -299,8 +311,25 @@
 </main>
 <script>
 document.addEventListener('submit', (event) => {
+    const form = event.target;
     const message = event.target.dataset.confirm;
-    if (message && !window.confirm(message)) event.preventDefault();
+    if (message && !window.confirm(message)) {
+        event.preventDefault();
+        return;
+    }
+    if (form.dataset.submitting === 'true') {
+        event.preventDefault();
+        return;
+    }
+    const button = event.submitter?.matches('.btn') ? event.submitter : null;
+    if (!button) return;
+    form.dataset.submitting = 'true';
+    window.requestAnimationFrame(() => {
+        button.disabled = true;
+        button.classList.add('is-submitting');
+        button.setAttribute('aria-busy', 'true');
+        button.textContent = button.dataset.submitting || document.body.dataset.processingLabel;
+    });
 });
 document.addEventListener('click', async (event) => {
     const button = event.target.closest('[data-copy-target]');
