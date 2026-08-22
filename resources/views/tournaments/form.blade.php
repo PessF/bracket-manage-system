@@ -76,8 +76,8 @@
     .format-config-panel.compact { padding: 14px 15px; }
     .format-config-head { display: flex; gap: 11px; align-items: flex-start; }
     .format-config-head > div { display: flex; flex-direction: column; min-width: 0; }
-    .format-config-head strong { font-size: 15px; }
-    .format-config-head span:not(.format-config-icon) { margin-top: 2px; color: var(--muted); font-size: 14px; }
+    .format-config-head strong { font-size: 14px; }
+    .format-config-head span:not(.format-config-icon) { margin-top: 2px; color: var(--muted); font-size: 13px; }
     .format-config-icon { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; color: #475569; font-size: 12px; font-weight: 800; }
     .format-settings-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 14px; }
     .format-settings-grid.three { grid-template-columns: repeat(3,minmax(0,1fr)); }

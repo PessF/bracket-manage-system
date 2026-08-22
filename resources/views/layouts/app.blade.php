@@ -12,7 +12,7 @@
         }
         * { box-sizing: border-box; }
         html { color-scheme: light; }
-        body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         a { color: inherit; text-decoration: none; }
         a:hover { opacity: .78; }
         .top { position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.94); backdrop-filter: blur(10px); }
@@ -56,8 +56,8 @@
         .container { width: 100%; max-width: 1152px; margin: 0 auto; padding: 28px 32px 56px; }
         .container-wide { max-width: 1560px; }
         .page-head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 18px; }
-        .page-head h1 { margin: 0 0 3px; font-size: 28px; line-height: 1.25; font-weight: 650; letter-spacing: -.025em; }
-        h2 { font-size: 19px; margin: 0 0 14px; letter-spacing: -.01em; }
+        .page-head h1 { margin: 0 0 3px; font-size: 26px; line-height: 1.25; font-weight: 650; letter-spacing: -.025em; }
+        h2 { font-size: 18px; margin: 0 0 14px; letter-spacing: -.01em; }
         .muted { color: var(--muted); }
         .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 21px; box-shadow: 0 1px 2px rgb(0 0 0 / .025); margin-bottom: 18px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: 16px; }
@@ -71,7 +71,7 @@
         .btn.small { min-height: 38px; padding: 7px 12px; font-size: 14px; }
         .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         .actions form { margin: 0; }
-        .badge { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; font-size: 12px; line-height: 20px; font-weight: 700; background: var(--soft); color: #52525b; letter-spacing: .025em; }
+        .badge { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; font-size: 11px; line-height: 19px; font-weight: 700; background: var(--soft); color: #52525b; letter-spacing: .025em; }
         .badge.LIVE, .badge.READY { background: #eff6ff; border-color: #bfdbfe; color: var(--blue); }
         .badge.COMPLETED, .badge.FINISHED { background: #f4f4f5; color: #3f3f46; }
         .badge.DRAFT, .badge.PENDING { background: #f8fafc; color: #64748b; }
@@ -170,10 +170,10 @@
             .page-head { display: block; }
             .page-head .actions { margin-top: 12px; }
             .card { padding: 14px; }
-            .page-head h1 { font-size:24px; }
-            .btn { min-height: 50px; padding:12px 17px; }
+            .page-head h1 { font-size:23px; }
+            .btn { min-height: 46px; padding:10px 15px; }
             .btn.small { min-height:44px; }
-            input, select, textarea { min-height: 50px; font-size: 16px; }
+            input, select, textarea { min-height: 46px; font-size: 16px; }
             .table-wrap { margin-right: -14px; margin-left: -14px; overflow: auto; padding: 0 14px; }
             .inline-form { align-items: stretch; flex-direction: column; }
             .inline-form .field { width: 100%; min-width: 0 !important; }

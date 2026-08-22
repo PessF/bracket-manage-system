@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', __('ui.title_matches').' · '.$tournament->name)
 @push('styles')
-<style>.match-card-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:10px;font-size:13px}.match-team-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:10px 11px;background:#fafafa;border-radius:7px}.match-team-row+.match-team-row{margin-top:5px}.match-team-row.winner{background:#f0fdf4;color:#166534;font-weight:650}.match-winner{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:14px}</style>
+<style>.match-card-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:10px;font-size:12px}.match-team-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:42px;padding:9px 10px;background:#fafafa;border-radius:7px}.match-team-row+.match-team-row{margin-top:5px}.match-team-row.winner{background:#f0fdf4;color:#166534;font-weight:650}.match-winner{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:13px}</style>
 @endpush
 @section('content')
 @php
