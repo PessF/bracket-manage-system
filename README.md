@@ -1,0 +1,92 @@
+# EasyKids Competition Tournament Management System
+
+Laravel 12 + PHP 8.3 + MySQL 8 implementation of the EasyKids tournament engine. It supports Ranking, Round Robin, Single Elimination, and Double Elimination, including BYEs, winner/loser dependency propagation, a runtime Grand Final reset, ranking attempts, and Round Robin standings.
+
+## Start on Linux with Docker
+
+Run from this directory:
+
+```bash
+cp .env.example .env
+mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache
+sudo chown -R "$(id -u):$(id -g)" storage bootstrap/cache
+chmod -R ug+rwX storage bootstrap/cache
+
+export APP_UID="$(id -u)"
+export APP_GID="$(id -g)"
+docker compose build
+docker compose run --rm --no-deps app composer install
+docker compose up -d
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate --force
+docker compose exec app php artisan db:seed --force
+```
+
+Open <http://127.0.0.1:8080>. The seeder creates a LIVE eight-team Double Elimination bracket with 14 matches.
+
+Use the `EN / ไทย` switch in the header to change the interface language. The selection is stored in the browser session.
+
+Participant CSV import is available while a tournament is `DRAFT` or `READY`. Open its Overview & Participants page, download the template, then upload a UTF-8 CSV with these supported columns:
+
+```text
+Team Name, Team ID, School, Coach, Member 1, Member 2, Member 3, Member 4, Seed
+```
+
+The importer also accepts `Team` as the team-name header and Thai headers such as `ชื่อทีม`, `รหัสทีม`, `โรงเรียน`, `โค้ช`, and `สมาชิก 1`–`สมาชิก 4`. Imports are limited to 1,000 data rows; invalid and duplicate rows are reported while valid rows are imported transactionally.
+
+Useful commands:
+
+```bash
+docker compose ps
+docker compose logs -f app web db
+docker compose exec app php artisan test
+docker compose exec app vendor/bin/pint
+docker compose down
+```
+
+MySQL data is kept in the `mysql-data` Docker volume. `docker compose down` preserves it; adding `--volumes` deletes it.
+
+## API
+
+- `GET /api/health`
+- `GET /api/tournaments`
+- `GET /api/tournaments/{uuid}`
+
+Responses use a consistent `{ "success": true, "data": ... }` envelope.
+
+## Docker Hub TLS error
+
+If Docker reports that `registry-1.docker.io` has a certificate for another domain (for example `*.zerovar.com`), DNS is returning a poisoned/stale address. Do not disable TLS verification. Check it with:
+
+```bash
+getent ahostsv4 registry-1.docker.io
+openssl s_client -connect registry-1.docker.io:443 -servername registry-1.docker.io </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer
+```
+
+Configure trusted DNS servers in `/etc/docker/daemon.json` while preserving any existing settings:
+
+```json
+{
+  "dns": ["1.1.1.1", "8.8.8.8"]
+}
+```
+
+Then restart Docker and retry:
+
+```bash
+sudo systemctl restart docker
+docker compose pull
+docker compose build --pull
+```
+
+If the host itself still resolves the wrong IP, also correct the Linux/network-manager DNS configuration or the router DNS settings and flush the resolver cache.
+
+## Architecture
+
+- Schema migration: `database/migrations/2026_08_21_100000_create_external_tournament_tables.php`
+- Enums: `app/Enums`
+- Tournament graph generator: `app/Services/BracketGenerator.php`
+- Atomic result propagation: `app/Services/MatchResultService.php`
+- Lifecycle: `app/Services/TournamentLifecycleService.php`
+- Ranking and Round Robin standings: `app/Services/RankingService.php`, `app/Services/RoundRobinStandingsService.php`
+- Demo data: `database/seeders/DatabaseSeeder.php`

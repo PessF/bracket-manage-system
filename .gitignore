@@ -1,0 +1,52 @@
+# Environment and local credentials
+.env
+.env.*
+!.env.example
+/auth.json
+
+# PHP / Laravel dependencies and runtime files
+/vendor/
+.phpactor.json
+/storage/*.key
+/storage/pail/
+
+# Local database files
+/database/*.sqlite
+/database/*.sqlite-*
+/database/*.sqlite3
+/database/*.sqlite3-*
+
+# Frontend dependencies and generated assets
+/node_modules/
+/public/build/
+/public/hot
+/public/storage
+/.vite/
+
+# Test and tooling output
+/coverage/
+/.phpunit.cache/
+.phpunit.result.cache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE and operating-system files
+/.fleet/
+/.idea/
+/.nova/
+/.vscode/
+/.zed/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*~
+
+# Legacy local development files
+Homestead.json
+Homestead.yaml
