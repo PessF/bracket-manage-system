@@ -36,13 +36,16 @@ Accept-Language: th-TH</code></pre><div class="api-note">{{ __('api.security_not
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -H "Accept-Language: th-TH" \
-  -d '{"name":"EasyKids 2026","competition":"Robot Challenge","division":"Junior","format":"DOUBLE_ELIMINATION","seeding_method":"REGISTRATION_ORDER","grand_final_matches":2}'</code></pre><h3>{{ __('api.status_example') }}</h3><pre><code>curl -X PATCH "{{ url('/api/tournaments/{id}/status') }}" \
+  -d '{"name":"EasyKids 2026","competition":"Robot Challenge","division":"Junior","format":"DOUBLE_ELIMINATION","seeding_method":"REGISTRATION_ORDER","grand_final_matches":2}'</code></pre><h3>{{ __('api.share_link_example') }}</h3><pre><code>curl -X PATCH "{{ url('/api/tournaments/{id}/share-link') }}" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"share_slug":"easykids-final-26"}'</code></pre><h3>{{ __('api.status_example') }}</h3><pre><code>curl -X PATCH "{{ url('/api/tournaments/{id}/status') }}" \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"status":"LIVE"}'</code></pre><h3>{{ __('api.score_example') }}</h3><pre><code>curl -X PUT "{{ url('/api/tournaments/{id}/matches/{match}/result') }}" \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"score_a":3,"score_b":1}'</code></pre></section>
+  -d '{"score_a":3,"score_b":1}'</code></pre><p>{{ __('api.score_correction_help') }}</p></section>
 
 <section class="card" id="codes"><h2>{{ __('api.status_codes') }}</h2><div class="table-wrap"><table><tbody>@foreach(__('api.status_code_rows') as $row)<tr><td><code>{{ $row[0] }}</code></td><td>{{ $row[1] }}</td></tr>@endforeach</tbody></table></div></section>
 </div>

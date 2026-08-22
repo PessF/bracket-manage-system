@@ -30,6 +30,7 @@ Route::middleware(['throttle:60,1', 'api.admin'])->group(function (): void {
 Route::middleware(['throttle:60,1', 'api.admin'])->group(function (): void {
     Route::post('/tournaments', [TournamentController::class, 'store']);
     Route::match(['put', 'patch'], '/tournaments/{tournament}', [TournamentController::class, 'update']);
+    Route::patch('/tournaments/{tournament}/share-link', [TournamentController::class, 'updateShareLink']);
     Route::delete('/tournaments/{tournament}', [TournamentController::class, 'destroy']);
 
     Route::post('/tournaments/{tournament}/participants', [ParticipantController::class, 'store']);

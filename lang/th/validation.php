@@ -28,6 +28,7 @@ return [
         'array' => ':attribute ต้องมีอย่างน้อย :min รายการ',
     ],
     'numeric' => ':attribute ต้องเป็นตัวเลข',
+    'regex' => 'รูปแบบ :attribute ไม่ถูกต้อง',
     'password' => [
         'letters' => ':attribute ต้องมีตัวอักษรอย่างน้อยหนึ่งตัว',
         'mixed' => ':attribute ต้องมีทั้งตัวพิมพ์ใหญ่และตัวพิมพ์เล็ก',
@@ -45,6 +46,7 @@ return [
         'competition' => 'ชื่อการแข่งขัน', 'division' => 'รุ่นการแข่งขัน', 'format' => 'รูปแบบการแข่งขัน',
         'seeding_method' => 'วิธีจัด Seed', 'score_a' => 'คะแนนฝ่าย A', 'score_b' => 'คะแนนฝ่าย B',
         'grand_final_matches' => 'จำนวนแมตช์ Grand Final',
+        'share_slug' => 'ชื่อลิงก์ผู้ชม',
         'attempt_number' => 'ครั้งที่', 'attempt_value' => 'ค่า', 'is_valid' => 'การใช้คำนวณ',
     ],
 ];

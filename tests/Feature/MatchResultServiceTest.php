@@ -73,6 +73,14 @@ class MatchResultServiceTest extends TestCase
         $this->assertSame(MatchStatus::READY, $winnerDestination->status);
         $this->assertSame($participantB->id, $loserDestination->participant_a_id);
         $this->assertSame(MatchStatus::READY, $loserDestination->status);
+
+        $corrected = app(MatchResultService::class)->confirm($source, '2', '11');
+        $winnerDestination->refresh();
+        $loserDestination->refresh();
+
+        $this->assertSame($participantB->id, $corrected->winner_id);
+        $this->assertSame($participantB->id, $winnerDestination->participant_b_id);
+        $this->assertSame($participantA->id, $loserDestination->participant_a_id);
     }
 
     public function test_it_rejects_an_elimination_tie_without_partial_writes(): void
@@ -122,6 +130,14 @@ class MatchResultServiceTest extends TestCase
         $this->assertSame(1, $standings[$participantA->id]->draws);
         $this->assertSame(1, $standings[$participantA->id]->points);
         $this->assertSame(1, $standings[$participantB->id]->points);
+
+        app(MatchResultService::class)->confirm($source, '4', '2');
+        $standings = $tournament->standings()->get()->keyBy('participant_id');
+
+        $this->assertSame(3, $standings[$participantA->id]->points);
+        $this->assertSame(1, $standings[$participantA->id]->wins);
+        $this->assertSame(0, $standings[$participantA->id]->draws);
+        $this->assertSame(0, $standings[$participantB->id]->points);
     }
 
     public function test_losers_bracket_finalist_winning_first_grand_final_creates_reset(): void
@@ -145,6 +161,10 @@ class MatchResultServiceTest extends TestCase
         $this->assertSame(MatchStatus::READY, $reset->status);
         $this->assertSame($winnersFinalist->id, $reset->participant_a_id);
         $this->assertSame($losersFinalist->id, $reset->participant_b_id);
+
+        app(MatchResultService::class)->confirm($grandFinal, 3, 1);
+
+        $this->assertSame(1, $tournament->matches()->where('bracket_type', BracketType::GRAND_FINAL)->count());
     }
 
     public function test_single_grand_final_mode_does_not_create_a_reset_match(): void
@@ -204,6 +224,46 @@ class MatchResultServiceTest extends TestCase
         $this->assertNull($source->score_a);
         $this->assertNull($source->winner_id);
         $this->assertSame($participantC->id, $destination->participant_a_id);
+    }
+
+    public function test_winner_correction_is_blocked_after_the_next_match_started(): void
+    {
+        [$tournament, $stage] = $this->createTournament(TournamentFormat::SINGLE_ELIMINATION);
+        [$participantA, $participantB, $participantC] = $this->createParticipants($tournament, 3);
+        $destination = $this->createMatch($tournament, $stage, [
+            'match_number' => 2,
+            'participant_b_id' => $participantC->id,
+        ]);
+        $source = $this->createMatch($tournament, $stage, [
+            'match_number' => 1,
+            'status' => MatchStatus::READY,
+            'participant_a_id' => $participantA->id,
+            'participant_b_id' => $participantB->id,
+            'winner_next_match_id' => $destination->id,
+            'winner_next_slot' => MatchSlot::A,
+        ]);
+
+        app(MatchResultService::class)->confirm($source, 5, 1);
+        $destination->forceFill(['status' => MatchStatus::LIVE])->save();
+        $sameWinnerCorrection = app(MatchResultService::class)->confirm($source, 7, 2);
+
+        $this->assertSame('7.000000', $sameWinnerCorrection->score_a);
+        $this->assertSame($participantA->id, $sameWinnerCorrection->winner_id);
+
+        try {
+            app(MatchResultService::class)->confirm($source, 1, 5);
+            $this->fail('Changing a winner after the next match starts should fail.');
+        } catch (DomainException $exception) {
+            $this->assertSame(
+                __('ui.score_correction_next_match_started', ['number' => 2]),
+                $exception->getMessage(),
+            );
+        }
+
+        $source->refresh();
+        $this->assertSame($participantA->id, $source->winner_id);
+        $this->assertSame('7.000000', $source->score_a);
+        $this->assertSame('2.000000', $source->score_b);
     }
 
     /**

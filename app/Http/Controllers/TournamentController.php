@@ -13,6 +13,7 @@ use App\Models\Tournament;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -97,6 +98,31 @@ class TournamentController extends Controller
         $tournament->delete();
 
         return redirect()->route('tournaments.index')->with('success', __('ui.tournament_deleted'));
+    }
+
+    public function updateShareLink(Request $request, Tournament $tournament): RedirectResponse
+    {
+        $request->merge([
+            'share_slug' => Str::lower(trim((string) $request->input('share_slug'))),
+        ]);
+        $data = $request->validate([
+            'share_slug' => [
+                'required',
+                'string',
+                'min:4',
+                'max:36',
+                'regex:/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])$/',
+                Rule::unique('external_tournaments', 'public_token')->ignore($tournament->id),
+            ],
+        ]);
+
+        $tournament->forceFill([
+            'public_token' => $data['share_slug'],
+            'source_updated_at' => now(),
+            'synced_at' => now(),
+        ])->save();
+
+        return redirect()->route('tournaments.show', $tournament)->with('success', __('ui.share_link_updated'));
     }
 
     /** @return array<string, mixed> */

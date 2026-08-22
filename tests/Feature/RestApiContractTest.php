@@ -75,6 +75,7 @@ class RestApiContractTest extends TestCase
             ->assertOk()
             ->assertSee('คู่มือ REST API ภาษาไทย')
             ->assertSee('/api/tournaments/{id}/participants/{participant}')
+            ->assertSee('/api/tournaments/{id}/share-link')
             ->assertSee('PATCH /status')
             ->assertSee('Accept-Language: th-TH');
     }

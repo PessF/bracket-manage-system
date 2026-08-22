@@ -30,7 +30,7 @@ Thai is the default interface language and the application timezone defaults to 
 
 Viewer accounts and public visitors do not receive a public competition list. They can open only a private `/view/{token}` link shared by an administrator, and that link works only while its competition is `LIVE`. The shared overview, bracket, matches, participants, and standings are read-only. Administrators sign in to see every competition and manage users, participants, CSV imports, lifecycle, and results.
 
-Each competition has a private viewer link in its administrator overview. This `/view/{token}` URL opens only that competition, preserves the read-only mode across Overview, Bracket, Matches, and Results, and is available only while the competition is `LIVE`. It can be copied before starting so it is ready to distribute when the competition goes live.
+Each competition has a private viewer link in its administrator overview. This `/view/{token}` URL opens only that competition, preserves the read-only mode across Overview, Bracket, Matches, and Results, and is available only while the competition is `LIVE`. Administrators can replace the generated token with a unique 4–36 character short name; doing so immediately disables the previous URL.
 
 To create the first administrator:
 
@@ -81,7 +81,7 @@ MySQL data is kept in the `mysql-data` Docker volume. `docker compose down` pres
 
 Open `/api/docs` for the complete endpoint list and request examples.
 
-The health endpoint is public. Every competition REST endpoint requires an administrator bearer token and covers tournament CRUD, participant CRUD and CSV import, lifecycle changes, match results, and ranking attempts. Viewer access uses the private web share link instead of the API. Create or revoke a bearer token from **API access** in the administrator navigation. API messages can be selected with `?lang=th` / `?lang=en` or the `Accept-Language` header.
+The health endpoint is public. Every competition REST endpoint requires an administrator bearer token and covers tournament CRUD, participant CRUD and CSV import, lifecycle changes, match results and safe score corrections, and ranking attempts. Viewer access uses the private web share link instead of the API. Create or revoke a bearer token from **API access** in the administrator navigation. API messages can be selected with `?lang=th` / `?lang=en` or the `Accept-Language` header.
 
 Responses use a consistent `{ "success": true, "data": ... }` envelope.
 

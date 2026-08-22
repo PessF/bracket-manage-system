@@ -35,6 +35,7 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::get('/tournaments/{tournament}/edit', [TournamentController::class, 'edit'])->name('tournaments.edit');
     Route::get('/tournaments/{tournament}/settings', [TournamentController::class, 'edit'])->name('tournaments.settings');
     Route::match(['put', 'patch'], '/tournaments/{tournament}', [TournamentController::class, 'update'])->name('tournaments.update');
+    Route::patch('/tournaments/{tournament}/share-link', [TournamentController::class, 'updateShareLink'])->name('tournaments.share-link.update');
     Route::delete('/tournaments/{tournament}', [TournamentController::class, 'destroy'])->name('tournaments.destroy');
 
     Route::post('/tournaments/{tournament}/participants', [ParticipantController::class, 'store'])->name('participants.store');

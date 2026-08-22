@@ -62,9 +62,13 @@ class MatchResultService
                 throw new DomainException(__('ui.result_live_only'));
             }
 
-            if (! in_array($currentMatch->status, [MatchStatus::READY, MatchStatus::LIVE], true)) {
+            if (! in_array($currentMatch->status, [MatchStatus::READY, MatchStatus::LIVE, MatchStatus::FINISHED], true)) {
                 throw new DomainException(__('ui.match_status_invalid'));
             }
+
+            $isCorrection = $currentMatch->status === MatchStatus::FINISHED;
+            $previousWinnerId = $currentMatch->winner_id;
+            $previousLoserId = $currentMatch->loser_id;
 
             if ($currentMatch->is_bye) {
                 throw new DomainException(__('ui.bye_result_invalid'));
@@ -107,11 +111,28 @@ class MatchResultService
                 'loser_id' => $loserId,
                 'status' => MatchStatus::FINISHED,
                 'started_at' => $currentMatch->started_at ?? $now,
-                'finished_at' => $now,
+                'finished_at' => $currentMatch->finished_at ?? $now,
                 'synced_at' => $now,
             ])->save();
 
-            if ($winnerId !== null) {
+            if ($isCorrection && ($previousWinnerId !== $winnerId || $previousLoserId !== $loserId)) {
+                $this->replacePropagation(
+                    sourceMatch: $currentMatch,
+                    previousParticipantId: $previousWinnerId,
+                    participantId: $winnerId,
+                    nextMatchId: $currentMatch->winner_next_match_id,
+                    nextSlot: $currentMatch->winner_next_slot,
+                    outcome: 'winner',
+                );
+                $this->replacePropagation(
+                    sourceMatch: $currentMatch,
+                    previousParticipantId: $previousLoserId,
+                    participantId: $loserId,
+                    nextMatchId: $currentMatch->loser_next_match_id,
+                    nextSlot: $currentMatch->loser_next_slot,
+                    outcome: 'loser',
+                );
+            } elseif (! $isCorrection && $winnerId !== null) {
                 $this->propagate(
                     sourceMatch: $currentMatch,
                     participantId: $winnerId,
@@ -121,7 +142,7 @@ class MatchResultService
                 );
             }
 
-            if ($loserId !== null) {
+            if (! $isCorrection && $loserId !== null) {
                 $this->propagate(
                     sourceMatch: $currentMatch,
                     participantId: $loserId,
@@ -135,7 +156,7 @@ class MatchResultService
                 $currentMatch->tournament->format === TournamentFormat::DOUBLE_ELIMINATION
                 && (int) ($currentMatch->tournament->double_elimination_config['grand_final_matches'] ?? 2) === 2
             ) {
-                $this->createGrandFinalResetWhenRequired($currentMatch, $winnerId);
+                $this->synchronizeGrandFinalReset($currentMatch, $winnerId);
             }
 
             if ($currentMatch->tournament->format === TournamentFormat::ROUND_ROBIN) {
@@ -222,17 +243,93 @@ class MatchResultService
         $nextMatch->save();
     }
 
-    private function createGrandFinalResetWhenRequired(TournamentMatch $match, ?string $winnerId): void
+    private function replacePropagation(
+        TournamentMatch $sourceMatch,
+        ?string $previousParticipantId,
+        ?string $participantId,
+        ?string $nextMatchId,
+        ?MatchSlot $nextSlot,
+        string $outcome,
+    ): void {
+        if ($nextMatchId === null || $previousParticipantId === $participantId) {
+            return;
+        }
+
+        if ($nextSlot === null) {
+            throw new LogicException(__('ui.destination_slot_missing', ['outcome' => __('ui.outcome_labels.'.$outcome)]));
+        }
+
+        /** @var TournamentMatch $nextMatch */
+        $nextMatch = TournamentMatch::query()->lockForUpdate()->findOrFail($nextMatchId);
+
+        if ($nextMatch->tournament_id !== $sourceMatch->tournament_id) {
+            throw new LogicException(__('ui.destination_wrong_tournament', ['outcome' => __('ui.outcome_labels.'.$outcome)]));
+        }
+
+        if (in_array($nextMatch->status, [MatchStatus::LIVE, MatchStatus::FINISHED], true)) {
+            throw new DomainException(__('ui.score_correction_next_match_started', ['number' => $nextMatch->match_number]));
+        }
+
+        $participantColumn = $nextSlot === MatchSlot::A ? 'participant_a_id' : 'participant_b_id';
+        $labelColumn = $nextSlot === MatchSlot::A ? 'participant_a_label' : 'participant_b_label';
+        $existingParticipantId = $nextMatch->getAttribute($participantColumn);
+
+        if ($existingParticipantId !== $previousParticipantId && $existingParticipantId !== $participantId) {
+            throw new LogicException(__('ui.destination_occupied', ['outcome' => __('ui.outcome_labels.'.$outcome)]));
+        }
+
+        $nextMatch->setAttribute($participantColumn, $participantId);
+        $nextMatch->setAttribute(
+            $labelColumn,
+            $participantId === null
+                ? ($outcome === 'winner' ? 'Winner' : 'Loser').' of Match #'.$sourceMatch->match_number
+                : (Participant::query()->whereKey($participantId)->value('team_name') ?? 'Unknown participant'),
+        );
+        $nextMatch->status = $nextMatch->participant_a_id !== null && $nextMatch->participant_b_id !== null
+            ? MatchStatus::READY
+            : MatchStatus::PENDING;
+        $nextMatch->synced_at = now();
+        $nextMatch->save();
+    }
+
+    private function synchronizeGrandFinalReset(TournamentMatch $match, ?string $winnerId): void
     {
+        $firstGrandFinalId = TournamentMatch::query()
+            ->where('tournament_id', $match->tournament_id)
+            ->where('bracket_type', BracketType::GRAND_FINAL)
+            ->orderBy('match_number')
+            ->value('id');
+
         if (
             $match->bracket_type !== BracketType::GRAND_FINAL
+            || $firstGrandFinalId !== $match->id
             || $winnerId === null
-            || $winnerId !== $match->participant_b_id
-            || TournamentMatch::query()
-                ->where('tournament_id', $match->tournament_id)
-                ->where('bracket_type', BracketType::GRAND_FINAL)
-                ->count() > 1
         ) {
+            return;
+        }
+
+        $reset = TournamentMatch::query()
+            ->where('tournament_id', $match->tournament_id)
+            ->where('bracket_type', BracketType::GRAND_FINAL)
+            ->whereKeyNot($match->id)
+            ->lockForUpdate()
+            ->first();
+
+        if ($winnerId !== $match->participant_b_id) {
+            if ($reset === null) {
+                return;
+            }
+
+            if (in_array($reset->status, [MatchStatus::LIVE, MatchStatus::FINISHED], true)) {
+                throw new DomainException(__('ui.score_correction_next_match_started', ['number' => $reset->match_number]));
+            }
+
+            $reset->delete();
+
+            return;
+        }
+
+        if ($reset !== null) {
             return;
         }
 

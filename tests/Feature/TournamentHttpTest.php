@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\MatchStatus;
 use App\Enums\SeedingMethod;
 use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
 use App\Enums\UserRole;
 use App\Models\Participant;
+use App\Models\Stage;
 use App\Models\Tournament;
+use App\Models\TournamentMatch;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -87,6 +90,35 @@ class TournamentHttpTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $this->assertSame(2, $tournament->refresh()->double_elimination_config['grand_final_matches']);
+    }
+
+    public function test_finished_match_shows_a_prefilled_score_editor_to_admin(): void
+    {
+        $tournament = Tournament::factory()->create([
+            'format' => TournamentFormat::SINGLE_ELIMINATION,
+            'status' => TournamentStatus::LIVE,
+        ]);
+        $stage = Stage::factory()->create(['tournament_id' => $tournament->id]);
+        $participantA = Participant::factory()->create(['tournament_id' => $tournament->id, 'team_name' => 'Alpha']);
+        $participantB = Participant::factory()->create(['tournament_id' => $tournament->id, 'team_name' => 'Beta']);
+        TournamentMatch::factory()->create([
+            'tournament_id' => $tournament->id,
+            'stage_id' => $stage->id,
+            'status' => MatchStatus::FINISHED,
+            'participant_a_id' => $participantA->id,
+            'participant_b_id' => $participantB->id,
+            'score_a' => 3,
+            'score_b' => 1,
+            'winner_id' => $participantA->id,
+            'loser_id' => $participantB->id,
+        ]);
+
+        $this->get(route('tournaments.matches', $tournament))
+            ->assertOk()
+            ->assertSee(__('ui.edit_score'))
+            ->assertSee('value="3"', false)
+            ->assertSee('value="1"', false)
+            ->assertSee(__('ui.save_corrected_score'));
     }
 
     public function test_live_competition_and_participant_information_can_be_corrected_without_changing_bracket_settings(): void

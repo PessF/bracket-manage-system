@@ -15,7 +15,8 @@ return [
     'method' => 'Method', 'endpoint' => 'Endpoint', 'description' => 'Description', 'authentication_required' => 'Access',
     'public_or_admin' => 'Admin', 'admin_only' => 'Admin', 'request_examples' => 'Request examples',
     'list_example' => 'Search and filter competitions', 'create_example' => 'Create a competition',
-    'status_example' => 'Transition through the REST status resource', 'score_example' => 'Record a match result idempotently with PUT',
+    'share_link_example' => 'Choose a short viewer link', 'status_example' => 'Transition through the REST status resource', 'score_example' => 'Record or correct a match result with PUT',
+    'score_correction_help' => 'A finished match can be corrected while its competition is LIVE. If the winner changes, unplayed destination matches are updated automatically; correction is rejected after a destination match starts.',
     'pagination_filters' => 'Filters and pagination', 'pagination_help' => 'GET /tournaments supports status, format, search, and per_page from 1–100. Double Elimination create/update accepts grand_final_matches as 1 or 2.',
     'status_codes' => 'HTTP status codes',
     'status_code_rows' => [['200', 'Read or update succeeded'], ['201', 'Resource created'], ['401', 'Token missing or invalid'], ['403', 'Account is not an administrator'], ['404', 'Resource not found'], ['422', 'Validation failed or lifecycle state is invalid'], ['429', 'Rate limit exceeded']],
@@ -27,7 +28,7 @@ return [
     'write_endpoints' => [
         ['POST', '/api/tournaments', 'Create competition'], ['PUT / PATCH', '/api/tournaments/{id}', 'Replace / update competition'], ['DELETE', '/api/tournaments/{id}', 'Delete competition and related data'],
         ['POST', '/api/tournaments/{id}/participants', 'Create participant'], ['PUT / PATCH', '/api/tournaments/{id}/participants/{participant}', 'Replace / update participant'], ['DELETE', '/api/tournaments/{id}/participants/{participant}', 'Delete participant'],
-        ['POST', '/api/tournaments/{id}/participants/import', 'Import multipart csv_file'], ['PATCH', '/api/tournaments/{id}/status', 'Transition to LIVE, COMPLETED, or ARCHIVED'], ['PUT', '/api/tournaments/{id}/matches/{match}/result', 'Put score_a and score_b'],
+        ['POST', '/api/tournaments/{id}/participants/import', 'Import multipart csv_file'], ['PATCH', '/api/tournaments/{id}/share-link', 'Replace the viewer URL using share_slug'], ['PATCH', '/api/tournaments/{id}/status', 'Transition to LIVE, COMPLETED, or ARCHIVED'], ['PUT', '/api/tournaments/{id}/matches/{match}/result', 'Record or correct score_a and score_b'],
         ['POST', '/api/tournaments/{id}/participants/{participant}/attempts', 'Create an attempt with attempt_number'], ['PUT', '/api/tournaments/{id}/participants/{participant}/attempts/{number}', 'Put an attempt at the URL number'],
     ],
     'action_endpoints' => [['POST', '/api/tournaments/{id}/start', 'Start and generate bracket'], ['POST', '/api/tournaments/{id}/complete', 'Complete when results are ready'], ['POST', '/api/tournaments/{id}/archive', 'Archive a completed competition'], ['POST', '/api/tournaments/{id}/matches/{match}/result', 'Legacy result submission']],

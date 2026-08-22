@@ -17,6 +17,7 @@ use App\Models\TournamentMatch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class TournamentController extends Controller
@@ -170,6 +171,31 @@ class TournamentController extends Controller
         $tournament->delete();
 
         return $this->success(['deleted' => true]);
+    }
+
+    public function updateShareLink(Request $request, Tournament $tournament): JsonResponse
+    {
+        $request->merge([
+            'share_slug' => Str::lower(trim((string) $request->input('share_slug'))),
+        ]);
+        $data = $request->validate([
+            'share_slug' => [
+                'required',
+                'string',
+                'min:4',
+                'max:36',
+                'regex:/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])$/',
+                Rule::unique('external_tournaments', 'public_token')->ignore($tournament->id),
+            ],
+        ]);
+
+        $tournament->forceFill([
+            'public_token' => $data['share_slug'],
+            'source_updated_at' => now(),
+            'synced_at' => now(),
+        ])->save();
+
+        return $this->success(['viewer_url' => $tournament->publicShareUrl()]);
     }
 
     /** @return array<string, mixed> */

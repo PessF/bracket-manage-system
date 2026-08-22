@@ -81,6 +81,13 @@
         .alert.error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
         .view-only-banner { background:#eff6ff; border-color:#bfdbfe; color:#1e40af; }
         .share-link-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:8px; }
+        .short-link-form { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:end; margin-top:16px; padding-top:16px; border-top:1px solid var(--line); }
+        .short-link-form label { margin-bottom:6px; }
+        .short-link-form small { display:block; margin-top:6px; }
+        .short-link-input { display:flex; align-items:center; overflow:hidden; border:1px solid #d4d4d8; border-radius:8px; background:#fff; }
+        .short-link-input:focus-within { border-color:#a1a1aa; box-shadow:0 0 0 3px rgb(161 161 170 / .15); }
+        .short-link-input span { flex:0 0 auto; padding-left:11px; color:var(--muted); white-space:nowrap; }
+        .short-link-input input { flex:1; width:0; min-width:90px; border:0; box-shadow:none; }
         .live-refresh { display:flex; align-items:center; gap:8px; min-height:43px; margin:-7px 0 18px; padding:8px 10px; border:1px solid #bbf7d0; border-radius:9px; background:#f0fdf4; color:#166534; font-size:12px; }
         .live-refresh .btn { margin-left:auto; }
         .live-dot { width:9px; height:9px; border-radius:50%; background:#16a34a; box-shadow:0 0 0 0 rgb(22 163 74 / .45); animation:live-pulse 1.8s infinite; }
@@ -136,7 +143,7 @@
         .match .meta { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
         .score-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 7px; margin-top: 9px; }
         .easy-score-form { margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--line); }
-        .score-pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
+        .score-pair { display: grid; grid-template-columns: 1fr; gap: 7px; }
         .score-team-control > span:first-child { display: block; margin-bottom: 4px; overflow: hidden; color: var(--muted); font-size: 13px; white-space: nowrap; text-overflow: ellipsis; }
         .score-stepper { display: grid; grid-template-columns: 42px minmax(48px,1fr) 42px; overflow: hidden; border: 1px solid #d4d4d8; border-radius: 8px; background: #fff; }
         .score-stepper button { min-height:42px; border: 0; background: var(--soft); color: #52525b; font-size: 22px; line-height: 40px; cursor: pointer; touch-action:manipulation; }
@@ -144,6 +151,11 @@
         .score-stepper input { width: 100%; min-width: 0; height: 42px; padding: 2px; border: 0; border-left: 1px solid var(--line); border-right: 1px solid var(--line); border-radius: 0; box-shadow: none; text-align: center; font-weight: 700; -moz-appearance: textfield; }
         .score-stepper input::-webkit-inner-spin-button, .score-stepper input::-webkit-outer-spin-button { margin: 0; -webkit-appearance: none; }
         .score-submit { width: 100%; margin-top: 7px; }
+        .score-editor { margin-top:9px; border-top:1px solid var(--line); }
+        .score-editor summary { display:flex; align-items:center; justify-content:center; min-height:44px; color:var(--blue); font-weight:650; cursor:pointer; list-style:none; }
+        .score-editor summary::-webkit-details-marker { display:none; }
+        .score-editor[open] summary { border-bottom:1px solid var(--line); }
+        .score-editor .easy-score-form { margin-top:0; padding-top:10px; border-top:0; }
         .inline-form { display: flex; gap: 7px; align-items: end; flex-wrap: wrap; }
         .inline-form .field { margin: 0; min-width: 110px; }
         .empty { text-align: center; padding: 34px; color: var(--muted); }
@@ -182,6 +194,9 @@
             .auth-shell { min-height: 0; place-items: start stretch; }
             .auth-card { padding: 18px; }
             .share-link-row { grid-template-columns:1fr; }
+            .short-link-form { grid-template-columns:1fr; }
+            .short-link-form .btn { width:100%; }
+            .short-link-input span { max-width:45%; overflow:hidden; text-overflow:ellipsis; }
             .tabs { position:sticky; top:58px; z-index:70; margin-right:-14px; margin-left:-14px; padding:0 7px; background:rgb(250 250 250 / .96); backdrop-filter:blur(9px); }
             .tabs a { min-height:44px; padding:12px 11px; }
             .live-refresh { position:relative; flex-wrap:wrap; margin-top:-8px; }

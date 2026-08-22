@@ -8,6 +8,7 @@ use App\Enums\TournamentStatus;
 use App\Enums\UserRole;
 use App\Models\Tournament;
 use App\Models\User;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -94,6 +95,35 @@ class LiveViewerTest extends TestCase
             ->assertSee($draft->name)
             ->assertSee('ลิงก์สำหรับผู้ชมยังไม่พร้อมใช้งาน')
             ->assertSee('php artisan migrate --force');
+    }
+
+    public function test_admin_can_replace_the_private_token_with_a_short_viewer_link(): void
+    {
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+        $live = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
+        $oldUrl = $live->publicShareUrl();
+        $admin = User::factory()->create(['role' => UserRole::ADMIN]);
+
+        $this->actingAs($admin)->patch(route('tournaments.share-link.update', $live), [
+            'share_slug' => 'easykids-final-26',
+        ])->assertSessionHasNoErrors()->assertRedirect(route('tournaments.show', $live));
+
+        $this->assertSame('easykids-final-26', $live->refresh()->public_token);
+        $this->get($oldUrl)->assertNotFound();
+        $this->get('/view/easykids-final-26')->assertOk()->assertSee($live->name);
+
+        $other = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
+        $this->actingAs($admin)->patch(route('tournaments.share-link.update', $other), [
+            'share_slug' => 'easykids-final-26',
+        ])->assertSessionHasErrors('share_slug');
+        $this->actingAs($admin)->patch(route('tournaments.share-link.update', $other), [
+            'share_slug' => 'ab',
+        ])->assertSessionHasErrors('share_slug');
+
+        $viewer = User::factory()->create(['role' => UserRole::VIEWER]);
+        $this->actingAs($viewer)->patch(route('tournaments.share-link.update', $live), [
+            'share_slug' => 'viewer-cannot-change-this',
+        ])->assertForbidden();
     }
 
     public function test_competition_api_is_private_and_admin_token_reads_all(): void

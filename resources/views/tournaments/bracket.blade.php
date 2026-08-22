@@ -75,6 +75,9 @@
                 && $tournament->status === App\Enums\TournamentStatus::LIVE
                 && in_array($match->status, [App\Enums\MatchStatus::READY, App\Enums\MatchStatus::LIVE], true)
                 && !$match->is_bye && $match->participant_a_id && $match->participant_b_id;
+            $canEditScore = !$isPublicView && (auth()->user()?->isAdmin() ?? false)
+                && $tournament->status === App\Enums\TournamentStatus::LIVE
+                && $match->status === App\Enums\MatchStatus::FINISHED && !$match->is_bye;
         @endphp
         <article class="bracket-match-node"
             data-match-id="{{ $match->id }}" data-round="{{ $match->round_number }}" data-number="{{ $match->match_number }}"
@@ -87,7 +90,9 @@
                 <span class="bracket-team-name">@if($match->participantB?->seed_number)<i class="bracket-seed">{{ $match->participantB->seed_number }}</i>@endif<span title="{{ $nameB }}">{{ $nameB }}</span></span><span class="bracket-score">{{ $match->score_b !== null ? (float)$match->score_b : '—' }}</span>
             </div>
             @if($readyForScore)
-            <form class="easy-score-form" method="post" action="{{ route('matches.results.store', [$tournament, $match]) }}">@csrf<div class="score-pair"><label class="score-team-control"><span title="{{ $nameA }}">{{ $nameA }}</span><span class="score-stepper"><button type="button" data-score-step="-1" aria-label="{{ __('ui.subtract_point') }}">−</button><input aria-label="{{ __('ui.score_for_team', ['team' => $nameA]) }}" type="number" min="0" step="any" name="score_a" value="0" required><button type="button" data-score-step="1" aria-label="{{ __('ui.add_point') }}">+</button></span></label><label class="score-team-control"><span title="{{ $nameB }}">{{ $nameB }}</span><span class="score-stepper"><button type="button" data-score-step="-1" aria-label="{{ __('ui.subtract_point') }}">−</button><input aria-label="{{ __('ui.score_for_team', ['team' => $nameB]) }}" type="number" min="0" step="any" name="score_b" value="0" required><button type="button" data-score-step="1" aria-label="{{ __('ui.add_point') }}">+</button></span></label></div><button class="btn small score-submit">{{ __('ui.confirm_score') }}</button></form>
+            @include('tournaments._score-form')
+            @elseif($canEditScore)
+            <a class="btn small secondary score-submit" href="{{ $matchesUrl }}#match-{{ $match->id }}">{{ __('ui.edit_score') }}</a>
             @endif
             @if($match->winnerNextMatch || $match->loserNextMatch)<div class="bracket-destinations">@if($match->winnerNextMatch)<span>{{ __('ui.winner_to_match', ['number' => $match->winnerNextMatch->match_number]) }}</span>@endif @if($match->loserNextMatch)<span>{{ __('ui.loser_to_match', ['number' => $match->loserNextMatch->match_number]) }}</span>@endif</div>@endif
         </article>

@@ -29,6 +29,10 @@ class ApiWorkflowTest extends TestCase
             'seeding_method' => 'REGISTRATION_ORDER',
         ])->assertCreated()->json('data.id');
 
+        $this->withToken($token)->patchJson("/api/tournaments/{$tournamentId}/share-link", [
+            'share_slug' => 'api-workflow-live',
+        ])->assertOk()->assertJsonPath('data.viewer_url', url('/view/api-workflow-live'));
+
         $participantA = $this->withToken($token)->postJson("/api/tournaments/{$tournamentId}/participants", [
             'team_name' => 'Alpha',
         ])->assertCreated()->json('data.id');
@@ -57,6 +61,8 @@ class ApiWorkflowTest extends TestCase
         ])->assertOk()->assertJsonPath('data.status', 'FINISHED');
         $this->withToken($token)->putJson($resultUrl, ['score_a' => 3, 'score_b' => 1])
             ->assertOk()->assertJsonPath('data.status', 'FINISHED');
+        $this->withToken($token)->putJson($resultUrl, ['score_a' => 5, 'score_b' => 2])
+            ->assertOk()->assertJsonPath('data.score_a', '5.000000')->assertJsonPath('data.score_b', '2.000000');
         $this->withToken($token)->patchJson("/api/tournaments/{$tournamentId}/status", ['status' => 'COMPLETED'])
             ->assertOk()->assertJsonPath('data.status', 'COMPLETED');
         $this->withToken($token)->patchJson("/api/tournaments/{$tournamentId}/status", ['status' => 'ARCHIVED'])
