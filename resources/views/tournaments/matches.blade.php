@@ -8,7 +8,7 @@
 @include('tournaments._tabs')
 <div class="match-grid">
 @forelse($matches as $match)
-@php($canScore = $tournament->status === App\Enums\TournamentStatus::LIVE && in_array($match->status, [App\Enums\MatchStatus::READY, App\Enums\MatchStatus::LIVE], true) && !$match->is_bye && $match->participant_a_id && $match->participant_b_id)
+@php($canScore = (auth()->user()?->isAdmin() ?? false) && $tournament->status === App\Enums\TournamentStatus::LIVE && in_array($match->status, [App\Enums\MatchStatus::READY, App\Enums\MatchStatus::LIVE], true) && !$match->is_bye && $match->participant_a_id && $match->participant_b_id)
 <article class="match">
     <div class="match-card-head"><span class="muted">{{ __('ui.match') }} #{{ $match->match_number }} · {{ str_replace('_',' ', $match->bracket_type->value) }} · {{ __('ui.round') }} {{ $match->round_number }}</span><span class="badge {{ $match->status->value }}">{{ $match->is_bye ? 'BYE' : $match->status->value }}</span></div>
     <div class="match-team-row {{ $match->winner_id === $match->participant_a_id ? 'winner' : '' }}"><span>{{ $match->participantA?->team_name ?? $match->participant_a_label }}</span><strong>{{ $match->score_a !== null ? (float)$match->score_a : '—' }}</strong></div>

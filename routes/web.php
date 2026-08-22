@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\ApiTokenController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\FirstAdminSetupController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MatchResultController;
 use App\Http\Controllers\ParticipantController;
@@ -12,18 +16,46 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/tournaments');
 Route::post('/locale/{locale}', LocaleController::class)->name('locale.update');
+
+Route::middleware('guest')->group(function (): void {
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
+});
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
+Route::get('/admin/setup', [FirstAdminSetupController::class, 'create'])->name('admin.setup');
+Route::post('/admin/setup', [FirstAdminSetupController::class, 'store'])->middleware('throttle:5,1')->name('admin.setup.store');
+
 Route::get('/participants/import-template.csv', [ParticipantImportController::class, 'template'])->name('participants.import.template');
-Route::resource('tournaments', TournamentController::class);
-Route::get('/tournaments/{tournament}/settings', [TournamentController::class, 'edit'])->name('tournaments.settings');
-Route::post('/tournaments/{tournament}/participants', [ParticipantController::class, 'store'])->name('participants.store');
-Route::put('/tournaments/{tournament}/participants/{participant}', [ParticipantController::class, 'update'])->name('participants.update');
-Route::delete('/tournaments/{tournament}/participants/{participant}', [ParticipantController::class, 'destroy'])->name('participants.destroy');
-Route::post('/tournaments/{tournament}/participants/import', [ParticipantImportController::class, 'store'])->name('participants.import');
-Route::post('/tournaments/{tournament}/start', [TournamentLifecycleController::class, 'start'])->name('tournaments.start');
-Route::post('/tournaments/{tournament}/complete', [TournamentLifecycleController::class, 'complete'])->name('tournaments.complete');
-Route::post('/tournaments/{tournament}/archive', [TournamentLifecycleController::class, 'archive'])->name('tournaments.archive');
+Route::get('/tournaments', [TournamentController::class, 'index'])->name('tournaments.index');
+
+Route::middleware(['auth', 'admin'])->group(function (): void {
+    Route::get('/tournaments/create', [TournamentController::class, 'create'])->name('tournaments.create');
+    Route::post('/tournaments', [TournamentController::class, 'store'])->name('tournaments.store');
+    Route::get('/tournaments/{tournament}/edit', [TournamentController::class, 'edit'])->name('tournaments.edit');
+    Route::get('/tournaments/{tournament}/settings', [TournamentController::class, 'edit'])->name('tournaments.settings');
+    Route::match(['put', 'patch'], '/tournaments/{tournament}', [TournamentController::class, 'update'])->name('tournaments.update');
+    Route::delete('/tournaments/{tournament}', [TournamentController::class, 'destroy'])->name('tournaments.destroy');
+
+    Route::post('/tournaments/{tournament}/participants', [ParticipantController::class, 'store'])->name('participants.store');
+    Route::put('/tournaments/{tournament}/participants/{participant}', [ParticipantController::class, 'update'])->name('participants.update');
+    Route::delete('/tournaments/{tournament}/participants/{participant}', [ParticipantController::class, 'destroy'])->name('participants.destroy');
+    Route::post('/tournaments/{tournament}/participants/import', [ParticipantImportController::class, 'store'])->name('participants.import');
+    Route::post('/tournaments/{tournament}/start', [TournamentLifecycleController::class, 'start'])->name('tournaments.start');
+    Route::post('/tournaments/{tournament}/complete', [TournamentLifecycleController::class, 'complete'])->name('tournaments.complete');
+    Route::post('/tournaments/{tournament}/archive', [TournamentLifecycleController::class, 'archive'])->name('tournaments.archive');
+    Route::post('/tournaments/{tournament}/matches/{match}/result', [MatchResultController::class, 'store'])->name('matches.results.store');
+    Route::post('/tournaments/{tournament}/participants/{participant}/attempts', [RankingAttemptController::class, 'store'])->name('ranking.attempts.store');
+
+    Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
+    Route::post('/admin/users', [AdminUserController::class, 'store'])->name('admin.users.store');
+    Route::put('/admin/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
+    Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
+    Route::get('/admin/api-token', [ApiTokenController::class, 'show'])->name('admin.api-token.show');
+    Route::post('/admin/api-token', [ApiTokenController::class, 'store'])->name('admin.api-token.store');
+    Route::delete('/admin/api-token', [ApiTokenController::class, 'destroy'])->name('admin.api-token.destroy');
+});
+
+Route::get('/tournaments/{tournament}', [TournamentController::class, 'show'])->name('tournaments.show');
 Route::get('/tournaments/{tournament}/bracket', [TournamentWorkspaceController::class, 'bracket'])->name('tournaments.bracket');
 Route::get('/tournaments/{tournament}/matches', [TournamentWorkspaceController::class, 'matches'])->name('tournaments.matches');
 Route::get('/tournaments/{tournament}/results', [TournamentWorkspaceController::class, 'results'])->name('tournaments.results');
-Route::post('/tournaments/{tournament}/matches/{match}/result', [MatchResultController::class, 'store'])->name('matches.results.store');
-Route::post('/tournaments/{tournament}/participants/{participant}/attempts', [RankingAttemptController::class, 'store'])->name('ranking.attempts.store');

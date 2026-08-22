@@ -4,10 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\SeedingMethod;
+use App\Enums\StageStatus;
+use App\Enums\TournamentFormat;
+use App\Enums\TournamentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Stage;
 use App\Models\Tournament;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class TournamentController extends Controller
 {
@@ -15,15 +22,163 @@ class TournamentController extends Controller
     {
         $data = Tournament::query()->withCount(['participants', 'matches'])
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
-            ->orderByDesc('source_created_at')->paginate(min(100, max(1, $request->integer('per_page', 20))));
+            ->when($request->filled('format'), fn ($query) => $query->where('format', $request->string('format')))
+            ->when($request->filled('search'), function ($query) use ($request): void {
+                $search = '%'.$request->string('search').'%';
+                $query->where(fn ($nested) => $nested->where('name', 'like', $search)->orWhere('competition', 'like', $search));
+            })
+            ->orderByDesc('source_created_at')
+            ->paginate(min(100, max(1, $request->integer('per_page', 20))));
 
-        return response()->json(['success' => true, 'data' => $data]);
+        return $this->success($data);
     }
 
     public function show(Tournament $tournament): JsonResponse
     {
-        $tournament->load(['stages', 'participants' => fn ($query) => $query->orderBy('seed_number'), 'matches' => fn ($query) => $query->orderBy('match_number'), 'standings.participant']);
+        $tournament->load([
+            'stages',
+            'participants' => fn ($query) => $query->orderBy('seed_number')->orderBy('team_name'),
+            'matches' => fn ($query) => $query->with(['participantA', 'participantB', 'winner'])->orderBy('match_number'),
+            'standings.participant',
+        ]);
 
-        return response()->json(['success' => true, 'data' => $tournament]);
+        return $this->success($tournament);
+    }
+
+    public function participants(Tournament $tournament): JsonResponse
+    {
+        return $this->success($tournament->participants()->with('members')->orderBy('seed_number')->orderBy('team_name')->get());
+    }
+
+    public function matches(Tournament $tournament): JsonResponse
+    {
+        return $this->success($tournament->matches()->with(['participantA', 'participantB', 'winner'])->orderBy('match_number')->get());
+    }
+
+    public function standings(Tournament $tournament): JsonResponse
+    {
+        return $this->success($tournament->standings()->with('participant')->orderBy('rank_number')->get());
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $data = $request->validate($this->rules());
+        $tournament = DB::transaction(function () use ($data): Tournament {
+            $now = now();
+            $tournament = Tournament::query()->create($data + [
+                'status' => TournamentStatus::DRAFT,
+                'participant_count' => 0,
+                'ranking_config' => $this->rankingConfig($data),
+                'round_robin_config' => $this->roundRobinConfig($data),
+                'source_created_at' => $now,
+                'source_updated_at' => $now,
+                'synced_at' => $now,
+            ]);
+            Stage::query()->create([
+                'tournament_id' => $tournament->id,
+                'name' => 'Main Stage',
+                'stage_order' => 1,
+                'format' => $tournament->format,
+                'status' => StageStatus::PENDING,
+                'source_created_at' => $now,
+            ]);
+
+            return $tournament;
+        });
+
+        return $this->success($tournament->load('stages'), 201);
+    }
+
+    public function update(Request $request, Tournament $tournament): JsonResponse
+    {
+        $data = $request->validate($this->rules(true));
+        $structural = ['format', 'seeding_method', 'ranking_attempts', 'ranking_comparator', 'win_points', 'draw_points', 'loss_points'];
+        $hasStructuralChanges = collect($structural)->contains(fn (string $key): bool => $request->exists($key));
+
+        if ($hasStructuralChanges && ! $this->editable($tournament)) {
+            return $this->error('Format and seeding cannot change after the tournament starts.', 422);
+        }
+
+        if ($hasStructuralChanges) {
+            $configuration = [
+                'format' => $data['format'] ?? $tournament->format->value,
+                'seeding_method' => $data['seeding_method'] ?? $tournament->seeding_method->value,
+                'ranking_attempts' => $data['ranking_attempts'] ?? ($tournament->ranking_config['attempts'] ?? 3),
+                'ranking_comparator' => $data['ranking_comparator'] ?? ($tournament->ranking_config['comparator'] ?? 'BEST_SCORE_HIGHER'),
+                'win_points' => $data['win_points'] ?? ($tournament->round_robin_config['win_points'] ?? 3),
+                'draw_points' => $data['draw_points'] ?? ($tournament->round_robin_config['draw_points'] ?? 1),
+                'loss_points' => $data['loss_points'] ?? ($tournament->round_robin_config['loss_points'] ?? 0),
+            ];
+            $data['ranking_config'] = $this->rankingConfig($configuration);
+            $data['round_robin_config'] = $this->roundRobinConfig($configuration);
+        }
+
+        unset($data['ranking_attempts'], $data['ranking_comparator'], $data['win_points'], $data['draw_points'], $data['loss_points']);
+        $tournament->fill($data + ['source_updated_at' => now(), 'synced_at' => now()])->save();
+        if ($hasStructuralChanges) {
+            $tournament->stages()->update(['format' => $tournament->format]);
+        }
+
+        return $this->success($tournament->fresh(['stages']));
+    }
+
+    public function destroy(Tournament $tournament): JsonResponse
+    {
+        $tournament->delete();
+
+        return $this->success(['deleted' => true]);
+    }
+
+    /** @return array<string, mixed> */
+    private function rules(bool $partial = false): array
+    {
+        $required = $partial ? 'sometimes' : 'required';
+
+        return [
+            'name' => [$required, 'string', 'max:200'],
+            'competition' => [$required, 'string', 'max:200'],
+            'division' => [$required, 'string', 'max:200'],
+            'competition_date' => ['sometimes', 'nullable', 'date'],
+            'venue' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'notes' => ['sometimes', 'nullable', 'string'],
+            'format' => [$required, Rule::enum(TournamentFormat::class)],
+            'seeding_method' => [$required, Rule::enum(SeedingMethod::class)],
+            'ranking_attempts' => ['sometimes', 'nullable', 'integer', 'between:1,20'],
+            'ranking_comparator' => ['sometimes', 'nullable', Rule::in(['BEST_SCORE_HIGHER', 'BEST_TIME_LOWER'])],
+            'win_points' => ['sometimes', 'nullable', 'integer', 'between:0,100'],
+            'draw_points' => ['sometimes', 'nullable', 'integer', 'between:0,100'],
+            'loss_points' => ['sometimes', 'nullable', 'integer', 'between:0,100'],
+        ];
+    }
+
+    /** @param array<string, mixed> $data */
+    private function rankingConfig(array $data): ?array
+    {
+        return $data['format'] === TournamentFormat::RANKING->value
+            ? ['attempts' => (int) ($data['ranking_attempts'] ?? 3), 'comparator' => $data['ranking_comparator'] ?? 'BEST_SCORE_HIGHER']
+            : null;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function roundRobinConfig(array $data): ?array
+    {
+        return $data['format'] === TournamentFormat::ROUND_ROBIN->value
+            ? ['win_points' => (int) ($data['win_points'] ?? 3), 'draw_points' => (int) ($data['draw_points'] ?? 1), 'loss_points' => (int) ($data['loss_points'] ?? 0)]
+            : null;
+    }
+
+    private function editable(Tournament $tournament): bool
+    {
+        return in_array($tournament->status, [TournamentStatus::DRAFT, TournamentStatus::READY], true);
+    }
+
+    private function success(mixed $data, int $status = 200): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => $data], $status);
+    }
+
+    private function error(string $message, int $status): JsonResponse
+    {
+        return response()->json(['success' => false, 'error' => ['message' => $message]], $status);
     }
 }

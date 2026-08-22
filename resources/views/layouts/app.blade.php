@@ -16,12 +16,23 @@
         a { color: inherit; text-decoration: none; }
         a:hover { opacity: .78; }
         .top { position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.94); backdrop-filter: blur(10px); }
-        .top .inner { max-width: 1152px; margin: auto; padding: 12px 32px; display: flex; align-items: center; justify-content: space-between; }
-        .brand { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+        .top .inner { max-width: 1152px; margin: auto; padding: 12px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .brand { display: inline-flex; min-width: 0; align-items: center; gap: 9px; color: var(--ink); font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+        .brand > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
         .brand-mark { width: 21px; height: 21px; }
-        .top nav { display: flex; align-items: center; gap: 7px; }
+        .top nav { display: flex; flex: 0 0 auto; align-items: center; gap: 7px; }
         .top nav a { padding: 6px 10px; border-radius: 7px; color: var(--muted); font-weight: 600; }
         .top nav a:hover { background: var(--soft); color: var(--ink); opacity: 1; }
+        .nav-form { margin: 0; }
+        .nav-button { padding: 6px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
+        .nav-button:hover { background: var(--soft); color: var(--ink); }
+        .account-label { max-width: 120px; overflow: hidden; padding: 4px 7px; color: var(--muted); font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }
+        .mobile-menu { position: relative; display: none; }
+        .mobile-menu summary { display: flex; align-items: center; min-height: 35px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-weight: 650; cursor: pointer; list-style: none; }
+        .mobile-menu summary::-webkit-details-marker { display: none; }
+        .mobile-popover { position: absolute; top: calc(100% + 7px); right: 0; z-index: 121; display: flex; width: min(260px,calc(100vw - 28px)); flex-direction: column; gap: 2px; padding: 7px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 14px 35px rgb(24 24 27 / .14); }
+        .mobile-popover a, .mobile-popover .nav-button { display: block; width: 100%; padding: 10px; text-align: left; }
+        .mobile-user { padding: 8px 10px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; }
         .language-menu { position: relative; margin-left: 5px; }
         .language-menu summary { display: flex; align-items: center; gap: 7px; min-width: 104px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #3f3f46; font-size: 12px; font-weight: 650; cursor: pointer; list-style: none; transition: border-color .15s, box-shadow .15s, background .15s; }
         .language-menu summary::-webkit-details-marker { display: none; }
@@ -119,29 +130,77 @@
         .inline-form { display: flex; gap: 7px; align-items: end; flex-wrap: wrap; }
         .inline-form .field { margin: 0; min-width: 110px; }
         .empty { text-align: center; padding: 34px; color: var(--muted); }
+        .auth-shell { display: grid; min-height: calc(100vh - 180px); place-items: center; }
+        .auth-card { width: min(100%, 430px); padding: 26px; }
+        .auth-card-wide { width: min(100%, 650px); }
+        .auth-card h1 { margin: 0 0 5px; font-size: 23px; }
+        .auth-card > p { margin: 0 0 22px; }
+        .checkbox-row { display: flex; align-items: center; gap: 8px; margin: 0 0 17px; font-weight: 500; }
+        .checkbox-row input { width: auto; }
+        .auth-submit { width: 100%; }
         @media (max-width: 680px) {
             .container { padding: 18px 14px 42px; }
             .top .inner { padding: 11px 14px; }
-            .top nav > a { display: none; }
+            .brand { max-width: calc(100vw - 176px); }
+            .brand-mark { flex: 0 0 auto; }
+            .desktop-only { display: none !important; }
+            .mobile-menu { display: block; }
+            .language-menu { margin-left: 0; }
+            .language-menu summary { min-width: 0; min-height: 35px; }
+            .language-menu summary > span { display: none; }
+            .language-popover { position: fixed; top: 58px; right: 14px; width: min(260px,calc(100vw - 28px)); }
             .form-grid { grid-template-columns: 1fr; }
             .page-head { display: block; }
             .page-head .actions { margin-top: 12px; }
             .card { padding: 14px; }
-            .table-wrap { overflow: auto; }
+            .btn { min-height: 40px; }
+            input, select, textarea { min-height: 42px; font-size: 16px; }
+            .table-wrap { margin-right: -14px; margin-left: -14px; overflow: auto; padding: 0 14px; }
+            .inline-form { align-items: stretch; flex-direction: column; }
+            .inline-form .field { width: 100%; min-width: 0 !important; }
+            .inline-form > .btn { width: 100%; }
+            .stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+            .auth-shell { min-height: 0; place-items: start stretch; }
+            .auth-card { padding: 18px; }
         }
     </style>
     @stack('styles')
 </head>
 <body>
+@php($isAdmin = auth()->user()?->isAdmin() ?? false)
 <header class="top">
     <div class="inner">
         <a class="brand" href="{{ route('tournaments.index') }}">
             <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v3a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v1a4 4 0 0 0 4 4M17 6h3v1a4 4 0 0 1-4 4"/></svg>
-            {{ __('ui.app_name') }}
+            <span>{{ __('ui.app_name') }}</span>
         </a>
         <nav>
-            <a href="{{ route('tournaments.index') }}">{{ __('ui.all_tournaments') }}</a>
-            <a href="{{ route('tournaments.create') }}">{{ __('ui.create') }}</a>
+            <a class="desktop-only" href="{{ route('tournaments.index') }}">{{ __('ui.all_tournaments') }}</a>
+            @if($isAdmin)
+            <a class="desktop-only" href="{{ route('tournaments.create') }}">{{ __('ui.create') }}</a>
+            <a class="desktop-only" href="{{ route('admin.users.index') }}">{{ __('ui.users') }}</a>
+            <a class="desktop-only" href="{{ route('admin.api-token.show') }}">API</a>
+            @endif
+            @auth
+            <span class="account-label desktop-only" title="{{ auth()->user()->email }}">{{ auth()->user()->name }} · {{ auth()->user()->role->value }}</span>
+            <form class="nav-form desktop-only" method="post" action="{{ route('logout') }}">@csrf<button class="nav-button">{{ __('ui.logout') }}</button></form>
+            @else
+            <a class="desktop-only" href="{{ route('login') }}">{{ __('ui.login') }}</a>
+            @endauth
+            <details class="mobile-menu">
+                <summary>{{ __('ui.menu') }}</summary>
+                <div class="mobile-popover">
+                    @auth<div class="mobile-user">{{ auth()->user()->name }} · {{ auth()->user()->role->value }}</div>@endauth
+                    <a href="{{ route('tournaments.index') }}">{{ __('ui.all_tournaments') }}</a>
+                    @if($isAdmin)
+                    <a href="{{ route('tournaments.create') }}">{{ __('ui.create') }}</a>
+                    <a href="{{ route('admin.users.index') }}">{{ __('ui.users') }}</a>
+                    <a href="{{ route('admin.api-token.show') }}">{{ __('ui.api_access') }}</a>
+                    @endif
+                    <a href="{{ url('/api/docs') }}">{{ __('ui.api_docs') }}</a>
+                    @auth<form class="nav-form" method="post" action="{{ route('logout') }}">@csrf<button class="nav-button">{{ __('ui.logout') }}</button></form>@else<a href="{{ route('login') }}">{{ __('ui.login') }}</a>@endauth
+                </div>
+            </details>
             <details class="language-menu">
                 <summary aria-label="Select language">
                     <svg class="language-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
@@ -162,7 +221,7 @@
 </header>
 <main class="container @yield('container-class')">
     @if(session('success'))<div class="alert success">{{ session('success') }}</div>@endif
-    @if($errors->any())<div class="alert error"><strong>{{ __('ui.please_fix') }}</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    @if(isset($errors) && $errors->any())<div class="alert error"><strong>{{ __('ui.please_fix') }}</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     @if(session('import_errors'))<div class="alert" style="background:#fffbeb;border-color:#fde68a;color:#92400e"><strong>{{ __('ui.csv_skipped_title') }}</strong><ul>@foreach(session('import_errors') as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     @yield('content')
 </main>
@@ -179,12 +238,12 @@ document.addEventListener('click', (event) => {
     input.dispatchEvent(new Event('input', { bubbles: true }));
 });
 document.addEventListener('click', (event) => {
-    document.querySelectorAll('.language-menu[open]').forEach((menu) => {
+    document.querySelectorAll('.language-menu[open], .mobile-menu[open]').forEach((menu) => {
         if (!menu.contains(event.target)) menu.removeAttribute('open');
     });
 });
 document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') document.querySelectorAll('.language-menu[open]').forEach((menu) => menu.removeAttribute('open'));
+    if (event.key === 'Escape') document.querySelectorAll('.language-menu[open], .mobile-menu[open]').forEach((menu) => menu.removeAttribute('open'));
 });
 
 (() => {

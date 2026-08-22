@@ -70,7 +70,8 @@
         @php
             $nameA = $match->participantA?->team_name ?? $match->participant_a_label;
             $nameB = $match->participantB?->team_name ?? $match->participant_b_label;
-            $readyForScore = $tournament->status === App\Enums\TournamentStatus::LIVE
+            $readyForScore = (auth()->user()?->isAdmin() ?? false)
+                && $tournament->status === App\Enums\TournamentStatus::LIVE
                 && in_array($match->status, [App\Enums\MatchStatus::READY, App\Enums\MatchStatus::LIVE], true)
                 && !$match->is_bye && $match->participant_a_id && $match->participant_b_id;
         @endphp

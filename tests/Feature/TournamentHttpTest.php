@@ -7,8 +7,10 @@ namespace Tests\Feature;
 use App\Enums\SeedingMethod;
 use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
+use App\Enums\UserRole;
 use App\Models\Participant;
 use App\Models\Tournament;
+use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -17,6 +19,13 @@ use Tests\TestCase;
 class TournamentHttpTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->actingAs(User::factory()->create(['role' => UserRole::ADMIN]));
+    }
 
     public function test_competition_form_contains_dynamic_configuration_for_every_format(): void
     {

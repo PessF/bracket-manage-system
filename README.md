@@ -26,6 +26,35 @@ Open <http://127.0.0.1:8080>. The seeder creates a LIVE eight-team Double Elimin
 
 Use the `EN / ไทย` switch in the header to change the interface language. The selection is stored in the browser session.
 
+## Access control
+
+Tournament lists, brackets, matches, participants, and standings are public and read-only. Administrators sign in to create and configure tournaments, manage users and participants, import CSV files, control tournament status, and record results.
+
+To create the first administrator:
+
+1. Set a long random `ADMIN_SETUP_TOKEN` in the server-side `.env` file.
+2. Run `php artisan migrate --force`.
+3. Open `/admin/setup`, enter that setup token, and create the administrator account.
+4. Remove `ADMIN_SETUP_TOKEN` from `.env` after the account has been created, then run `php artisan config:clear` or redeploy.
+
+The setup page disables itself as soon as an administrator exists. Additional administrator or viewer accounts can be managed from **Users** after signing in. Passwords must be at least 12 characters and include uppercase and lowercase letters, a number, and a symbol.
+
+## Plesk deployment
+
+Use Plesk Laravel Toolkit to install from this repository's `main` branch. Set the domain document root to `httpdocs/public`, select PHP 8.2 or newer, and configure production values in Laravel Toolkit's `.env` editor. The phpMyAdmin URL is not the database hostname; for a database on the same Plesk server, use the database server value shown by Plesk (commonly `localhost`).
+
+Recommended deployment commands:
+
+```bash
+composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+php artisan migrate --force
+npm ci
+npm run build
+php artisan optimize
+```
+
+Use `APP_ENV=production`, `APP_DEBUG=false`, HTTPS for `APP_URL`, and `SESSION_SECURE_COOKIE=true`. Never commit the production `.env` file. Do not run `php artisan db:seed` in production unless demonstration data is intentionally required.
+
 Participant CSV import is available while a tournament is `DRAFT` or `READY`. Open its Overview & Participants page, download the template, then upload a UTF-8 CSV with these supported columns:
 
 ```text
@@ -48,9 +77,9 @@ MySQL data is kept in the `mysql-data` Docker volume. `docker compose down` pres
 
 ## API
 
-- `GET /api/health`
-- `GET /api/tournaments`
-- `GET /api/tournaments/{uuid}`
+Open `/api/docs` for the complete endpoint list and request examples.
+
+Public read endpoints include health, tournaments, participants, matches, and standings. Administrator write endpoints cover tournament CRUD, participant CRUD and CSV import, lifecycle changes, match results, and ranking attempts. Create or revoke a bearer token from **API access** in the administrator navigation.
 
 Responses use a consistent `{ "success": true, "data": ... }` envelope.
 
