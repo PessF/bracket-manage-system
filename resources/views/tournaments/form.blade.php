@@ -88,7 +88,8 @@
     .choice-card input { flex:0 0 auto; width:20px; height:20px; margin:1px 0 0; }
     .choice-card span { display:flex; flex-direction:column; }
     .choice-card small { margin-top:3px; color:var(--muted); font-weight:500; }
-    @media (max-width: 680px) { .format-settings-grid, .format-settings-grid.three, .choice-grid { grid-template-columns: 1fr; } .choice-card { min-height:86px; padding:16px; } }
+    @media (max-width: 820px) { .format-settings-grid.three { grid-template-columns: 1fr; } }
+    @media (max-width: 680px) { .format-settings-grid, .choice-grid { grid-template-columns: 1fr; } .choice-card { min-height:86px; padding:16px; } }
 </style>
 @endpush
 

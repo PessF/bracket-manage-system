@@ -14,6 +14,7 @@ use App\Models\Tournament;
 use App\Services\TournamentLifecycleService;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -27,6 +28,7 @@ class DatabaseSeeder extends Seeder
 
         $now = now();
         $tournament = Tournament::query()->create([
+            'public_token' => (string) Str::uuid(),
             'name' => 'EasyKids 8-Team Double Elimination Demo',
             'competition' => 'EasyKids Robotics Championship',
             'division' => 'Junior Open',

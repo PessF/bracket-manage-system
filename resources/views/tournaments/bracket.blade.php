@@ -11,7 +11,7 @@
     .bracket-section-head { display:flex; align-items:center; gap:10px; margin:0 0 10px; }
     .bracket-section-head h2 { margin:0; font-size:16px; }
     .bracket-count { color:var(--muted); font-size:12px; }
-    .bracket-viewport { position:relative; overflow:auto; min-height:190px; border:1px solid var(--line); border-radius:10px; background-color:#fff; background-image:radial-gradient(#e4e4e7 .7px, transparent .7px); background-size:18px 18px; box-shadow:inset 0 1px 0 rgb(255 255 255 / .6); scrollbar-color:#d4d4d8 transparent; }
+    .bracket-viewport { position:relative; overflow:auto; overscroll-behavior-inline:contain; min-height:190px; border:1px solid var(--line); border-radius:10px; background-color:#fff; background-image:radial-gradient(#e4e4e7 .7px, transparent .7px); background-size:18px 18px; box-shadow:inset 0 1px 0 rgb(255 255 255 / .6); scrollbar-color:#d4d4d8 transparent; -webkit-overflow-scrolling:touch; }
     .bracket-canvas { position:relative; min-width:100%; }
     .bracket-connectors { position:absolute; inset:0; z-index:1; overflow:visible; pointer-events:none; }
     .bracket-connector { fill:none; stroke:#cbd5e1; stroke-width:2; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
@@ -35,7 +35,7 @@
     .bracket-legend span { display:inline-flex; align-items:center; gap:5px; }
     .legend-line { display:inline-block; width:22px; border-top:2px solid #cbd5e1; }
     .legend-win { display:inline-block; width:12px; height:12px; border-radius:3px; background:#f0fdf4; border:1px solid #dcfce7; }
-    @media(max-width:680px){.bracket-viewport{margin-left:-14px;margin-right:-14px;border-radius:0;border-left:0;border-right:0}.bracket-toolbar{align-items:flex-start;flex-direction:column}.bracket-match-node{width:246px}.bracket-round-title{font-size:12px}}
+    @media(max-width:680px){.bracket-viewport{margin-left:-14px;margin-right:-14px;border-radius:0;border-left:0;border-right:0}.bracket-toolbar{align-items:flex-start;flex-direction:column}.bracket-legend{gap:8px 12px}.bracket-match-node{width:246px}.bracket-round-title{font-size:12px}}
 </style>
 @endpush
 
@@ -127,71 +127,87 @@
         const ids = new Set(matches.map((match) => match.id));
         const rounds = [...new Set(matches.map((match) => match.round))].sort((a,b) => a-b);
         const roundIndex = new Map(rounds.map((round, index) => [round, index]));
-        const cardWidth = Math.max(...nodes.map((node) => node.offsetWidth));
-        const cardHeight = Math.max(...nodes.map((node) => node.offsetHeight));
-        const base = cardHeight + GAP_Y;
-        const columnWidth = cardWidth + GAP_X;
-        const y = new Map();
+        const layout = () => {
+            canvas.querySelectorAll('.bracket-connectors, .bracket-round-title').forEach((element) => element.remove());
+            nodes.forEach((node) => { node.style.width = ''; });
 
-        rounds.forEach((round) => {
-            const inRound = matches.filter((match) => match.round === round).sort((a,b) => a.number-b.number);
-            let leafIndex = 0;
-            let previousY = -base;
-            inRound.forEach((match) => {
-                const feeders = matches.filter((source) => source.winnerNext === match.id || source.loserNext === match.id);
-                const feederY = feeders.map((source) => y.get(source.id)).filter((value) => value !== undefined);
-                let proposed = feederY.length ? feederY.reduce((sum,value) => sum+value, 0) / feederY.length : leafIndex++ * base;
-                proposed = Math.max(proposed, previousY + base);
-                y.set(match.id, proposed);
-                previousY = proposed;
+            const cardWidth = Math.max(...nodes.map((node) => node.offsetWidth));
+            const cardHeight = Math.max(...nodes.map((node) => node.offsetHeight));
+            const base = cardHeight + GAP_Y;
+            const columnWidth = cardWidth + GAP_X;
+            const y = new Map();
+
+            rounds.forEach((round) => {
+                const inRound = matches.filter((match) => match.round === round).sort((a,b) => a.number-b.number);
+                let leafIndex = 0;
+                let previousY = -base;
+                inRound.forEach((match) => {
+                    const feeders = matches.filter((source) => source.winnerNext === match.id || source.loserNext === match.id);
+                    const feederY = feeders.map((source) => y.get(source.id)).filter((value) => value !== undefined);
+                    let proposed = feederY.length ? feederY.reduce((sum,value) => sum+value, 0) / feederY.length : leafIndex++ * base;
+                    proposed = Math.max(proposed, previousY + base);
+                    y.set(match.id, proposed);
+                    previousY = proposed;
+                });
             });
-        });
 
-        const maxY = Math.max(0, ...y.values());
-        const width = Math.max(viewport.clientWidth, rounds.length * columnWidth - GAP_X + 28);
-        const height = maxY + cardHeight + HEADER + 24;
-        canvas.style.width = `${width}px`;
-        canvas.style.height = `${height}px`;
+            const maxY = Math.max(0, ...y.values());
+            const width = Math.max(viewport.clientWidth, rounds.length * columnWidth - GAP_X + 28);
+            const height = maxY + cardHeight + HEADER + 24;
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
 
-        rounds.forEach((round, index) => {
-            const title = document.createElement('div');
-            title.className = 'bracket-round-title';
-            title.style.left = `${index * columnWidth + 14}px`;
-            title.style.width = `${cardWidth}px`;
-            title.textContent = viewport.dataset.bracketType === 'GRAND_FINAL'
-                ? `${FINAL_LABEL} ${index + 1}`
-                : (rounds.length === 1 ? FINAL_LABEL : (index === rounds.length - 1 ? FINAL_LABEL : `${ROUND_LABEL} ${index + 1}`));
-            canvas.appendChild(title);
-        });
-
-        matches.forEach((match) => {
-            match.node.style.left = `${(roundIndex.get(match.round) || 0) * columnWidth + 14}px`;
-            match.node.style.top = `${(y.get(match.id) || 0) + HEADER}px`;
-            match.node.style.width = `${cardWidth}px`;
-        });
-
-        const svg = document.createElementNS(SVG_NS, 'svg');
-        svg.classList.add('bracket-connectors');
-        svg.setAttribute('width', width);
-        svg.setAttribute('height', height);
-        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-
-        matches.forEach((source) => {
-            [source.winnerNext, source.loserNext].forEach((targetId) => {
-                if (!targetId || !ids.has(targetId)) return;
-                const target = matches.find((candidate) => candidate.id === targetId);
-                const x1 = (roundIndex.get(source.round) || 0) * columnWidth + 14 + cardWidth;
-                const y1 = (y.get(source.id) || 0) + HEADER + source.node.offsetHeight / 2;
-                const x2 = (roundIndex.get(target.round) || 0) * columnWidth + 14;
-                const y2 = (y.get(target.id) || 0) + HEADER + target.node.offsetHeight / 2;
-                const midX = x1 + (x2 - x1) / 2;
-                const path = document.createElementNS(SVG_NS, 'path');
-                path.setAttribute('class', 'bracket-connector');
-                path.setAttribute('d', `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`);
-                svg.appendChild(path);
+            rounds.forEach((round, index) => {
+                const title = document.createElement('div');
+                title.className = 'bracket-round-title';
+                title.style.left = `${index * columnWidth + 14}px`;
+                title.style.width = `${cardWidth}px`;
+                title.textContent = viewport.dataset.bracketType === 'GRAND_FINAL'
+                    ? `${FINAL_LABEL} ${index + 1}`
+                    : (rounds.length === 1 ? FINAL_LABEL : (index === rounds.length - 1 ? FINAL_LABEL : `${ROUND_LABEL} ${index + 1}`));
+                canvas.appendChild(title);
             });
-        });
-        canvas.prepend(svg);
+
+            matches.forEach((match) => {
+                match.node.style.left = `${(roundIndex.get(match.round) || 0) * columnWidth + 14}px`;
+                match.node.style.top = `${(y.get(match.id) || 0) + HEADER}px`;
+                match.node.style.width = `${cardWidth}px`;
+            });
+
+            const svg = document.createElementNS(SVG_NS, 'svg');
+            svg.classList.add('bracket-connectors');
+            svg.setAttribute('width', width);
+            svg.setAttribute('height', height);
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+            matches.forEach((source) => {
+                [source.winnerNext, source.loserNext].forEach((targetId) => {
+                    if (!targetId || !ids.has(targetId)) return;
+                    const target = matches.find((candidate) => candidate.id === targetId);
+                    const x1 = (roundIndex.get(source.round) || 0) * columnWidth + 14 + cardWidth;
+                    const y1 = (y.get(source.id) || 0) + HEADER + source.node.offsetHeight / 2;
+                    const x2 = (roundIndex.get(target.round) || 0) * columnWidth + 14;
+                    const y2 = (y.get(target.id) || 0) + HEADER + target.node.offsetHeight / 2;
+                    const midX = x1 + (x2 - x1) / 2;
+                    const path = document.createElementNS(SVG_NS, 'path');
+                    path.setAttribute('class', 'bracket-connector');
+                    path.setAttribute('d', `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`);
+                    svg.appendChild(path);
+                });
+            });
+            canvas.prepend(svg);
+        };
+
+        layout();
+        let observedWidth = Math.round(viewport.getBoundingClientRect().width);
+        let resizeFrame = null;
+        new ResizeObserver(([entry]) => {
+            const nextWidth = Math.round(entry.contentRect.width);
+            if (nextWidth === observedWidth) return;
+            observedWidth = nextWidth;
+            cancelAnimationFrame(resizeFrame);
+            resizeFrame = requestAnimationFrame(layout);
+        }).observe(viewport);
     });
 })();
 </script>
