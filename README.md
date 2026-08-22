@@ -24,11 +24,13 @@ docker compose exec app php artisan db:seed --force
 
 Open <http://127.0.0.1:8080>. The seeder creates a LIVE eight-team Double Elimination bracket with 14 matches.
 
-Use the `EN / ไทย` switch in the header to change the interface language. The selection is stored in the browser session.
+Thai is the default interface language and the application timezone defaults to `Asia/Bangkok`. Use the `EN / ไทย` switch in the header to change the language; the selection is stored in the browser session.
 
 ## Access control
 
-Tournament lists, brackets, matches, participants, and standings are public and read-only. Administrators sign in to create and configure tournaments, manage users and participants, import CSV files, control tournament status, and record results.
+Viewer accounts and public visitors can see only competitions with `LIVE` status. Their tournament lists, brackets, matches, participants, and standings are read-only. Draft, ready, completed, and archived competitions return a not-found response unless opened by an administrator. Administrators sign in to create and configure tournaments, manage users and participants, import CSV files, control tournament status, and record results.
+
+Each competition has a private viewer link in its administrator overview. This `/view/{token}` URL opens only that competition, preserves the read-only mode across Overview, Bracket, Matches, and Results, and is available only while the competition is `LIVE`. It can be copied before starting so it is ready to distribute when the competition goes live.
 
 To create the first administrator:
 
@@ -53,7 +55,7 @@ npm run build
 php artisan optimize
 ```
 
-Use `APP_ENV=production`, `APP_DEBUG=false`, HTTPS for `APP_URL`, and `SESSION_SECURE_COOKIE=true`. Never commit the production `.env` file. Do not run `php artisan db:seed` in production unless demonstration data is intentionally required.
+Use `APP_ENV=production`, `APP_DEBUG=false`, HTTPS for `APP_URL`, `SESSION_SECURE_COOKIE=true`, `APP_LOCALE=th`, `APP_FALLBACK_LOCALE=en`, and `APP_TIMEZONE=Asia/Bangkok`. Never commit the production `.env` file. Do not run `php artisan db:seed` in production unless demonstration data is intentionally required.
 
 Participant CSV import is available while a tournament is `DRAFT` or `READY`. Open its Overview & Participants page, download the template, then upload a UTF-8 CSV with these supported columns:
 
@@ -79,7 +81,7 @@ MySQL data is kept in the `mysql-data` Docker volume. `docker compose down` pres
 
 Open `/api/docs` for the complete endpoint list and request examples.
 
-Public read endpoints include health, tournaments, participants, matches, and standings. Administrator write endpoints cover tournament CRUD, participant CRUD and CSV import, lifecycle changes, match results, and ranking attempts. Create or revoke a bearer token from **API access** in the administrator navigation.
+Public read endpoints include health plus live tournaments, participants, matches, and standings. Supplying an administrator bearer token also allows GET requests to read non-live competitions. Administrator write endpoints cover tournament CRUD, participant CRUD and CSV import, lifecycle changes, match results, and ranking attempts. Create or revoke a bearer token from **API access** in the administrator navigation. API messages can be selected with `?lang=th` / `?lang=en` or the `Accept-Language` header.
 
 Responses use a consistent `{ "success": true, "data": ... }` envelope.
 

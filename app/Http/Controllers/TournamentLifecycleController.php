@@ -15,17 +15,17 @@ class TournamentLifecycleController extends Controller
 
     public function start(Tournament $tournament): RedirectResponse
     {
-        return $this->execute(fn () => $this->lifecycle->start($tournament), 'Tournament started and bracket generated.');
+        return $this->execute(fn () => $this->lifecycle->start($tournament), __('ui.tournament_started'));
     }
 
     public function complete(Tournament $tournament): RedirectResponse
     {
-        return $this->execute(fn () => $this->lifecycle->complete($tournament), 'Tournament completed.');
+        return $this->execute(fn () => $this->lifecycle->complete($tournament), __('ui.tournament_completed'));
     }
 
     public function archive(Tournament $tournament): RedirectResponse
     {
-        return $this->execute(fn () => $this->lifecycle->archive($tournament), 'Tournament archived.');
+        return $this->execute(fn () => $this->lifecycle->archive($tournament), __('ui.tournament_archived'));
     }
 
     private function execute(callable $callback, string $message): RedirectResponse

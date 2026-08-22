@@ -22,7 +22,7 @@ class RankingAttemptController extends Controller
         try {
             $this->ranking->saveAttempt($tournament, $participant, (int) $data['attempt_number'], $data['attempt_value'] ?? null, $request->boolean('is_valid'));
 
-            return back()->with('success', "Attempt {$data['attempt_number']} saved.");
+            return back()->with('success', __('ui.attempt_saved', ['number' => $data['attempt_number']]));
         } catch (Throwable $exception) {
             report($exception);
 

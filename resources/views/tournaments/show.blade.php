@@ -1,7 +1,8 @@
 @extends('layouts.app')
 @section('title', $tournament->name.' · EasyKids')
 @php
-    $isAdmin = auth()->user()?->isAdmin() ?? false;
+    $isPublicView = request()->routeIs('public.tournaments.*');
+    $isAdmin = !$isPublicView && (auth()->user()?->isAdmin() ?? false);
     $rosterEditable = in_array($tournament->status, [App\Enums\TournamentStatus::DRAFT, App\Enums\TournamentStatus::READY], true);
 @endphp
 @push('styles')
@@ -11,11 +12,29 @@
 @endpush
 @section('content')
 <div class="page-head">
-    <div><div class="actions" style="margin-bottom:4px"><h1 style="margin:0">{{ $tournament->name }}</h1><span class="badge {{ $tournament->status->value }}">{{ $tournament->status->value }}</span></div><div class="muted">{{ $tournament->competition }} · {{ $tournament->division }} · {{ str_replace('_',' ', $tournament->format->value) }}</div></div>
+    <div><div class="actions" style="margin-bottom:4px"><h1 style="margin:0">{{ $tournament->name }}</h1><span class="badge {{ $tournament->status->value }}">{{ __('ui.tournament_status_labels.'.$tournament->status->value) }}</span></div><div class="muted">{{ $tournament->competition }} · {{ $tournament->division }} · {{ __('ui.format_labels.'.$tournament->format->value) }}</div></div>
     @if($isAdmin)<div class="actions"><a class="btn secondary" href="{{ route('tournaments.settings', $tournament) }}">{{ __('ui.settings') }}</a>@if($rosterEditable)<form method="post" action="{{ route('tournaments.start', $tournament) }}">@csrf<button class="btn">{{ __('ui.start_tournament') }}</button></form>@elseif($tournament->status === App\Enums\TournamentStatus::LIVE)<form method="post" action="{{ route('tournaments.complete', $tournament) }}">@csrf<button class="btn">{{ __('ui.complete') }}</button></form>@elseif($tournament->status === App\Enums\TournamentStatus::COMPLETED)<form method="post" action="{{ route('tournaments.archive', $tournament) }}">@csrf<button class="btn secondary">{{ __('ui.archive') }}</button></form>@endif</div>@endif
 </div>
 @include('tournaments._tabs')
-<div class="stats card"><div class="stat"><strong>{{ $tournament->participants_count }}</strong><span>Participants</span></div><div class="stat"><strong>{{ $tournament->matches_count }}</strong><span>Matches</span></div><div class="stat"><strong>{{ $tournament->ranking_attempts_count }}</strong><span>Attempts</span></div><div class="stat"><strong>{{ str_replace('_',' ', $tournament->seeding_method->value) }}</strong><span>Seeding</span></div></div>
+@includeWhen($isPublicView, 'tournaments._live_refresh')
+<div class="stats card"><div class="stat"><strong>{{ $tournament->participants_count }}</strong><span>{{ __('ui.participant_count') }}</span></div><div class="stat"><strong>{{ $tournament->matches_count }}</strong><span>{{ __('ui.matches') }}</span></div><div class="stat"><strong>{{ $tournament->ranking_attempts_count }}</strong><span>{{ __('ui.attempt_count') }}</span></div><div class="stat"><strong>{{ __('ui.seeding_labels.'.$tournament->seeding_method->value) }}</strong><span>{{ __('ui.seeding') }}</span></div></div>
+
+<section class="card">
+    <h2>{{ __('ui.competition_details') }}</h2>
+    <div class="detail-grid">
+        <div class="detail-item"><small>{{ __('ui.competition_date') }}</small><strong>{{ $tournament->competition_date?->translatedFormat('j M Y · H:i') ?? __('ui.not_specified') }}</strong></div>
+        <div class="detail-item"><small>{{ __('ui.venue') }}</small><strong>{{ $tournament->venue ?: __('ui.not_specified') }}</strong></div>
+        <div class="detail-item"><small>{{ __('ui.division') }}</small><strong>{{ $tournament->division }}</strong></div>
+        @if($tournament->notes)<div class="detail-item full"><small>{{ __('ui.notes') }}</small><span>{!! nl2br(e($tournament->notes)) !!}</span></div>@endif
+    </div>
+</section>
+
+@if($isAdmin)
+<section class="card">
+    <div class="actions" style="justify-content:space-between;margin-bottom:10px"><div><h2 style="margin:0 0 3px">{{ __('ui.share_view_link') }}</h2><div class="muted">{{ __('ui.share_link_help') }}</div></div><span class="badge {{ $tournament->status->value }}">{{ $tournament->status === App\Enums\TournamentStatus::LIVE ? __('ui.available_now') : __('ui.available_when_live') }}</span></div>
+    <div class="share-link-row"><input id="share-link" readonly value="{{ $tournament->publicShareUrl() }}" aria-label="{{ __('ui.share_view_link') }}"><button class="btn secondary" type="button" data-copy-target="#share-link" data-copied="{{ __('ui.share_link_copied') }}">{{ __('ui.copy_share_link') }}</button>@if($tournament->status === App\Enums\TournamentStatus::LIVE)<a class="btn secondary" href="{{ $tournament->publicShareUrl() }}" target="_blank" rel="noopener">{{ __('ui.open_view_page') }}</a>@else<span class="btn secondary" aria-disabled="true" style="opacity:.5;cursor:not-allowed">{{ __('ui.waiting_for_live') }}</span>@endif</div>
+</section>
+@endif
 
 @if($isAdmin && $rosterEditable)
 <div class="grid">
@@ -32,7 +51,7 @@
     @forelse($tournament->participants as $participant)
         <article class="participant-item">
         @if($isAdmin)
-            <details><summary class="participant-summary"><strong>#{{ $participant->seed_number ?? '—' }}</strong><span class="participant-team"><strong>{{ $participant->team_name }}</strong><small class="muted">{{ $participant->team_code ?: __('ui.no_team_code') }}</small></span><span class="participant-hide-mobile">{{ $participant->school ?? '—' }}</span><span class="participant-hide-mobile">{{ $participant->coach_name ?? '—' }}</span><span class="badge">{{ $participant->status->value }}</span><span class="participant-chevron">⌄</span></summary>
+            <details><summary class="participant-summary"><strong>#{{ $participant->seed_number ?? '—' }}</strong><span class="participant-team"><strong>{{ $participant->team_name }}</strong><small class="muted">{{ $participant->team_code ?: __('ui.no_team_code') }}</small></span><span class="participant-hide-mobile">{{ $participant->school ?? '—' }}</span><span class="participant-hide-mobile">{{ $participant->coach_name ?? '—' }}</span><span class="badge">{{ __('ui.participant_status_labels.'.$participant->status->value) }}</span><span class="participant-chevron">⌄</span></summary>
                 <div class="participant-edit">
                     <form method="post" action="{{ route('participants.update', [$tournament, $participant]) }}">@csrf @method('PUT')
                         <div class="form-grid">
@@ -40,15 +59,15 @@
                             <div class="field"><label>{{ __('ui.team_code') }}</label><input name="team_code" maxlength="100" value="{{ $participant->team_code }}"></div>
                             <div class="field"><label>{{ __('ui.school') }}</label><input name="school" maxlength="200" value="{{ $participant->school }}"></div>
                             <div class="field"><label>{{ __('ui.coach_name') }}</label><input name="coach_name" maxlength="200" value="{{ $participant->coach_name }}"></div>
-                            @if($rosterEditable)<div class="field"><label>{{ __('ui.seed') }}</label><input type="number" name="seed_number" min="1" value="{{ $participant->seed_number }}"></div><div class="field"><label>{{ __('ui.status') }}</label><select name="status">@foreach(App\Enums\ParticipantStatus::cases() as $status)<option value="{{ $status->value }}" @selected($participant->status === $status)>{{ str_replace('_',' ', $status->value) }}</option>@endforeach</select></div>@endif
+                            @if($rosterEditable)<div class="field"><label>{{ __('ui.seed') }}</label><input type="number" name="seed_number" min="1" value="{{ $participant->seed_number }}"></div><div class="field"><label>{{ __('ui.status') }}</label><select name="status">@foreach(App\Enums\ParticipantStatus::cases() as $status)<option value="{{ $status->value }}" @selected($participant->status === $status)>{{ __('ui.participant_status_labels.'.$status->value) }}</option>@endforeach</select></div>@endif
                         </div>
                         <button class="btn small">{{ __('ui.save_participant') }}</button>
                     </form>
-                    @if($rosterEditable)<form style="margin-top:8px" method="post" action="{{ route('participants.destroy', [$tournament, $participant]) }}" onsubmit="return confirm('Remove {{ addslashes($participant->team_name) }}?')">@csrf @method('DELETE')<button class="btn danger small">{{ __('ui.remove_participant') }}</button></form>@endif
+                    @if($rosterEditable)<form style="margin-top:8px" method="post" action="{{ route('participants.destroy', [$tournament, $participant]) }}" data-confirm="{{ __('ui.remove_participant_confirm', ['name' => $participant->team_name]) }}">@csrf @method('DELETE')<button class="btn danger small">{{ __('ui.remove_participant') }}</button></form>@endif
                 </div>
             </details>
         @else
-            <div class="participant-summary"><strong>#{{ $participant->seed_number ?? '—' }}</strong><span class="participant-team"><strong>{{ $participant->team_name }}</strong><small class="muted">{{ $participant->team_code ?: __('ui.no_team_code') }}</small></span><span class="participant-hide-mobile">{{ $participant->school ?? '—' }}</span><span class="participant-hide-mobile">{{ $participant->coach_name ?? '—' }}</span><span class="badge">{{ $participant->status->value }}</span><span></span></div>
+            <div class="participant-summary"><strong>#{{ $participant->seed_number ?? '—' }}</strong><span class="participant-team"><strong>{{ $participant->team_name }}</strong><small class="muted">{{ $participant->team_code ?: __('ui.no_team_code') }}</small></span><span class="participant-hide-mobile">{{ $participant->school ?? '—' }}</span><span class="participant-hide-mobile">{{ $participant->coach_name ?? '—' }}</span><span class="badge">{{ __('ui.participant_status_labels.'.$participant->status->value) }}</span><span></span></div>
         @endif
         </article>
     @empty<div class="empty">{{ __('ui.no_participants') }}</div>@endforelse

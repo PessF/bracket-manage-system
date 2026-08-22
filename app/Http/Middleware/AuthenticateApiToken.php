@@ -13,19 +13,24 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AuthenticateApiToken
 {
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, string $mode = 'required'): Response
     {
         $token = $request->bearerToken();
+
+        if (! $token && $mode === 'optional') {
+            return $next($request);
+        }
+
         $user = is_string($token) && strlen($token) >= 32
             ? User::query()->where('api_token_hash', hash('sha256', $token))->first()
             : null;
 
         if (! $user) {
-            return $this->error('A valid bearer token is required.', 401);
+            return $this->error(__('ui.api_token_required'), 401);
         }
 
         if (! $user->isAdmin()) {
-            return $this->error('Administrator access is required.', 403);
+            return $this->error(__('ui.admin_access_required'), 403);
         }
 
         Auth::setUser($user);

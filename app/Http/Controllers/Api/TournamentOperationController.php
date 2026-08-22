@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\MatchStatus;
+use App\Enums\TournamentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Participant;
 use App\Models\Tournament;
@@ -38,6 +40,19 @@ class TournamentOperationController extends Controller
         return $this->execute(fn () => $this->lifecycle->archive($tournament));
     }
 
+    public function transition(Request $request, Tournament $tournament): JsonResponse
+    {
+        $data = $request->validate([
+            'status' => ['required', 'string', 'in:LIVE,COMPLETED,ARCHIVED'],
+        ]);
+
+        return match ($data['status']) {
+            TournamentStatus::LIVE->value => $this->start($tournament),
+            TournamentStatus::COMPLETED->value => $this->complete($tournament),
+            TournamentStatus::ARCHIVED->value => $this->archive($tournament),
+        };
+    }
+
     public function result(Request $request, Tournament $tournament, TournamentMatch $match): JsonResponse
     {
         abort_unless($match->tournament_id === $tournament->id, 404);
@@ -45,6 +60,12 @@ class TournamentOperationController extends Controller
             'score_a' => ['required', 'numeric', 'min:0'],
             'score_b' => ['required', 'numeric', 'min:0'],
         ]);
+
+        if ($request->isMethod('put') && $match->status === MatchStatus::FINISHED
+            && $this->sameScore($match->score_a, $data['score_a'])
+            && $this->sameScore($match->score_b, $data['score_b'])) {
+            return response()->json(['success' => true, 'data' => $match->fresh(['winner', 'loser'])]);
+        }
 
         return $this->execute(fn () => $this->results->confirm($match, $data['score_a'], $data['score_b']));
     }
@@ -67,6 +88,13 @@ class TournamentOperationController extends Controller
         ));
     }
 
+    public function attemptAt(Request $request, Tournament $tournament, Participant $participant, int $attemptNumber): JsonResponse
+    {
+        $request->merge(['attempt_number' => $attemptNumber]);
+
+        return $this->attempt($request, $tournament, $participant);
+    }
+
     private function execute(callable $callback): JsonResponse
     {
         try {
@@ -76,5 +104,11 @@ class TournamentOperationController extends Controller
 
             return response()->json(['success' => false, 'error' => ['message' => $exception->getMessage()]], 422);
         }
+    }
+
+    private function sameScore(mixed $stored, mixed $submitted): bool
+    {
+        return $stored !== null
+            && number_format((float) $stored, 6, '.', '') === number_format((float) $submitted, 6, '.', '');
     }
 }

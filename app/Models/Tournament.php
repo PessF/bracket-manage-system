@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Tournament extends Model
 {
@@ -26,6 +27,7 @@ class Tournament extends Model
 
     protected $fillable = [
         'id',
+        'public_token',
         'name',
         'competition',
         'division',
@@ -45,6 +47,22 @@ class Tournament extends Model
         'source_updated_at',
         'synced_at',
     ];
+
+    protected $hidden = [
+        'public_token',
+    ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Tournament $tournament): void {
+            $tournament->public_token ??= (string) Str::uuid();
+        });
+    }
+
+    public function publicShareUrl(): string
+    {
+        return route('public.tournaments.show', ['tournament' => $this->public_token]);
+    }
 
     protected $casts = [
         'format' => TournamentFormat::class,

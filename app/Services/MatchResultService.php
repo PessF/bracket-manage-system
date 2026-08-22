@@ -40,7 +40,7 @@ class MatchResultService
             : $match;
 
         if ($matchId === '') {
-            throw new InvalidArgumentException('A match ID is required.');
+            throw new InvalidArgumentException(__('ui.match_id_required'));
         }
 
         $normalizedScoreA = $this->normalizeScore($scoreA, 'score_a');
@@ -59,23 +59,23 @@ class MatchResultService
             $currentMatch->load('tournament');
 
             if ($currentMatch->tournament->status !== TournamentStatus::LIVE) {
-                throw new DomainException('Results can only be confirmed for a LIVE tournament.');
+                throw new DomainException(__('ui.result_live_only'));
             }
 
             if (! in_array($currentMatch->status, [MatchStatus::READY, MatchStatus::LIVE], true)) {
-                throw new DomainException('Only READY or LIVE matches can be confirmed.');
+                throw new DomainException(__('ui.match_status_invalid'));
             }
 
             if ($currentMatch->is_bye) {
-                throw new DomainException('A BYE match cannot accept a manual result.');
+                throw new DomainException(__('ui.bye_result_invalid'));
             }
 
             if ($currentMatch->participant_a_id === null || $currentMatch->participant_b_id === null) {
-                throw new DomainException('Both participants must be assigned before confirming a result.');
+                throw new DomainException(__('ui.participants_required_for_result'));
             }
 
             if ($currentMatch->participant_a_id === $currentMatch->participant_b_id) {
-                throw new DomainException('A participant cannot compete against itself.');
+                throw new DomainException(__('ui.self_match_invalid'));
             }
 
             $this->assertParticipantsBelongToTournament($currentMatch);
@@ -83,7 +83,7 @@ class MatchResultService
             $comparison = bccomp($normalizedScoreA, $normalizedScoreB, 6);
 
             if ($comparison === 0 && $currentMatch->tournament->format->isElimination()) {
-                throw new DomainException('Elimination matches cannot end in a tie.');
+                throw new DomainException(__('ui.elimination_tie_invalid'));
             }
 
             $winnerId = match (true) {
@@ -156,7 +156,7 @@ class MatchResultService
             ->count();
 
         if ($participantCount !== 2) {
-            throw new DomainException('Match participants must belong to the same tournament.');
+            throw new DomainException(__('ui.match_participants_wrong_tournament'));
         }
     }
 
@@ -172,7 +172,7 @@ class MatchResultService
         }
 
         if ($nextSlot === null) {
-            throw new LogicException("The {$outcome} destination slot is missing.");
+            throw new LogicException(__('ui.destination_slot_missing', ['outcome' => __('ui.outcome_labels.'.$outcome)]));
         }
 
         /** @var TournamentMatch $nextMatch */
@@ -181,11 +181,11 @@ class MatchResultService
             ->findOrFail($nextMatchId);
 
         if ($nextMatch->tournament_id !== $sourceMatch->tournament_id) {
-            throw new LogicException("The {$outcome} destination belongs to another tournament.");
+            throw new LogicException(__('ui.destination_wrong_tournament', ['outcome' => __('ui.outcome_labels.'.$outcome)]));
         }
 
         if (in_array($nextMatch->status, [MatchStatus::LIVE, MatchStatus::FINISHED], true)) {
-            throw new DomainException("Cannot propagate into a {$nextMatch->status->value} match.");
+            throw new DomainException(__('ui.destination_status_invalid', ['status' => __('ui.match_status_labels.'.$nextMatch->status->value)]));
         }
 
         $participantColumn = $nextSlot === MatchSlot::A
@@ -196,7 +196,7 @@ class MatchResultService
 
         if ($existingParticipantId !== null && $existingParticipantId !== $participantId) {
             throw new LogicException(
-                "The {$outcome} destination slot already contains another participant.",
+                __('ui.destination_occupied', ['outcome' => __('ui.outcome_labels.'.$outcome)]),
             );
         }
 
@@ -258,7 +258,7 @@ class MatchResultService
 
         if (! preg_match('/^\d{1,12}(?:\.\d{1,6})?$/', $value)) {
             throw new InvalidArgumentException(
-                "{$field} must be a non-negative decimal with up to 12 integer and 6 fractional digits.",
+                __('ui.score_invalid', ['field' => __('ui.score_field_labels.'.$field)]),
             );
         }
 

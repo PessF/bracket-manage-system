@@ -89,7 +89,7 @@ class MatchResultServiceTest extends TestCase
             app(MatchResultService::class)->confirm($source, '4', '4');
             $this->fail('An elimination tie should have been rejected.');
         } catch (DomainException $exception) {
-            $this->assertSame('Elimination matches cannot end in a tie.', $exception->getMessage());
+            $this->assertSame(__('ui.elimination_tie_invalid'), $exception->getMessage());
         }
 
         $source->refresh();
@@ -168,7 +168,10 @@ class MatchResultServiceTest extends TestCase
             app(MatchResultService::class)->confirm($source, '5', '1');
             $this->fail('A conflicting destination should have been rejected.');
         } catch (LogicException $exception) {
-            $this->assertStringContainsString('already contains another participant', $exception->getMessage());
+            $this->assertSame(
+                __('ui.destination_occupied', ['outcome' => __('ui.outcome_labels.winner')]),
+                $exception->getMessage(),
+            );
         }
 
         $source->refresh();

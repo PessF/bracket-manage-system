@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'EasyKids Tournament')</title>
+    <title>@yield('title', __('ui.app_name'))</title>
     <style>
         :root {
             --ink: #18181b; --muted: #71717a; --line: #e4e4e7; --line-strong: #cbd5e1;
@@ -79,6 +79,20 @@
         .alert { padding: 11px 14px; border: 1px solid; border-radius: 8px; margin-bottom: 16px; }
         .alert.success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
         .alert.error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+        .view-only-banner { background:#eff6ff; border-color:#bfdbfe; color:#1e40af; }
+        .share-link-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:8px; }
+        .live-refresh { display:flex; align-items:center; gap:8px; min-height:43px; margin:-7px 0 18px; padding:8px 10px; border:1px solid #bbf7d0; border-radius:9px; background:#f0fdf4; color:#166534; font-size:12px; }
+        .live-refresh .btn { margin-left:auto; }
+        .live-dot { width:9px; height:9px; border-radius:50%; background:#16a34a; box-shadow:0 0 0 0 rgb(22 163 74 / .45); animation:live-pulse 1.8s infinite; }
+        .detail-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+        .detail-item { min-width:0; padding:12px; border-radius:8px; background:var(--soft); }
+        .detail-item small { display:block; margin-bottom:3px; color:var(--muted); font-weight:650; }
+        .detail-item strong, .detail-item span { overflow-wrap:anywhere; }
+        .detail-item.full { grid-column:1/-1; }
+        .tournament-card { display:block; transition:transform .15s,border-color .15s,box-shadow .15s; }
+        .tournament-card:hover { border-color:#cbd5e1; box-shadow:0 7px 20px rgb(15 23 42 / .07); opacity:1; transform:translateY(-2px); }
+        .card-link-label { display:flex; align-items:center; justify-content:flex-end; gap:5px; margin-top:12px; color:var(--blue); font-size:12px; font-weight:650; }
+        @keyframes live-pulse { 70% { box-shadow:0 0 0 7px rgb(22 163 74 / 0); } 100% { box-shadow:0 0 0 0 rgb(22 163 74 / 0); } }
         label { display: block; font-weight: 600; margin-bottom: 5px; }
         input, select, textarea { width: 100%; padding: 8px 9px; border: 1px solid #d4d4d8; border-radius: 7px; background: #fff; color: var(--ink); font: inherit; outline: none; transition: border-color .15s, box-shadow .15s, background-color .15s; }
         select { padding-right: 34px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; background-size: 15px; appearance: none; cursor: pointer; }
@@ -162,6 +176,15 @@
             .stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
             .auth-shell { min-height: 0; place-items: start stretch; }
             .auth-card { padding: 18px; }
+            .share-link-row { grid-template-columns:1fr; }
+            .tabs { position:sticky; top:58px; z-index:70; margin-right:-14px; margin-left:-14px; padding:0 7px; background:rgb(250 250 250 / .96); backdrop-filter:blur(9px); }
+            .tabs a { min-height:44px; padding:12px 11px; }
+            .live-refresh { position:relative; flex-wrap:wrap; margin-top:-8px; }
+            .live-refresh .btn { width:100%; margin-left:0; }
+            .detail-grid { grid-template-columns:1fr; }
+            .detail-item.full { grid-column:auto; }
+            .table-wrap th, .table-wrap td { white-space:nowrap; }
+            .tournament-card { margin-bottom:0; }
         }
     </style>
     @stack('styles')
@@ -179,10 +202,10 @@
             @if($isAdmin)
             <a class="desktop-only" href="{{ route('tournaments.create') }}">{{ __('ui.create') }}</a>
             <a class="desktop-only" href="{{ route('admin.users.index') }}">{{ __('ui.users') }}</a>
-            <a class="desktop-only" href="{{ route('admin.api-token.show') }}">API</a>
+            <a class="desktop-only" href="{{ route('admin.api-token.show') }}">{{ __('ui.api_access') }}</a>
             @endif
             @auth
-            <span class="account-label desktop-only" title="{{ auth()->user()->email }}">{{ auth()->user()->name }} · {{ auth()->user()->role->value }}</span>
+            <span class="account-label desktop-only" title="{{ auth()->user()->email }}">{{ auth()->user()->name }} · {{ __('ui.role_labels.'.auth()->user()->role->value) }}</span>
             <form class="nav-form desktop-only" method="post" action="{{ route('logout') }}">@csrf<button class="nav-button">{{ __('ui.logout') }}</button></form>
             @else
             <a class="desktop-only" href="{{ route('login') }}">{{ __('ui.login') }}</a>
@@ -190,7 +213,7 @@
             <details class="mobile-menu">
                 <summary>{{ __('ui.menu') }}</summary>
                 <div class="mobile-popover">
-                    @auth<div class="mobile-user">{{ auth()->user()->name }} · {{ auth()->user()->role->value }}</div>@endauth
+                    @auth<div class="mobile-user">{{ auth()->user()->name }} · {{ __('ui.role_labels.'.auth()->user()->role->value) }}</div>@endauth
                     <a href="{{ route('tournaments.index') }}">{{ __('ui.all_tournaments') }}</a>
                     @if($isAdmin)
                     <a href="{{ route('tournaments.create') }}">{{ __('ui.create') }}</a>
@@ -202,17 +225,17 @@
                 </div>
             </details>
             <details class="language-menu">
-                <summary aria-label="Select language">
+                <summary aria-label="{{ __('ui.select_language') }}">
                     <svg class="language-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
                     <span>{{ app()->isLocale('th') ? 'ไทย' : 'English' }}</span>
                     <svg class="language-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
                 </summary>
                 <div class="language-popover">
                     <form method="post" action="{{ route('locale.update', 'en') }}">@csrf
-                        <button class="language-option {{ app()->isLocale('en') ? 'active' : '' }}" type="submit"><span class="language-code">EN</span><span class="language-name">English<small>English</small></span><svg class="language-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 12 4 4L19 6"/></svg></button>
+                        <button class="language-option {{ app()->isLocale('en') ? 'active' : '' }}" type="submit"><span class="language-code">EN</span><span class="language-name">{{ __('ui.language_english') }}<small>English</small></span><svg class="language-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 12 4 4L19 6"/></svg></button>
                     </form>
                     <form method="post" action="{{ route('locale.update', 'th') }}">@csrf
-                        <button class="language-option {{ app()->isLocale('th') ? 'active' : '' }}" type="submit"><span class="language-code">TH</span><span class="language-name">ภาษาไทย<small>Thai</small></span><svg class="language-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 12 4 4L19 6"/></svg></button>
+                        <button class="language-option {{ app()->isLocale('th') ? 'active' : '' }}" type="submit"><span class="language-code">TH</span><span class="language-name">{{ __('ui.language_thai') }}<small>ภาษาไทย</small></span><svg class="language-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 12 4 4L19 6"/></svg></button>
                     </form>
                 </div>
             </details>
@@ -226,6 +249,27 @@
     @yield('content')
 </main>
 <script>
+document.addEventListener('submit', (event) => {
+    const message = event.target.dataset.confirm;
+    if (message && !window.confirm(message)) event.preventDefault();
+});
+document.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-copy-target]');
+    if (!button) return;
+    const source = document.querySelector(button.dataset.copyTarget);
+    if (!source) return;
+    const value = 'value' in source ? source.value : source.textContent;
+    try {
+        await navigator.clipboard.writeText(value);
+    } catch (_) {
+        if ('select' in source) {
+            source.select();
+            document.execCommand('copy');
+            source.setSelectionRange(0, 0);
+        }
+    }
+    button.textContent = button.dataset.copied;
+});
 document.addEventListener('click', (event) => {
     const button = event.target.closest('[data-score-step]');
     if (!button) return;

@@ -71,7 +71,7 @@ class TournamentHttpTest extends TestCase
         ]);
 
         $this->get(route('tournaments.settings', $tournament))
-            ->assertOk()->assertSee('Competition settings')->assertSee('Delete competition');
+            ->assertOk()->assertSee(__('ui.competition_settings'))->assertSee(__('ui.delete_button'));
         $this->put(route('tournaments.update', $tournament), [
             'name' => 'Corrected Competition Name',
             'competition' => 'EasyKids Championship',

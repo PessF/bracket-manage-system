@@ -22,7 +22,7 @@ class MatchResultController extends Controller
         try {
             $this->results->confirm($match, $data['score_a'], $data['score_b']);
 
-            return back()->with('success', "Match #{$match->match_number} confirmed.");
+            return back()->with('success', __('ui.match_confirmed', ['number' => $match->match_number]));
         } catch (Throwable $exception) {
             report($exception);
 

@@ -4,10 +4,10 @@
     $structureLocked = $editing && !in_array($tournament->status, [App\Enums\TournamentStatus::DRAFT, App\Enums\TournamentStatus::READY], true);
     $selectedFormat = old('format', $tournament->format?->value ?? App\Enums\TournamentFormat::RANKING->value);
 @endphp
-@section('title', ($editing ? 'Settings' : 'New tournament').' · EasyKids')
+@section('title', ($editing ? __('ui.title_settings') : __('ui.title_new_tournament')).' · EasyKids')
 @section('content')
 @if($editing)
-<div class="page-head"><div><div class="actions" style="margin-bottom:4px"><h1 style="margin:0">{{ $tournament->name }}</h1><span class="badge {{ $tournament->status->value }}">{{ $tournament->status->value }}</span></div><div class="muted">{{ __('ui.competition_settings') }}</div></div></div>
+<div class="page-head"><div><div class="actions" style="margin-bottom:4px"><h1 style="margin:0">{{ $tournament->name }}</h1><span class="badge {{ $tournament->status->value }}">{{ __('ui.tournament_status_labels.'.$tournament->status->value) }}</span></div><div class="muted">{{ __('ui.competition_settings') }}</div></div></div>
 @include('tournaments._tabs')
 @else
 <div class="page-head"><div><h1>{{ __('ui.create_tournament') }}</h1><div class="muted">{{ __('ui.create_help') }}</div></div></div>
@@ -28,7 +28,7 @@
 @if($structureLocked)<div class="alert" style="background:#f8fafc;border-color:#e2e8f0;color:#475569;margin-top:15px">{{ __('ui.locked_help') }}</div>@endif
 <div class="form-grid" style="margin-top:16px">
 <div class="field"><label for="format">{{ __('ui.format') }}</label><select id="format" name="format" required @disabled($structureLocked)>@foreach(App\Enums\TournamentFormat::cases() as $format)<option value="{{ $format->value }}" @selected($selectedFormat === $format->value)>{{ __('ui.format_labels.'.$format->value) }}</option>@endforeach</select></div>
-<div class="field"><label for="seeding_method">{{ __('ui.seeding_method') }}</label><select id="seeding_method" name="seeding_method" required @disabled($structureLocked)>@foreach(App\Enums\SeedingMethod::cases() as $method)<option value="{{ $method->value }}" @selected(old('seeding_method', $tournament->seeding_method?->value ?? 'REGISTRATION_ORDER') === $method->value)>{{ str_replace('_',' ', $method->value) }}</option>@endforeach</select></div>
+<div class="field"><label for="seeding_method">{{ __('ui.seeding_method') }}</label><select id="seeding_method" name="seeding_method" required @disabled($structureLocked)>@foreach(App\Enums\SeedingMethod::cases() as $method)<option value="{{ $method->value }}" @selected(old('seeding_method', $tournament->seeding_method?->value ?? 'REGISTRATION_ORDER') === $method->value)>{{ __('ui.seeding_labels.'.$method->value) }}</option>@endforeach</select></div>
 
 <div class="format-config-panel full" data-format-panel="RANKING" @if($selectedFormat !== 'RANKING') hidden @endif>
     <div class="format-config-head"><span class="format-config-icon">#</span><div><strong>{{ __('ui.ranking_settings') }}</strong><span>{{ __('ui.ranking_format_help') }}</span></div></div>
@@ -60,7 +60,7 @@
 </form>
 
 @if($editing)
-<section class="card" style="margin-top:34px;border-color:#fecaca"><h2 style="color:#991b1b">{{ __('ui.danger_zone') }}</h2><div class="actions" style="justify-content:space-between"><div><strong>{{ __('ui.delete_competition') }}</strong><div class="muted">{{ __('ui.delete_competition_help') }}</div></div><form method="post" action="{{ route('tournaments.destroy', $tournament) }}" onsubmit="return confirm('Delete {{ addslashes($tournament->name) }} and all of its data? This cannot be undone.')">@csrf @method('DELETE')<button class="btn danger">{{ __('ui.delete_button') }}</button></form></div></section>
+<section class="card" style="margin-top:34px;border-color:#fecaca"><h2 style="color:#991b1b">{{ __('ui.danger_zone') }}</h2><div class="actions" style="justify-content:space-between"><div><strong>{{ __('ui.delete_competition') }}</strong><div class="muted">{{ __('ui.delete_competition_help') }}</div></div><form method="post" action="{{ route('tournaments.destroy', $tournament) }}" data-confirm="{{ __('ui.delete_competition_confirm', ['name' => $tournament->name]) }}">@csrf @method('DELETE')<button class="btn danger">{{ __('ui.delete_button') }}</button></form></div></section>
 @endif
 @endsection
 

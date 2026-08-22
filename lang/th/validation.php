@@ -1,0 +1,49 @@
+<?php
+
+return [
+    'accepted' => 'ต้องยอมรับ :attribute',
+    'between' => [
+        'numeric' => ':attribute ต้องอยู่ระหว่าง :min ถึง :max',
+        'file' => ':attribute ต้องมีขนาดระหว่าง :min ถึง :max กิโลไบต์',
+        'string' => ':attribute ต้องมีความยาวระหว่าง :min ถึง :max ตัวอักษร',
+        'array' => ':attribute ต้องมีระหว่าง :min ถึง :max รายการ',
+    ],
+    'boolean' => ':attribute ต้องเป็นจริงหรือเท็จ',
+    'confirmed' => 'การยืนยัน :attribute ไม่ตรงกัน',
+    'date' => ':attribute ต้องเป็นวันที่ที่ถูกต้อง',
+    'email' => ':attribute ต้องเป็นอีเมลที่ถูกต้อง',
+    'file' => ':attribute ต้องเป็นไฟล์',
+    'integer' => ':attribute ต้องเป็นจำนวนเต็ม',
+    'max' => [
+        'numeric' => ':attribute ต้องไม่เกิน :max',
+        'file' => ':attribute ต้องมีขนาดไม่เกิน :max กิโลไบต์',
+        'string' => ':attribute ต้องมีความยาวไม่เกิน :max ตัวอักษร',
+        'array' => ':attribute ต้องมีไม่เกิน :max รายการ',
+    ],
+    'mimes' => ':attribute ต้องเป็นไฟล์ชนิด: :values',
+    'min' => [
+        'numeric' => ':attribute ต้องมีค่าอย่างน้อย :min',
+        'file' => ':attribute ต้องมีขนาดอย่างน้อย :min กิโลไบต์',
+        'string' => ':attribute ต้องมีความยาวอย่างน้อย :min ตัวอักษร',
+        'array' => ':attribute ต้องมีอย่างน้อย :min รายการ',
+    ],
+    'numeric' => ':attribute ต้องเป็นตัวเลข',
+    'password' => [
+        'letters' => ':attribute ต้องมีตัวอักษรอย่างน้อยหนึ่งตัว',
+        'mixed' => ':attribute ต้องมีทั้งตัวพิมพ์ใหญ่และตัวพิมพ์เล็ก',
+        'numbers' => ':attribute ต้องมีตัวเลขอย่างน้อยหนึ่งตัว',
+        'symbols' => ':attribute ต้องมีสัญลักษณ์อย่างน้อยหนึ่งตัว',
+    ],
+    'required' => 'กรุณากรอก :attribute',
+    'string' => ':attribute ต้องเป็นข้อความ',
+    'unique' => ':attribute นี้ถูกใช้งานแล้ว',
+    'uploaded' => 'อัปโหลด :attribute ไม่สำเร็จ',
+    'attributes' => [
+        'name' => 'ชื่อ', 'email' => 'อีเมล', 'password' => 'รหัสผ่าน', 'setup_token' => 'Setup Token',
+        'role' => 'สิทธิ์', 'team_name' => 'ชื่อทีม', 'team_code' => 'รหัสทีม', 'school' => 'โรงเรียน / สถาบัน',
+        'coach_name' => 'ชื่อโค้ช', 'seed_number' => 'อันดับ Seed', 'status' => 'สถานะ', 'csv_file' => 'ไฟล์ CSV',
+        'competition' => 'ชื่อการแข่งขัน', 'division' => 'รุ่นการแข่งขัน', 'format' => 'รูปแบบการแข่งขัน',
+        'seeding_method' => 'วิธีจัด Seed', 'score_a' => 'คะแนนฝ่าย A', 'score_b' => 'คะแนนฝ่าย B',
+        'attempt_number' => 'ครั้งที่', 'attempt_value' => 'ค่า', 'is_valid' => 'การใช้คำนวณ',
+    ],
+];

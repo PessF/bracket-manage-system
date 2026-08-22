@@ -12,7 +12,7 @@ class EnsureUserIsAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless($request->user()?->isAdmin(), 403, 'Administrator access is required.');
+        abort_unless($request->user()?->isAdmin(), 403, __('ui.admin_access_required'));
 
         return $next($request);
     }

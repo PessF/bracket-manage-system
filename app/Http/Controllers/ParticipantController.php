@@ -17,7 +17,7 @@ class ParticipantController extends Controller
     public function store(Request $request, Tournament $tournament): RedirectResponse
     {
         if (! $this->editable($tournament)) {
-            return back()->withErrors('The roster is locked after the tournament starts.');
+            return back()->withErrors(__('ui.roster_locked'));
         }
         $data = $this->validated($request);
         $tournament->participants()->create($data + [
@@ -26,7 +26,7 @@ class ParticipantController extends Controller
         ]);
         $this->syncCount($tournament);
 
-        return back()->with('success', 'Participant added.');
+        return back()->with('success', __('ui.participant_added'));
     }
 
     public function update(Request $request, Tournament $tournament, Participant $participant): RedirectResponse
@@ -37,19 +37,19 @@ class ParticipantController extends Controller
             : $this->validatedIdentity($request);
         $participant->fill($data + ['synced_at' => now()])->save();
 
-        return back()->with('success', 'Participant updated.');
+        return back()->with('success', __('ui.participant_updated'));
     }
 
     public function destroy(Tournament $tournament, Participant $participant): RedirectResponse
     {
         $this->assertOwner($tournament, $participant);
         if (! $this->editable($tournament)) {
-            return back()->withErrors('The roster is locked after the tournament starts.');
+            return back()->withErrors(__('ui.roster_locked'));
         }
         $participant->delete();
         $this->syncCount($tournament);
 
-        return back()->with('success', 'Participant removed.');
+        return back()->with('success', __('ui.participant_removed'));
     }
 
     /** @return array<string, mixed> */

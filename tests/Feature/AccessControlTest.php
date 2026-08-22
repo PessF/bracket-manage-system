@@ -26,7 +26,7 @@ class AccessControlTest extends TestCase
 
     public function test_public_visitors_can_view_but_cannot_open_or_submit_admin_pages(): void
     {
-        $tournament = Tournament::factory()->create();
+        $tournament = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
 
         $this->get(route('tournaments.index'))->assertOk()->assertSee($tournament->name);
         $this->get(route('tournaments.show', $tournament))->assertOk()->assertDontSee(route('tournaments.settings', $tournament));
@@ -83,7 +83,7 @@ class AccessControlTest extends TestCase
 
     public function test_api_reads_are_public_and_writes_require_an_admin_token(): void
     {
-        $tournament = Tournament::factory()->create(['status' => TournamentStatus::DRAFT]);
+        $tournament = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
         $this->getJson('/api/tournaments/'.$tournament->id)->assertOk()->assertJsonPath('success', true);
 
         $payload = [

@@ -9,8 +9,11 @@ use App\Enums\StageStatus;
 use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Participant;
 use App\Models\Stage;
+use App\Models\Standing;
 use App\Models\Tournament;
+use App\Models\TournamentMatch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +24,8 @@ class TournamentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $data = Tournament::query()->withCount(['participants', 'matches'])
-            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+            ->when(! ($request->user()?->isAdmin() ?? false), fn ($query) => $query->where('status', TournamentStatus::LIVE))
+            ->when(($request->user()?->isAdmin() ?? false) && $request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
             ->when($request->filled('format'), fn ($query) => $query->where('format', $request->string('format')))
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = '%'.$request->string('search').'%';
@@ -33,8 +37,9 @@ class TournamentController extends Controller
         return $this->success($data);
     }
 
-    public function show(Tournament $tournament): JsonResponse
+    public function show(Request $request, Tournament $tournament): JsonResponse
     {
+        $this->ensureVisible($request, $tournament);
         $tournament->load([
             'stages',
             'participants' => fn ($query) => $query->orderBy('seed_number')->orderBy('team_name'),
@@ -45,19 +50,54 @@ class TournamentController extends Controller
         return $this->success($tournament);
     }
 
-    public function participants(Tournament $tournament): JsonResponse
+    public function participants(Request $request, Tournament $tournament): JsonResponse
     {
+        $this->ensureVisible($request, $tournament);
+
         return $this->success($tournament->participants()->with('members')->orderBy('seed_number')->orderBy('team_name')->get());
     }
 
-    public function matches(Tournament $tournament): JsonResponse
+    public function participant(Request $request, Tournament $tournament, Participant $participant): JsonResponse
     {
+        $this->ensureVisible($request, $tournament);
+        abort_unless($participant->tournament_id === $tournament->id, 404, __('ui.resource_not_found'));
+
+        return $this->success($participant->load(['members', 'standing', 'rankingAttempts']));
+    }
+
+    public function matches(Request $request, Tournament $tournament): JsonResponse
+    {
+        $this->ensureVisible($request, $tournament);
+
         return $this->success($tournament->matches()->with(['participantA', 'participantB', 'winner'])->orderBy('match_number')->get());
     }
 
-    public function standings(Tournament $tournament): JsonResponse
+    public function match(Request $request, Tournament $tournament, TournamentMatch $match): JsonResponse
     {
+        $this->ensureVisible($request, $tournament);
+        abort_unless($match->tournament_id === $tournament->id, 404, __('ui.resource_not_found'));
+
+        return $this->success($match->load(['participantA', 'participantB', 'winner', 'loser']));
+    }
+
+    public function standings(Request $request, Tournament $tournament): JsonResponse
+    {
+        $this->ensureVisible($request, $tournament);
+
         return $this->success($tournament->standings()->with('participant')->orderBy('rank_number')->get());
+    }
+
+    public function standing(Request $request, Tournament $tournament, Participant $participant): JsonResponse
+    {
+        $this->ensureVisible($request, $tournament);
+        abort_unless($participant->tournament_id === $tournament->id, 404, __('ui.resource_not_found'));
+        $standing = Standing::query()
+            ->where('tournament_id', $tournament->id)
+            ->where('participant_id', $participant->id)
+            ->with('participant')
+            ->firstOrFail();
+
+        return $this->success($standing);
     }
 
     public function store(Request $request): JsonResponse
@@ -91,12 +131,12 @@ class TournamentController extends Controller
 
     public function update(Request $request, Tournament $tournament): JsonResponse
     {
-        $data = $request->validate($this->rules(true));
+        $data = $request->validate($this->rules(! $request->isMethod('put')));
         $structural = ['format', 'seeding_method', 'ranking_attempts', 'ranking_comparator', 'win_points', 'draw_points', 'loss_points'];
         $hasStructuralChanges = collect($structural)->contains(fn (string $key): bool => $request->exists($key));
 
         if ($hasStructuralChanges && ! $this->editable($tournament)) {
-            return $this->error('Format and seeding cannot change after the tournament starts.', 422);
+            return $this->error(__('ui.structure_locked'), 422);
         }
 
         if ($hasStructuralChanges) {
@@ -170,6 +210,15 @@ class TournamentController extends Controller
     private function editable(Tournament $tournament): bool
     {
         return in_array($tournament->status, [TournamentStatus::DRAFT, TournamentStatus::READY], true);
+    }
+
+    private function ensureVisible(Request $request, Tournament $tournament): void
+    {
+        abort_unless(
+            ($request->user()?->isAdmin() ?? false) || $tournament->status === TournamentStatus::LIVE,
+            404,
+            __('ui.resource_not_found'),
+        );
     }
 
     private function success(mixed $data, int $status = 200): JsonResponse

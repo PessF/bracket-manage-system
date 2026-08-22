@@ -40,18 +40,26 @@ class ApiWorkflowTest extends TestCase
             'team_name' => 'Alpha Updated',
         ])->assertOk()->assertJsonPath('data.team_name', 'Alpha Updated');
 
-        $this->withToken($token)->postJson("/api/tournaments/{$tournamentId}/start")
+        $this->withToken($token)->getJson("/api/tournaments/{$tournamentId}/participants/{$participantA}")
+            ->assertOk()->assertJsonPath('data.team_name', 'Alpha Updated');
+
+        $this->withToken($token)->patchJson("/api/tournaments/{$tournamentId}/status", ['status' => 'LIVE'])
             ->assertOk()->assertJsonPath('data.status', 'LIVE');
         $matchId = $this->getJson("/api/tournaments/{$tournamentId}/matches")
             ->assertOk()->json('data.0.id');
+        $this->getJson("/api/tournaments/{$tournamentId}/matches/{$matchId}")
+            ->assertOk()->assertJsonPath('data.id', $matchId);
 
-        $this->withToken($token)->postJson("/api/tournaments/{$tournamentId}/matches/{$matchId}/result", [
+        $resultUrl = "/api/tournaments/{$tournamentId}/matches/{$matchId}/result";
+        $this->withToken($token)->putJson($resultUrl, [
             'score_a' => 3,
             'score_b' => 1,
         ])->assertOk()->assertJsonPath('data.status', 'FINISHED');
-        $this->withToken($token)->postJson("/api/tournaments/{$tournamentId}/complete")
+        $this->withToken($token)->putJson($resultUrl, ['score_a' => 3, 'score_b' => 1])
+            ->assertOk()->assertJsonPath('data.status', 'FINISHED');
+        $this->withToken($token)->patchJson("/api/tournaments/{$tournamentId}/status", ['status' => 'COMPLETED'])
             ->assertOk()->assertJsonPath('data.status', 'COMPLETED');
-        $this->withToken($token)->postJson("/api/tournaments/{$tournamentId}/archive")
+        $this->withToken($token)->patchJson("/api/tournaments/{$tournamentId}/status", ['status' => 'ARCHIVED'])
             ->assertOk()->assertJsonPath('data.status', 'ARCHIVED');
     }
 }

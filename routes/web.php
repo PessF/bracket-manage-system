@@ -26,6 +26,7 @@ Route::get('/admin/setup', [FirstAdminSetupController::class, 'create'])->name('
 Route::post('/admin/setup', [FirstAdminSetupController::class, 'store'])->middleware('throttle:5,1')->name('admin.setup.store');
 
 Route::get('/participants/import-template.csv', [ParticipantImportController::class, 'template'])->name('participants.import.template');
+Route::view('/api/docs', 'api.docs')->name('api.docs');
 Route::get('/tournaments', [TournamentController::class, 'index'])->name('tournaments.index');
 
 Route::middleware(['auth', 'admin'])->group(function (): void {
@@ -55,7 +56,16 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::delete('/admin/api-token', [ApiTokenController::class, 'destroy'])->name('admin.api-token.destroy');
 });
 
-Route::get('/tournaments/{tournament}', [TournamentController::class, 'show'])->name('tournaments.show');
-Route::get('/tournaments/{tournament}/bracket', [TournamentWorkspaceController::class, 'bracket'])->name('tournaments.bracket');
-Route::get('/tournaments/{tournament}/matches', [TournamentWorkspaceController::class, 'matches'])->name('tournaments.matches');
-Route::get('/tournaments/{tournament}/results', [TournamentWorkspaceController::class, 'results'])->name('tournaments.results');
+Route::middleware('tournament.visible')->group(function (): void {
+    Route::get('/tournaments/{tournament}', [TournamentController::class, 'show'])->name('tournaments.show');
+    Route::get('/tournaments/{tournament}/bracket', [TournamentWorkspaceController::class, 'bracket'])->name('tournaments.bracket');
+    Route::get('/tournaments/{tournament}/matches', [TournamentWorkspaceController::class, 'matches'])->name('tournaments.matches');
+    Route::get('/tournaments/{tournament}/results', [TournamentWorkspaceController::class, 'results'])->name('tournaments.results');
+});
+
+Route::middleware('tournament.live')->prefix('view')->name('public.tournaments.')->group(function (): void {
+    Route::get('/{tournament:public_token}', [TournamentController::class, 'show'])->name('show');
+    Route::get('/{tournament:public_token}/bracket', [TournamentWorkspaceController::class, 'bracket'])->name('bracket');
+    Route::get('/{tournament:public_token}/matches', [TournamentWorkspaceController::class, 'matches'])->name('matches');
+    Route::get('/{tournament:public_token}/results', [TournamentWorkspaceController::class, 'results'])->name('results');
+});

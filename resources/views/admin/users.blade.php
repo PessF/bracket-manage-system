@@ -8,7 +8,7 @@
         <div class="form-grid">
             <div class="field"><label>{{ __('ui.name') }}</label><input name="name" required></div>
             <div class="field"><label>{{ __('ui.email') }}</label><input type="email" name="email" required></div>
-            <div class="field"><label>{{ __('ui.role') }}</label><select name="role"><option value="VIEWER">{{ __('ui.viewer') }}</option><option value="ADMIN">{{ __('ui.administrator') }}</option></select></div>
+            <div class="field"><label>{{ __('ui.role') }}</label><select name="role"><option value="VIEWER">{{ __('ui.role_labels.VIEWER') }}</option><option value="ADMIN">{{ __('ui.role_labels.ADMIN') }}</option></select></div>
             <div></div>
             <div class="field"><label>{{ __('ui.password') }}</label><input type="password" name="password" required autocomplete="new-password"></div>
             <div class="field"><label>{{ __('ui.confirm_password') }}</label><input type="password" name="password_confirmation" required autocomplete="new-password"></div>
@@ -19,13 +19,13 @@
 <div class="user-list">
 @foreach($users as $managedUser)
 <details class="card user-card">
-    <summary><span><strong>{{ $managedUser->name }}</strong><small>{{ $managedUser->email }}</small></span><span class="badge">{{ $managedUser->role->value }}</span></summary>
+    <summary><span><strong>{{ $managedUser->name }}</strong><small>{{ $managedUser->email }}</small></span><span class="badge">{{ __('ui.role_labels.'.$managedUser->role->value) }}</span></summary>
     <div class="user-card-body">
         <form method="post" action="{{ route('admin.users.update', $managedUser) }}">@csrf @method('PUT')
             <div class="form-grid">
                 <div class="field"><label>{{ __('ui.name') }}</label><input name="name" value="{{ $managedUser->name }}" required></div>
                 <div class="field"><label>{{ __('ui.email') }}</label><input type="email" name="email" value="{{ $managedUser->email }}" required></div>
-                <div class="field"><label>{{ __('ui.role') }}</label><select name="role"><option value="VIEWER" @selected($managedUser->role === App\Enums\UserRole::VIEWER)>{{ __('ui.viewer') }}</option><option value="ADMIN" @selected($managedUser->role === App\Enums\UserRole::ADMIN)>{{ __('ui.administrator') }}</option></select></div>
+                <div class="field"><label>{{ __('ui.role') }}</label><select name="role"><option value="VIEWER" @selected($managedUser->role === App\Enums\UserRole::VIEWER)>{{ __('ui.role_labels.VIEWER') }}</option><option value="ADMIN" @selected($managedUser->role === App\Enums\UserRole::ADMIN)>{{ __('ui.role_labels.ADMIN') }}</option></select></div>
                 <div></div>
                 <div class="field"><label>{{ __('ui.new_password_optional') }}</label><input type="password" name="password" autocomplete="new-password"></div>
                 <div class="field"><label>{{ __('ui.confirm_password') }}</label><input type="password" name="password_confirmation" autocomplete="new-password"></div>
@@ -33,7 +33,7 @@
             <button class="btn small">{{ __('ui.save') }}</button>
         </form>
         @unless(auth()->user()->is($managedUser))
-        <form class="user-delete" method="post" action="{{ route('admin.users.destroy', $managedUser) }}" onsubmit="return confirm('Delete this user?')">@csrf @method('DELETE')<button class="btn danger small">{{ __('ui.delete_user') }}</button></form>
+        <form class="user-delete" method="post" action="{{ route('admin.users.destroy', $managedUser) }}" data-confirm="{{ __('ui.delete_user_confirm') }}">@csrf @method('DELETE')<button class="btn danger small">{{ __('ui.delete_user') }}</button></form>
         @endunless
     </div>
 </details>

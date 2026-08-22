@@ -3,7 +3,7 @@
 @section('content')
 <div class="page-head"><div><h1>{{ __('ui.api_token') }}</h1><div class="muted">{{ __('ui.api_token_help') }}</div></div><a class="btn secondary" href="{{ url('/api/docs') }}">{{ __('ui.api_docs') }}</a></div>
 @if($plainTextToken)
-<section class="alert success"><strong>{{ __('ui.token_created_once') }}</strong><div class="token-output"><code id="api-token-value">{{ $plainTextToken }}</code><button class="btn small secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('api-token-value').textContent)">Copy</button></div></section>
+<section class="alert success"><strong>{{ __('ui.token_created_once') }}</strong><div class="token-output"><code id="api-token-value">{{ $plainTextToken }}</code><button class="btn small secondary" type="button" data-copy-target="#api-token-value" data-copied="{{ __('ui.copied') }}">{{ __('ui.copy') }}</button></div></section>
 @endif
 <section class="card">
     <div class="actions" style="justify-content:space-between">

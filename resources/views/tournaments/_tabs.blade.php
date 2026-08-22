@@ -1,7 +1,12 @@
-<nav class="tabs">
-    <a class="{{ request()->routeIs('tournaments.show') ? 'active' : '' }}" href="{{ route('tournaments.show', $tournament) }}">{{ __('ui.overview_participants') }}</a>
-    <a class="{{ request()->routeIs('tournaments.bracket') ? 'active' : '' }}" href="{{ route('tournaments.bracket', $tournament) }}">{{ __('ui.bracket_competition') }}</a>
-    <a class="{{ request()->routeIs('tournaments.matches') ? 'active' : '' }}" href="{{ route('tournaments.matches', $tournament) }}">{{ __('ui.matches') }}</a>
-    <a class="{{ request()->routeIs('tournaments.results') ? 'active' : '' }}" href="{{ route('tournaments.results', $tournament) }}">{{ __('ui.results') }}</a>
-    @if(auth()->user()?->isAdmin())<a class="{{ request()->routeIs('tournaments.settings', 'tournaments.edit') ? 'active' : '' }}" href="{{ route('tournaments.settings', $tournament) }}">{{ __('ui.settings') }}</a>@endif
+@php
+    $isPublicView = request()->routeIs('public.tournaments.*');
+    $routePrefix = $isPublicView ? 'public.tournaments.' : 'tournaments.';
+    $routeParameter = $isPublicView ? ['tournament' => $tournament->public_token] : $tournament;
+@endphp
+<nav class="tabs" aria-label="{{ __('ui.tournament_navigation') }}">
+    <a class="{{ request()->routeIs($routePrefix.'show') ? 'active' : '' }}" href="{{ route($routePrefix.'show', $routeParameter) }}">{{ __('ui.overview_participants') }}</a>
+    <a class="{{ request()->routeIs($routePrefix.'bracket') ? 'active' : '' }}" href="{{ route($routePrefix.'bracket', $routeParameter) }}">{{ __('ui.bracket_competition') }}</a>
+    <a class="{{ request()->routeIs($routePrefix.'matches') ? 'active' : '' }}" href="{{ route($routePrefix.'matches', $routeParameter) }}">{{ __('ui.matches') }}</a>
+    <a class="{{ request()->routeIs($routePrefix.'results') ? 'active' : '' }}" href="{{ route($routePrefix.'results', $routeParameter) }}">{{ __('ui.results') }}</a>
+    @if(!$isPublicView && auth()->user()?->isAdmin())<a class="{{ request()->routeIs('tournaments.settings', 'tournaments.edit') ? 'active' : '' }}" href="{{ route('tournaments.settings', $tournament) }}">{{ __('ui.settings') }}</a>@endif
 </nav>

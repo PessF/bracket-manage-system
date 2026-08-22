@@ -20,8 +20,10 @@ class TournamentController extends Controller
 {
     public function index(Request $request): View
     {
+        $isAdmin = $request->user()?->isAdmin() ?? false;
         $tournaments = Tournament::query()->withCount(['participants', 'matches'])
-            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+            ->when(! $isAdmin, fn ($query) => $query->where('status', TournamentStatus::LIVE))
+            ->when($isAdmin && $request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
             ->orderByDesc('source_created_at')->paginate(12)->withQueryString();
 
         return view('tournaments.index', compact('tournaments'));
@@ -51,7 +53,7 @@ class TournamentController extends Controller
             return $tournament;
         });
 
-        return redirect()->route('tournaments.show', $tournament)->with('success', 'Tournament created. Add participants, then start it.');
+        return redirect()->route('tournaments.show', $tournament)->with('success', __('ui.tournament_created'));
     }
 
     public function show(Tournament $tournament): View
@@ -85,14 +87,14 @@ class TournamentController extends Controller
             $tournament->stages()->update(['format' => $tournament->format]);
         }
 
-        return redirect()->route('tournaments.settings', $tournament)->with('success', 'Competition settings saved.');
+        return redirect()->route('tournaments.settings', $tournament)->with('success', __('ui.settings_saved'));
     }
 
     public function destroy(Tournament $tournament): RedirectResponse
     {
         $tournament->delete();
 
-        return redirect()->route('tournaments.index')->with('success', 'Tournament deleted.');
+        return redirect()->route('tournaments.index')->with('success', __('ui.tournament_deleted'));
     }
 
     /** @return array<string, mixed> */

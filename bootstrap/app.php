@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Middleware\AuthenticateApiToken;
+use App\Http\Middleware\EnsureTournamentIsLive;
+use App\Http\Middleware\EnsureTournamentIsVisible;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\SetApiLocale;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -21,9 +24,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [SetLocale::class]);
+        $middleware->api(append: [SetApiLocale::class]);
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
             'api.admin' => AuthenticateApiToken::class,
+            'tournament.live' => EnsureTournamentIsLive::class,
+            'tournament.visible' => EnsureTournamentIsVisible::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -35,7 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
             return response()->json([
                 'success' => false,
                 'error' => [
-                    'message' => 'The submitted data is invalid.',
+                    'message' => __('ui.api_validation_failed'),
                     'fields' => $exception->errors(),
                 ],
             ], 422);
@@ -48,7 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return response()->json([
                 'success' => false,
-                'error' => ['message' => 'Resource not found.'],
+                'error' => ['message' => __('ui.resource_not_found')],
             ], 404);
         });
 
@@ -58,10 +64,13 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             $status = $exception->getStatusCode();
+            $message = $status === 404
+                ? __('ui.resource_not_found')
+                : ($exception->getMessage() ?: __('ui.request_failed'));
 
             return response()->json([
                 'success' => false,
-                'error' => ['message' => $exception->getMessage() ?: 'Request failed.'],
+                'error' => ['message' => $message],
             ], $status, $exception->getHeaders());
         });
     })->create();

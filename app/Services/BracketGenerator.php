@@ -348,7 +348,7 @@ class BracketGenerator
             }
         }
 
-        throw new InvalidArgumentException("Unknown bracket match key: {$key}");
+        throw new InvalidArgumentException(__('ui.unknown_bracket_match_key', ['key' => $key]));
     }
 
     /**
@@ -357,7 +357,7 @@ class BracketGenerator
     private function assertParticipantCount(array $participants): void
     {
         if (count($participants) < 2) {
-            throw new InvalidArgumentException('Bracket generation requires at least two participants.');
+            throw new InvalidArgumentException(__('ui.bracket_two_participants_required'));
         }
     }
 

@@ -23,17 +23,17 @@ class RankingService
             $locked = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
 
             if ($locked->format !== TournamentFormat::RANKING || $locked->status !== TournamentStatus::LIVE) {
-                throw new DomainException('Attempts can only be recorded for a LIVE ranking tournament.');
+                throw new DomainException(__('ui.ranking_live_only'));
             }
 
             if ($participant->tournament_id !== $locked->id) {
-                throw new DomainException('Participant does not belong to this tournament.');
+                throw new DomainException(__('ui.participant_wrong_tournament'));
             }
 
             $limit = max(1, min(20, (int) ($locked->ranking_config['attempts'] ?? 3)));
 
             if ($number < 1 || $number > $limit) {
-                throw new InvalidArgumentException("Attempt number must be between 1 and {$limit}.");
+                throw new InvalidArgumentException(__('ui.attempt_number_range', ['limit' => $limit]));
             }
 
             $normalized = $value === null || $value === '' ? null : $this->normalizeValue($value);
@@ -106,7 +106,7 @@ class RankingService
         $text = trim((string) $value);
 
         if (! preg_match('/^\d{1,12}(?:\.\d{1,6})?$/', $text)) {
-            throw new InvalidArgumentException('Attempt value must be a non-negative decimal with up to 6 decimal places.');
+            throw new InvalidArgumentException(__('ui.attempt_value_invalid'));
         }
 
         return bcadd($text, '0', 6);

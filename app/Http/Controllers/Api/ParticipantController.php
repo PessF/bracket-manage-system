@@ -18,7 +18,7 @@ class ParticipantController extends Controller
     public function store(Request $request, Tournament $tournament): JsonResponse
     {
         if (! $this->editable($tournament)) {
-            return $this->error('The roster is locked after the tournament starts.', 422);
+            return $this->error(__('ui.roster_locked'), 422);
         }
 
         $data = $request->validate($this->rules());
@@ -35,7 +35,7 @@ class ParticipantController extends Controller
     public function update(Request $request, Tournament $tournament, Participant $participant): JsonResponse
     {
         $this->assertOwner($tournament, $participant);
-        $rules = $this->rules(true);
+        $rules = $this->rules(! $request->isMethod('put'));
         if (! $this->editable($tournament)) {
             unset($rules['seed_number'], $rules['status']);
         }
@@ -48,7 +48,7 @@ class ParticipantController extends Controller
     {
         $this->assertOwner($tournament, $participant);
         if (! $this->editable($tournament)) {
-            return $this->error('The roster is locked after the tournament starts.', 422);
+            return $this->error(__('ui.roster_locked'), 422);
         }
         $participant->delete();
         $this->syncCount($tournament);

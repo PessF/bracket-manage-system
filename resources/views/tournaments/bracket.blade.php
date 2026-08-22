@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Bracket · '.$tournament->name)
+@section('title', __('ui.title_bracket').' · '.$tournament->name)
 @section('container-class', 'container-wide')
 
 @push('styles')
@@ -43,14 +43,19 @@
 @endpush
 
 @section('content')
+@php
+    $isPublicView = request()->routeIs('public.tournaments.*');
+    $matchesUrl = $isPublicView ? route('public.tournaments.matches', ['tournament' => $tournament->public_token]) : route('tournaments.matches', $tournament);
+@endphp
 <div class="page-head">
     <div>
-        <div class="actions" style="margin-bottom:5px"><h1 style="margin:0">{{ $tournament->name }}</h1><span class="badge {{ $tournament->status->value }}">{{ $tournament->status->value }}</span></div>
-        <div class="muted">{{ $tournament->competition }} · {{ $tournament->division }} · {{ str_replace('_', ' ', $tournament->format->value) }}</div>
+        <div class="actions" style="margin-bottom:5px"><h1 style="margin:0">{{ $tournament->name }}</h1><span class="badge {{ $tournament->status->value }}">{{ __('ui.tournament_status_labels.'.$tournament->status->value) }}</span></div>
+        <div class="muted">{{ $tournament->competition }} · {{ $tournament->division }} · {{ __('ui.format_labels.'.$tournament->format->value) }}</div>
     </div>
-    <a class="btn secondary" href="{{ route('tournaments.matches', $tournament) }}">{{ __('ui.match_list') }}</a>
+    <a class="btn secondary" href="{{ $matchesUrl }}">{{ __('ui.match_list') }}</a>
 </div>
 @include('tournaments._tabs')
+@includeWhen($isPublicView, 'tournaments._live_refresh')
 
 <div class="bracket-toolbar">
     <div class="bracket-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z"/></svg>{{ __('ui.bracket_updates') }}</div>
@@ -59,18 +64,17 @@
 
 @forelse($matches as $type => $group)
 @php
-    $labels = ['WINNERS' => __('ui.winners_bracket'), 'LOSERS' => __('ui.losers_bracket'), 'GRAND_FINAL' => __('ui.grand_final'), 'ROUND_ROBIN' => __('ui.round_robin_matches'), 'RANKING' => __('ui.ranking_attempts')];
     $isGrid = in_array($type, ['ROUND_ROBIN', 'RANKING'], true);
 @endphp
 <section class="bracket-section">
-    <div class="bracket-section-head"><h2>{{ $labels[$type] ?? str_replace('_', ' ', $type) }}</h2><span class="bracket-count">{{ $group->count() }} {{ Str::plural('match', $group->count()) }}</span></div>
+    <div class="bracket-section-head"><h2>{{ __('ui.bracket_labels.'.$type) }}</h2><span class="bracket-count">{{ trans_choice('ui.match_count', $group->count(), ['count' => $group->count()]) }}</span></div>
     <div class="bracket-viewport {{ $isGrid ? 'bracket-grid' : '' }}" data-bracket-section>
         @if(!$isGrid)<div class="bracket-canvas" data-bracket-canvas></div>@endif
         @foreach($group as $match)
         @php
-            $nameA = $match->participantA?->team_name ?? $match->participant_a_label;
-            $nameB = $match->participantB?->team_name ?? $match->participant_b_label;
-            $readyForScore = (auth()->user()?->isAdmin() ?? false)
+            $nameA = $match->participantA?->team_name ?? $match->participantALabel();
+            $nameB = $match->participantB?->team_name ?? $match->participantBLabel();
+            $readyForScore = !$isPublicView && (auth()->user()?->isAdmin() ?? false)
                 && $tournament->status === App\Enums\TournamentStatus::LIVE
                 && in_array($match->status, [App\Enums\MatchStatus::READY, App\Enums\MatchStatus::LIVE], true)
                 && !$match->is_bye && $match->participant_a_id && $match->participant_b_id;
@@ -78,7 +82,7 @@
         <article class="bracket-match-node"
             data-match-id="{{ $match->id }}" data-round="{{ $match->round_number }}" data-number="{{ $match->match_number }}"
             data-winner-next="{{ $match->winner_next_match_id }}" data-loser-next="{{ $match->loser_next_match_id }}">
-            <div class="bracket-match-meta"><span class="bracket-match-number">{{ __('ui.match') }} #{{ $match->match_number }}</span><span class="badge {{ $match->status->value }}">{{ $match->is_bye ? 'BYE' : $match->status->value }}</span></div>
+            <div class="bracket-match-meta"><span class="bracket-match-number">{{ __('ui.match') }} #{{ $match->match_number }}</span><span class="badge {{ $match->status->value }}">{{ $match->is_bye ? __('ui.bye') : __('ui.match_status_labels.'.$match->status->value) }}</span></div>
             <div class="bracket-team {{ $match->winner_id && $match->winner_id === $match->participant_a_id ? 'winner' : '' }} {{ !$match->participant_a_id ? 'waiting' : '' }}">
                 <span class="bracket-team-name">@if($match->participantA?->seed_number)<i class="bracket-seed">{{ $match->participantA->seed_number }}</i>@endif<span title="{{ $nameA }}">{{ $nameA }}</span></span><span class="bracket-score">{{ $match->score_a !== null ? (float)$match->score_a : '—' }}</span>
             </div>
@@ -86,15 +90,15 @@
                 <span class="bracket-team-name">@if($match->participantB?->seed_number)<i class="bracket-seed">{{ $match->participantB->seed_number }}</i>@endif<span title="{{ $nameB }}">{{ $nameB }}</span></span><span class="bracket-score">{{ $match->score_b !== null ? (float)$match->score_b : '—' }}</span>
             </div>
             @if($readyForScore)
-            <form class="easy-score-form" method="post" action="{{ route('matches.results.store', [$tournament, $match]) }}">@csrf<div class="score-pair"><label class="score-team-control"><span title="{{ $nameA }}">{{ $nameA }}</span><span class="score-stepper"><button type="button" data-score-step="-1" aria-label="Subtract one point">−</button><input aria-label="Score for {{ $nameA }}" type="number" min="0" step="any" name="score_a" value="0" required><button type="button" data-score-step="1" aria-label="Add one point">+</button></span></label><label class="score-team-control"><span title="{{ $nameB }}">{{ $nameB }}</span><span class="score-stepper"><button type="button" data-score-step="-1" aria-label="Subtract one point">−</button><input aria-label="Score for {{ $nameB }}" type="number" min="0" step="any" name="score_b" value="0" required><button type="button" data-score-step="1" aria-label="Add one point">+</button></span></label></div><button class="btn small score-submit">{{ __('ui.confirm_score') }}</button></form>
+            <form class="easy-score-form" method="post" action="{{ route('matches.results.store', [$tournament, $match]) }}">@csrf<div class="score-pair"><label class="score-team-control"><span title="{{ $nameA }}">{{ $nameA }}</span><span class="score-stepper"><button type="button" data-score-step="-1" aria-label="{{ __('ui.subtract_point') }}">−</button><input aria-label="{{ __('ui.score_for_team', ['team' => $nameA]) }}" type="number" min="0" step="any" name="score_a" value="0" required><button type="button" data-score-step="1" aria-label="{{ __('ui.add_point') }}">+</button></span></label><label class="score-team-control"><span title="{{ $nameB }}">{{ $nameB }}</span><span class="score-stepper"><button type="button" data-score-step="-1" aria-label="{{ __('ui.subtract_point') }}">−</button><input aria-label="{{ __('ui.score_for_team', ['team' => $nameB]) }}" type="number" min="0" step="any" name="score_b" value="0" required><button type="button" data-score-step="1" aria-label="{{ __('ui.add_point') }}">+</button></span></label></div><button class="btn small score-submit">{{ __('ui.confirm_score') }}</button></form>
             @endif
-            @if($match->winnerNextMatch || $match->loserNextMatch)<div class="bracket-destinations">@if($match->winnerNextMatch)<span>W → #{{ $match->winnerNextMatch->match_number }}</span>@endif @if($match->loserNextMatch)<span>L ↓ #{{ $match->loserNextMatch->match_number }}</span>@endif</div>@endif
+            @if($match->winnerNextMatch || $match->loserNextMatch)<div class="bracket-destinations">@if($match->winnerNextMatch)<span>{{ __('ui.winner_to_match', ['number' => $match->winnerNextMatch->match_number]) }}</span>@endif @if($match->loserNextMatch)<span>{{ __('ui.loser_to_match', ['number' => $match->loserNextMatch->match_number]) }}</span>@endif</div>@endif
         </article>
         @endforeach
     </div>
 </section>
 @empty
-<div class="card empty">No matches generated yet. Start the tournament to build the bracket.</div>
+<div class="card empty">{{ __('ui.bracket_empty') }}</div>
 @endforelse
 @endsection
 

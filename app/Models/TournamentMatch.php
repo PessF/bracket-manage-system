@@ -132,4 +132,28 @@ class TournamentMatch extends Model
     {
         return $this->hasMany(self::class, 'loser_next_match_id');
     }
+
+    public function participantALabel(): string
+    {
+        return $this->localizedParticipantLabel($this->participant_a_label);
+    }
+
+    public function participantBLabel(): string
+    {
+        return $this->localizedParticipantLabel($this->participant_b_label);
+    }
+
+    private function localizedParticipantLabel(?string $label): string
+    {
+        if (preg_match('/^(Winner|Loser) of Match #(\d+)$/', (string) $label, $matches) === 1) {
+            return __($matches[1] === 'Winner' ? 'ui.source_winner_label' : 'ui.source_loser_label', ['number' => $matches[2]]);
+        }
+
+        return match ($label) {
+            null, '', 'TBD' => __('ui.to_be_determined'),
+            'BYE' => __('ui.bye'),
+            'Unknown participant' => __('ui.unknown_participant'),
+            default => $label,
+        };
+    }
 }

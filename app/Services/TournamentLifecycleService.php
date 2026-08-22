@@ -32,18 +32,18 @@ class TournamentLifecycleService
             $locked = Tournament::query()->lockForUpdate()->findOrFail($id);
 
             if (! in_array($locked->status, [TournamentStatus::DRAFT, TournamentStatus::READY], true)) {
-                throw new DomainException('Only DRAFT or READY tournaments can be started.');
+                throw new DomainException(__('ui.start_status_invalid'));
             }
 
             if ($locked->matches()->exists()) {
-                throw new DomainException('This tournament already has a generated match graph.');
+                throw new DomainException(__('ui.match_graph_exists'));
             }
 
             /** @var Stage|null $stage */
             $stage = $locked->stages()->orderBy('stage_order')->lockForUpdate()->first();
 
             if ($stage === null) {
-                throw new DomainException('A tournament stage is required before starting.');
+                throw new DomainException(__('ui.stage_required'));
             }
 
             $participants = $locked->participants()
@@ -51,7 +51,7 @@ class TournamentLifecycleService
                 ->get();
 
             if ($participants->count() < 2) {
-                throw new DomainException('At least two active participants are required.');
+                throw new DomainException(__('ui.two_participants_required'));
             }
 
             $seeded = $this->seedParticipants($participants->all(), $locked->seeding_method);
@@ -82,7 +82,7 @@ class TournamentLifecycleService
             $locked = Tournament::query()->lockForUpdate()->findOrFail($id);
 
             if ($locked->status !== TournamentStatus::LIVE) {
-                throw new DomainException('Only a LIVE tournament can be completed.');
+                throw new DomainException(__('ui.complete_status_invalid'));
             }
 
             if ($locked->format === TournamentFormat::RANKING) {
@@ -90,10 +90,10 @@ class TournamentLifecycleService
                 $expected = $locked->participant_count * $attempts;
 
                 if ($locked->rankingAttempts()->count() < $expected) {
-                    throw new DomainException("Ranking progress is incomplete ({$locked->rankingAttempts()->count()}/{$expected} attempts).");
+                    throw new DomainException(__('ui.ranking_incomplete', ['current' => $locked->rankingAttempts()->count(), 'expected' => $expected]));
                 }
             } elseif ($locked->matches()->whereNotIn('status', [MatchStatus::FINISHED, MatchStatus::DQ])->exists()) {
-                throw new DomainException('All matches must be finished before completing the tournament.');
+                throw new DomainException(__('ui.matches_incomplete'));
             }
 
             $now = now();
@@ -114,7 +114,7 @@ class TournamentLifecycleService
         $model = $tournament instanceof Tournament ? $tournament : Tournament::query()->findOrFail($tournament);
 
         if ($model->status !== TournamentStatus::COMPLETED) {
-            throw new DomainException('Only a COMPLETED tournament can be archived.');
+            throw new DomainException(__('ui.archive_status_invalid'));
         }
 
         $model->fill([
