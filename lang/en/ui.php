@@ -15,7 +15,7 @@ return [
     'no_team_code' => 'No team code', 'add_team' => 'Add team', 'no_participants' => 'Add at least two participants before starting.',
     'import_csv' => 'Import CSV', 'csv_file' => 'CSV file', 'choose_csv' => 'Choose a .csv file',
     'download_template' => 'Download CSV template', 'import_participants' => 'Import participants',
-    'csv_help' => 'Accepted columns: Team Name, Team ID, School, Coach, Member 1–4, and Seed. Up to 1,000 rows.',
+    'csv_help' => 'Accepted columns: Team Name/teamName, Team ID, School, Coach, Member 1–4 or memberNames, and Seed. Up to 1,000 rows.',
     'csv_locked_help' => 'CSV import is available while the tournament is DRAFT or READY. This roster is now locked.',
     'csv_skipped_title' => 'Some CSV rows were skipped:',
     'competition_settings' => 'Competition settings and tournament configuration',
