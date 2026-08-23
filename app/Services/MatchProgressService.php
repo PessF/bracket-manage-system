@@ -39,16 +39,15 @@ class MatchProgressService
                 throw new DomainException(__('ui.participants_required_for_result'));
             }
 
-            $otherLive = TournamentMatch::query()
+            TournamentMatch::query()
                 ->where('tournament_id', $current->tournament_id)
                 ->where('status', MatchStatus::LIVE)
                 ->whereKeyNot($current->id)
                 ->lockForUpdate()
-                ->first();
-
-            if ($otherLive !== null) {
-                throw new DomainException(__('ui.another_match_in_progress', ['number' => $otherLive->match_number]));
-            }
+                ->update([
+                    'status' => MatchStatus::READY,
+                    'synced_at' => now(),
+                ]);
 
             $now = now();
             $current->forceFill([

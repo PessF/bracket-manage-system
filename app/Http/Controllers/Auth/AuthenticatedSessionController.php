@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +31,17 @@ class AuthenticatedSessionController extends Controller
 
         $credentials['email'] = mb_strtolower($credentials['email']);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        try {
+            $authenticated = Auth::attempt($credentials, $request->boolean('remember'));
+        } catch (QueryException $exception) {
+            throw_unless(app()->isLocal(), $exception);
+
+            return back()
+                ->withErrors(['email' => __('ui.database_unavailable')])
+                ->onlyInput('email');
+        }
+
+        if (! $authenticated) {
             return back()->withErrors(['email' => __('ui.invalid_credentials')])->onlyInput('email');
         }
 
