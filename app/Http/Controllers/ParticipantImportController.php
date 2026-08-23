@@ -17,7 +17,7 @@ class ParticipantImportController extends Controller
 
     public function store(Request $request, Tournament $tournament): RedirectResponse
     {
-        $request->validate(['csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:5120']]);
+        $request->validate(['csv_file' => ['required', 'file', 'extensions:csv', 'max:5120']]);
 
         try {
             $result = $this->importer->import($tournament, $request->file('csv_file'));

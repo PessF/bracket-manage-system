@@ -193,6 +193,25 @@ class TournamentHttpTest extends TestCase
         $this->assertSame(2, $tournament->refresh()->participant_count);
     }
 
+    public function test_exported_registration_csv_headers_and_combined_members_can_be_imported(): void
+    {
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+        $tournament = Tournament::factory()->create(['status' => TournamentStatus::DRAFT]);
+        $csv = "catalogEventId,stage,teamName,memberNames,participantIds\n".
+            "ringmaster-junior-team,GROUP-A,The Achievers,\"Student One, Student Two\",\"EKRC-001; EKRC-002\"\n";
+
+        $response = $this->post(route('participants.import', $tournament), [
+            'csv_file' => UploadedFile::fake()->createWithContent('registration-export.csv', $csv),
+        ]);
+
+        $response->assertSessionHasNoErrors()->assertSessionHas('success');
+        $participant = $tournament->participants()->with('members')->sole();
+
+        $this->assertSame('The Achievers', $participant->team_name);
+        $this->assertSame(['Student One', 'Student Two'], $participant->members->pluck('name')->all());
+        $this->assertSame(1, $tournament->refresh()->participant_count);
+    }
+
     public function test_thai_language_mode_is_saved_in_the_session(): void
     {
         $this->withoutMiddleware(ValidateCsrfToken::class);

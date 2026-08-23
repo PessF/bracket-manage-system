@@ -38,7 +38,7 @@ class ParticipantCsvImportService
             }
 
             $delimiter = $this->detectDelimiter($firstLine);
-            $rawHeaders = str_getcsv($firstLine, $delimiter);
+            $rawHeaders = str_getcsv($firstLine, $delimiter, '"', '');
             $headers = array_map(fn (string $header): string => $this->normalizeHeader($header), $rawHeaders);
 
             if (! in_array('team_name', $headers, true)) {
@@ -48,7 +48,7 @@ class ParticipantCsvImportService
             $rows = [];
             $lineNumber = 1;
 
-            while (($values = fgetcsv($handle, 0, $delimiter)) !== false) {
+            while (($values = fgetcsv($handle, 0, $delimiter, '"', '')) !== false) {
                 $lineNumber++;
 
                 if ($this->emptyRow($values)) {
@@ -60,7 +60,15 @@ class ParticipantCsvImportService
                 }
 
                 $values = array_pad($values, count($headers), '');
-                $rows[] = ['line' => $lineNumber, 'data' => array_combine($headers, array_slice($values, 0, count($headers)))];
+                $data = [];
+
+                foreach ($headers as $index => $header) {
+                    if ($header !== '' && ! array_key_exists($header, $data)) {
+                        $data[$header] = $values[$index] ?? '';
+                    }
+                }
+
+                $rows[] = ['line' => $lineNumber, 'data' => $data];
             }
         } finally {
             fclose($handle);
@@ -125,12 +133,8 @@ class ParticipantCsvImportService
                 'synced_at' => now(),
             ]);
 
-            foreach (['member_1', 'member_2', 'member_3', 'member_4'] as $memberColumn) {
-                $member = trim((string) ($data[$memberColumn] ?? ''));
-
-                if ($member !== '') {
-                    $participant->members()->create(['name' => mb_substr($member, 0, 200)]);
-                }
+            foreach ($this->memberNames($data) as $member) {
+                $participant->members()->create(['name' => mb_substr($member, 0, 200)]);
             }
 
             $seen[$key] = true;
@@ -152,9 +156,9 @@ class ParticipantCsvImportService
         $key = preg_replace('/\s+/u', ' ', $key) ?? $key;
 
         return [
-            'team name' => 'team_name', 'team' => 'team_name', 'team_name' => 'team_name',
+            'team name' => 'team_name', 'team' => 'team_name', 'team_name' => 'team_name', 'teamname' => 'team_name',
             'ชื่อทีม' => 'team_name', 'ทีม' => 'team_name',
-            'team id' => 'team_code', 'teamid' => 'team_code', 'team code' => 'team_code', 'team_code' => 'team_code',
+            'team id' => 'team_code', 'teamid' => 'team_code', 'team code' => 'team_code', 'team_code' => 'team_code', 'teamcode' => 'team_code',
             'รหัสทีม' => 'team_code', 'school' => 'school', 'school / organization' => 'school',
             'organization' => 'school', 'โรงเรียน' => 'school', 'สถาบัน' => 'school',
             'coach' => 'coach_name', 'coach name' => 'coach_name', 'coach_name' => 'coach_name', 'โค้ช' => 'coach_name', 'ชื่อโค้ช' => 'coach_name',
@@ -163,7 +167,42 @@ class ParticipantCsvImportService
             'member 2' => 'member_2', 'member2' => 'member_2', 'สมาชิก 2' => 'member_2',
             'member 3' => 'member_3', 'member3' => 'member_3', 'สมาชิก 3' => 'member_3',
             'member 4' => 'member_4', 'member4' => 'member_4', 'สมาชิก 4' => 'member_4',
+            'member names' => 'member_names', 'member_names' => 'member_names', 'membernames' => 'member_names',
         ][$key] ?? str_replace(' ', '_', $key);
+    }
+
+    /**
+     * @param  array<string, string>  $data
+     * @return list<string>
+     */
+    private function memberNames(array $data): array
+    {
+        $members = [];
+
+        foreach (['member_1', 'member_2', 'member_3', 'member_4'] as $memberColumn) {
+            $member = trim((string) ($data[$memberColumn] ?? ''));
+
+            if ($member !== '') {
+                $members[] = $member;
+            }
+        }
+
+        if ($members !== []) {
+            return $members;
+        }
+
+        $combinedMembers = trim((string) ($data['member_names'] ?? ''));
+
+        if ($combinedMembers === '') {
+            return [];
+        }
+
+        $splitMembers = preg_split('/\s*(?:,|;|\R)\s*/u', $combinedMembers) ?: [];
+
+        return array_values(array_slice(array_filter(
+            $splitMembers,
+            fn (string $member): bool => $member !== '',
+        ), 0, 4));
     }
 
     private function detectDelimiter(string $line): string

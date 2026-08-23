@@ -63,7 +63,7 @@ Participant CSV import is available while a tournament is `DRAFT` or `READY`. Op
 Team Name, Team ID, School, Coach, Member 1, Member 2, Member 3, Member 4, Seed
 ```
 
-The importer also accepts `Team` as the team-name header and Thai headers such as `ชื่อทีม`, `รหัสทีม`, `โรงเรียน`, `โค้ช`, and `สมาชิก 1`–`สมาชิก 4`. Imports are limited to 1,000 data rows; invalid and duplicate rows are reported while valid rows are imported transactionally.
+The importer also accepts `Team` or `teamName` as the team-name header, `memberNames` for a comma-separated member list, and Thai headers such as `ชื่อทีม`, `รหัสทีม`, `โรงเรียน`, `โค้ช`, and `สมาชิก 1`–`สมาชิก 4`. Imports are limited to 1,000 data rows; invalid and duplicate rows are reported while valid rows are imported transactionally.
 
 Useful commands:
 
