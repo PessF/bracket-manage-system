@@ -149,9 +149,6 @@ class TournamentController extends Controller
             'seeding_method' => ['required', Rule::enum(SeedingMethod::class)],
             'ranking_attempts' => ['nullable', 'integer', 'between:1,20'],
             'ranking_comparator' => ['nullable', Rule::in(['BEST_SCORE_HIGHER', 'BEST_TIME_LOWER'])],
-            'win_points' => ['nullable', 'integer', 'between:0,100'],
-            'draw_points' => ['nullable', 'integer', 'between:0,100'],
-            'loss_points' => ['nullable', 'integer', 'between:0,100'],
             'grand_final_matches' => ['nullable', 'integer', Rule::in([1, 2])],
         ]);
     }
@@ -167,7 +164,8 @@ class TournamentController extends Controller
     private function roundRobinConfig(array $data): ?array
     {
         return $data['format'] === TournamentFormat::ROUND_ROBIN->value
-            ? ['win_points' => (int) ($data['win_points'] ?? 3), 'draw_points' => (int) ($data['draw_points'] ?? 1), 'loss_points' => (int) ($data['loss_points'] ?? 0)] : null;
+            ? ['ranking' => 'WINS_THEN_DRAWS_THEN_SCORE_DIFFERENCE']
+            : null;
     }
 
     /** @param array<string, mixed> $data */

@@ -57,13 +57,33 @@ class LiveViewerTest extends TestCase
         $this->get($shareUrl)
             ->assertOk()
             ->assertSee($live->name)
-            ->assertSee(route('public.tournaments.bracket', ['tournament' => $live->public_token]))
+            ->assertSee('class="viewer-shell"', false)
+            ->assertSee('class="viewer-event-head"', false)
+            ->assertDontSee('class="tabs"', false)
+            ->assertDontSee(__('ui.overview_participants'))
+            ->assertDontSee(__('ui.match_list'))
             ->assertDontSee(route('tournaments.settings', $live));
 
         $this->actingAs($admin)->get($shareUrl)
             ->assertOk()
             ->assertDontSee(route('tournaments.settings', $live))
             ->assertDontSee(route('participants.store', $live));
+    }
+
+    public function test_minimal_viewer_is_localized_and_dark_only(): void
+    {
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+        $live = Tournament::factory()->create(['name' => 'Mobile Final', 'status' => TournamentStatus::LIVE]);
+
+        $this->post(route('locale.update', 'en'))->assertRedirect();
+        $this->get($live->publicShareUrl())
+            ->assertOk()
+            ->assertSee('Live bracket · swipe sideways to view later rounds')
+            ->assertSee('data-theme="dark"', false)
+            ->assertDontSee('data-theme-toggle', false)
+            ->assertDontSee('data-light-label', false)
+            ->assertDontSee(__('ui.all_tournaments'))
+            ->assertDontSee(__('ui.login'));
     }
 
     public function test_share_link_is_unavailable_when_competition_is_not_live(): void

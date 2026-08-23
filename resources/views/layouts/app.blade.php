@@ -88,7 +88,18 @@
         .alert { padding: 11px 14px; border: 1px solid; border-radius: 8px; margin-bottom: 16px; overflow-wrap:anywhere; }
         .alert ul { margin:6px 0 0; padding-left:20px; }
         .alert.success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+        .alert.warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
         .alert.error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+        .alert.neutral { background:#f8fafc; border-color:#dbe3ee; color:#475569; }
+        .danger-card { border-color:#fecaca; }
+        .danger-card h2 { color:#991b1b; }
+        .match-side { display:inline-flex; flex:0 0 auto; align-items:center; justify-content:center; min-width:42px; height:22px; padding:0 7px; border:1px solid; border-radius:999px; font-size:10px; font-style:normal; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+        .match-side.red { border-color:#fecaca; background:#fff1f2; color:#be123c; }
+        .match-side.blue { border-color:#bfdbfe; background:#eff6ff; color:#1d4ed8; }
+        .match-progress-form { margin-top:8px; }
+        .progress-button { width:100%; background:#ea580c; box-shadow:0 3px 8px rgb(234 88 12 / .2); }
+        .current-match-indicator { display:flex; align-items:center; justify-content:center; gap:7px; margin-top:8px; padding:7px 10px; border:1px solid #fdba74; border-radius:7px; background:#fff7ed; color:#9a3412; font-size:12px; font-weight:800; text-transform:uppercase; }
+        .current-match-indicator span { width:8px; height:8px; border-radius:50%; background:#f97316; box-shadow:0 0 0 4px rgb(249 115 22 / .15); }
         .view-only-banner { background:#eff6ff; border-color:#bfdbfe; color:#1e40af; }
         .share-link-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:8px; }
         .short-link-form { margin-top:16px; padding-top:16px; border-top:1px solid var(--line); }
@@ -157,21 +168,16 @@
         .match { border: 1px solid var(--line); border-radius: 9px; padding: 12px; background: #fff; }
         .match .team { display: flex; justify-content: space-between; padding: 6px 0; }
         .match .meta { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
-        .score-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 7px; margin-top: 9px; }
-        .easy-score-form { margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--line); }
-        .score-pair { display: grid; grid-template-columns: 1fr; gap: 7px; }
-        .score-team-control > span:first-child { display: block; margin-bottom: 4px; overflow: hidden; color: var(--muted); font-size: 13px; white-space: nowrap; text-overflow: ellipsis; }
         .score-stepper { display: grid; grid-template-columns: 42px minmax(48px,1fr) 42px; overflow: hidden; border: 1px solid #d4d4d8; border-radius: 8px; background: #fff; }
         .score-stepper button { height:44px; min-height:44px; border: 0; background: var(--soft); color: #52525b; font-size: 22px; line-height:1; cursor: pointer; touch-action:manipulation; }
         .score-stepper button:hover { background: #e4e4e7; color: var(--ink); }
         .score-stepper input { width: 100%; min-width: 0; height:44px; min-height:44px; padding: 2px; border: 0; border-left: 1px solid var(--line); border-right: 1px solid var(--line); border-radius: 0; box-shadow: none; text-align: center; font-weight: 700; -moz-appearance: textfield; }
         .score-stepper input::-webkit-inner-spin-button, .score-stepper input::-webkit-outer-spin-button { margin: 0; -webkit-appearance: none; }
-        .score-submit { width: 100%; margin-top: 7px; }
-        .score-editor { margin-top:9px; border-top:1px solid var(--line); }
-        .score-editor summary { display:flex; align-items:center; justify-content:center; min-height:44px; color:var(--blue); font-weight:650; cursor:pointer; list-style:none; }
-        .score-editor summary::-webkit-details-marker { display:none; }
-        .score-editor[open] summary { border-bottom:1px solid var(--line); }
-        .score-editor .easy-score-form { margin-top:0; padding-top:10px; border-top:0; }
+        .viewer-only-nav { margin:-5px 0 16px; }
+        .viewer-only-nav a { display:inline-flex; min-height:44px; align-items:center; color:var(--blue); font-weight:700; }
+        .viewer-shell .container { max-width:none; padding-top:18px; }
+        .viewer-shell .top .inner { max-width:none; }
+        .viewer-shell .live-refresh { margin-top:0; }
         .inline-form { display: flex; gap: 7px; align-items: end; flex-wrap: wrap; }
         .inline-form .field { margin: 0; min-width: 110px; }
         .empty { text-align: center; padding: 34px; color: var(--muted); }
@@ -214,6 +220,8 @@
             .form-grid { grid-template-columns: 1fr; }
             .page-head { display: block; }
             .page-head > .actions, .page-head > .btn, .page-head > .badge { margin-top: 12px; }
+            .page-head > .actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .page-head > .actions form, .page-head > .actions .btn { width:100%; }
             .card { padding: 14px; }
             .page-head h1 { font-size:23px; }
             .btn { min-height: 46px; padding:10px 15px; }
@@ -245,6 +253,11 @@
             .table-wrap th, .table-wrap td { white-space:nowrap; }
             .tournament-card { margin-bottom:0; }
             .admin-welcome .actions { display:grid; grid-template-columns:1fr; }
+            .viewer-shell .container { padding:12px 10px 32px; }
+            .viewer-shell .top .inner { padding:8px 10px; }
+            .viewer-shell .live-refresh { flex-wrap:nowrap; gap:6px; margin-bottom:12px; }
+            .viewer-shell .live-refresh .muted { display:none; }
+            .viewer-shell .live-refresh .btn { width:auto; min-height:38px; margin-left:auto; padding:6px 10px; font-size:13px; }
         }
         @media (max-width: 360px) {
             .brand-name { display:none; }
@@ -274,14 +287,13 @@
         .brand-mark { display: none; }
         .top nav a, .nav-button, .account-label { color: #315675; }
         .top nav a:hover, .nav-button:hover { background: #e7f3fa; color: #0d4f7e; }
-        .theme-toggle { min-height: 44px; padding: 10px 12px; border: 1px solid #b9d3e5; border-radius: 8px; background: #eef7fc; color: #164a70; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
-        .theme-toggle:hover { background: #dceffa; }
         .language-menu summary, .mobile-menu summary { border-color: #b9d3e5; background: #f4f9fc; color: #164a70; }
         .language-icon, .language-chevron { color: #27628b; }
         .container { max-width: 1360px; padding-top: 32px; }
         .page-head h1 { color: #0d3558; font-size: 29px; font-weight: 700; letter-spacing: 0; }
         .card { border-color: var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgb(25 63 95 / .07); }
         .card::before { content: ""; display: block; width: 48px; height: 3px; margin: -21px 0 18px; border-radius: 3px; background: linear-gradient(90deg, #2ba8d8, #1769aa); }
+        .danger-card::before { background:linear-gradient(90deg,#ef4444,#b4233f); }
         .stat { border: 1px solid #dde7ef; background: #f6f9fc; }
         .btn { border-radius: 7px; background: #1769aa; box-shadow: 0 3px 8px rgb(23 105 170 / .2); }
         .btn.secondary { border-color: #c6d5e2; background: #ffffff; color: #173c61; box-shadow: none; }
@@ -300,6 +312,7 @@
             --ink: #edf5ff; --muted: #b4c6d9; --line: #2b4964; --line-strong: #3e6282;
             --card: #102237; --bg: #071524; --soft: #162d45; --brand: #45b5e8;
             --good: #5bd69b; --warn: #ffd27a; --bad: #ff8299; --blue: #6fc7ef;
+            color-scheme: dark;
         }
         body[data-theme="dark"] { background: radial-gradient(circle at 4% 0%, rgb(53 181 227 / .15), transparent 25%), radial-gradient(circle at 98% 8%, rgb(93 106 255 / .13), transparent 28%), linear-gradient(180deg, #071524, #091827 48%, #06121e); }
         body[data-theme="dark"] .top { border-bottom-color: #183d5d; background: rgba(7, 25, 43, .97); }
@@ -309,8 +322,7 @@
         body[data-theme="dark"] .brand-logo--dark { display: block; }
         body[data-theme="dark"] .top nav a, body[data-theme="dark"] .nav-button, body[data-theme="dark"] .account-label { color: #d5e6f5; }
         body[data-theme="dark"] .top nav a:hover, body[data-theme="dark"] .nav-button:hover { background: rgb(103 182 235 / .18); color: #ffffff; }
-        body[data-theme="dark"] .theme-toggle, body[data-theme="dark"] .language-menu summary, body[data-theme="dark"] .mobile-menu summary { border-color: rgb(158 213 248 / .3); background: rgb(103 182 235 / .15); color: #ffffff; }
-        body[data-theme="dark"] .theme-toggle:hover { background: rgb(103 182 235 / .28); }
+        body[data-theme="dark"] .language-menu summary, body[data-theme="dark"] .mobile-menu summary { border-color: rgb(158 213 248 / .3); background: rgb(103 182 235 / .15); color: #ffffff; }
         body[data-theme="dark"] .language-icon, body[data-theme="dark"] .language-chevron { color: #ccecff; }
         body[data-theme="dark"] .card, body[data-theme="dark"] .match, body[data-theme="dark"] .participant-item { box-shadow: 0 11px 28px rgb(0 0 0 / .22); }
         body[data-theme="dark"] .page-head h1 { color: #f2f8ff; }
@@ -326,6 +338,13 @@
         body[data-theme="dark"] .mobile-popover, body[data-theme="dark"] .language-popover { border-color: #365b77; background: #10243a; }
         body[data-theme="dark"] .alert.success, body[data-theme="dark"] .live-refresh { border-color:#28775c; background:#103b31; color:#9af0c4; }
         body[data-theme="dark"] .alert.error { border-color:#8d3d54; background:#3b1723; color:#ffb7c4; }
+        body[data-theme="dark"] .alert.warning { border-color:#9a6b25; background:#38290f; color:#ffe09a; }
+        body[data-theme="dark"] .alert.neutral { border-color:#365b77; background:#10243a; color:#c5d8e8; }
+        body[data-theme="dark"] .danger-card { border-color:#8d3d54; }
+        body[data-theme="dark"] .danger-card h2 { color:#ffb7c4; }
+        body[data-theme="dark"] .match-side.red { border-color:#8d3d54; background:#3b1723; color:#ffb7c4; }
+        body[data-theme="dark"] .match-side.blue { border-color:#315f84; background:#102d47; color:#b9e5fb; }
+        body[data-theme="dark"] .current-match-indicator { border-color:#9a6b25; background:#38290f; color:#ffe09a; }
         body[data-theme="dark"] .view-only-banner { border-color:#315f84; background:#102d47; color:#b9e5fb; }
         body[data-theme="dark"] .participant-item, body[data-theme="dark"] .match-team-row, body[data-theme="dark"] .choice-card { border-color:#365a76; background:#10263b; }
         body[data-theme="dark"] .participant-item details > .participant-summary:hover { background:#152e47; }
@@ -338,30 +357,138 @@
         body[data-theme="dark"] .api-content p { color:#c4d6e6; }
         body[data-theme="dark"] .api-note { border-color:#d69b36; background:#3b2b11; color:#ffe09a; }
         @media (max-width:680px) { body[data-theme="dark"] .standings-table th:first-child, body[data-theme="dark"] .standings-table td:first-child, body[data-theme="dark"] .standings-table th:nth-child(2), body[data-theme="dark"] .standings-table td:nth-child(2) { background:#102237; } }
-        @media (max-width: 680px) { .brand-logo-slot { width: 82px; height: 38px; } .brand-logo-divider { height: 25px; } .theme-toggle { min-height: 46px; padding-inline: 10px; } }
+        @media (max-width: 680px) {
+            .brand-logo-slot { width:76px; height:38px; }
+            .brand-logo-slot:last-child, .brand-logo-divider { display:none; }
+            .brand-name, .brand-short { display:none; }
+            .card::before { margin:-14px 0 12px; }
+        }
+
+        /* Minimal dark-only interface. */
+        :root {
+            --ink:#e7edf4; --muted:#8c99a8; --line:#27313c; --line-strong:#3a4653;
+            --card:#111820; --bg:#0a0f15; --soft:#171f29; --brand:#3b82b6;
+            --good:#59c995; --warn:#e5b45d; --bad:#e76d83; --blue:#69b7e8;
+            --top-height:62px;
+        }
+        html { color-scheme:dark; }
+        body, body[data-theme="dark"] { background:#0a0f15; color:var(--ink); font-size:15px; }
+        .top, body[data-theme="dark"] .top { border-bottom:1px solid var(--line); background:#0d131a; box-shadow:none; backdrop-filter:none; }
+        .top .inner { max-width:1240px; min-height:var(--top-height); padding:8px 22px; }
+        .brand { gap:9px; color:var(--ink); font-size:15px; }
+        .brand-logo-slot { width:86px; height:34px; }
+        .brand-logo--dark { display:block; }
+        .brand-name { color:#cdd7e2; }
+        .top nav { gap:3px; }
+        .top nav a, .nav-button, body[data-theme="dark"] .top nav a, body[data-theme="dark"] .nav-button { min-height:38px; padding:8px 10px; border-radius:6px; color:var(--muted); font-size:13px; }
+        .top nav a:hover, .nav-button:hover, body[data-theme="dark"] .top nav a:hover, body[data-theme="dark"] .nav-button:hover { background:var(--soft); color:var(--ink); }
+        .top nav a.active { background:var(--soft); color:var(--ink); }
+        .account-label { max-width:150px; color:var(--muted); }
+        .mobile-menu summary, .language-menu summary, body[data-theme="dark"] .mobile-menu summary, body[data-theme="dark"] .language-menu summary { min-height:38px; border-color:var(--line); border-radius:6px; background:#111820; color:var(--ink); box-shadow:none; }
+        .language-menu summary { min-width:92px; }
+        .mobile-popover, .language-popover, body[data-theme="dark"] .mobile-popover, body[data-theme="dark"] .language-popover { border-color:var(--line); border-radius:7px; background:#111820; box-shadow:0 12px 28px rgb(0 0 0 / .35); }
+        .language-popover::before { border-color:var(--line); background:#111820; }
+        .language-option:hover, .language-option.active { background:var(--soft); }
+        .language-code { border-color:var(--line); color:#b8c4d0; }
+        .container, .viewer-shell .container { max-width:1240px; padding:24px 22px 48px; }
+        .container-wide, .viewer-shell .container-wide { max-width:none; }
+        .page-head { margin-bottom:16px; }
+        .page-head h1, body[data-theme="dark"] .page-head h1 { color:var(--ink); font-size:24px; letter-spacing:-.015em; }
+        h2 { font-size:16px; }
+        .card, body[data-theme="dark"] .card { padding:17px; border:1px solid var(--line); border-radius:7px; background:var(--card); box-shadow:none; }
+        .card::before { display:none; }
+        .grid { gap:12px; }
+        .stats { gap:8px; }
+        .stat, body[data-theme="dark"] .stat { padding:11px; border:1px solid var(--line); border-radius:6px; background:var(--soft); }
+        .stat strong { font-size:18px; }
+        .btn, body[data-theme="dark"] .btn { min-height:40px; padding:8px 13px; border-radius:6px; background:var(--brand); box-shadow:none; font-size:14px; }
+        .btn:hover { opacity:1; filter:none; }
+        .btn.secondary, body[data-theme="dark"] .btn.secondary { border-color:var(--line-strong); background:#141c25; color:var(--ink); }
+        .btn.danger { background:#9f3f52; }
+        .btn.small { min-height:36px; padding:6px 10px; font-size:13px; }
+        .badge, body[data-theme="dark"] .badge { border-color:var(--line-strong); background:#18212b; color:#aab7c4; letter-spacing:0; }
+        .badge.LIVE, .badge.READY, body[data-theme="dark"] .badge.LIVE, body[data-theme="dark"] .badge.READY { border-color:#275b48; background:#10271f; color:#78d6aa; }
+        .badge.COMPLETED, .badge.FINISHED, body[data-theme="dark"] .badge.COMPLETED, body[data-theme="dark"] .badge.FINISHED { background:#1a222c; color:#aeb9c5; }
+        .badge.DRAFT, .badge.PENDING, .badge.ARCHIVED, body[data-theme="dark"] .badge.DRAFT, body[data-theme="dark"] .badge.PENDING, body[data-theme="dark"] .badge.ARCHIVED { background:#141b23; color:#8694a3; }
+        .alert { border-radius:6px; }
+        .alert.success, body[data-theme="dark"] .alert.success { border-color:#275b48; background:#10271f; color:#8bddb5; }
+        .alert.warning, body[data-theme="dark"] .alert.warning { border-color:#6d5529; background:#2a2111; color:#edc779; }
+        .alert.error, body[data-theme="dark"] .alert.error { border-color:#713544; background:#2b171d; color:#f09aab; }
+        .alert.neutral, body[data-theme="dark"] .alert.neutral { border-color:var(--line); background:var(--soft); color:#b4c0cc; }
+        .admin-welcome { align-items:flex-start; border-color:var(--line); background:var(--card); }
+        .admin-welcome h2 { margin-top:7px; }
+        .tournament-card:hover { border-color:var(--line); box-shadow:none; transform:none; }
+        .filter-bar { margin-bottom:14px; padding:10px; border:1px solid var(--line); border-radius:7px; background:#0d131a; }
+        .filter-bar .field { min-width:190px; }
+        input, select, textarea, .smart-select-trigger, body[data-theme="dark"] input, body[data-theme="dark"] select, body[data-theme="dark"] textarea, body[data-theme="dark"] .smart-select-trigger { min-height:42px; border-color:var(--line-strong); border-radius:6px; background:#0c1219; color:var(--ink); }
+        input:focus, select:focus, textarea:focus, .smart-select-trigger:focus-visible, .smart-select-trigger[aria-expanded="true"] { border-color:#4d8db8; box-shadow:0 0 0 2px rgb(77 141 184 / .2); }
+        input[readonly], select:disabled, .smart-select-trigger:disabled { background:#121820; color:#7f8b98; }
+        .smart-select-popover, body[data-theme="dark"] .smart-select-popover { border-color:var(--line); border-radius:7px; background:#111820; box-shadow:0 14px 28px rgb(0 0 0 / .38); }
+        .smart-select-option:hover, .smart-select-option.focused, .smart-select-option.selected { background:var(--soft); }
+        .tabs { margin-bottom:18px; border-color:var(--line); }
+        .tabs a { min-height:42px; padding:9px 12px; color:var(--muted); font-size:13px; }
+        .tabs a:hover, .tabs a.active, body[data-theme="dark"] .tabs a:hover, body[data-theme="dark"] .tabs a.active { color:var(--ink); }
+        .tabs a.active::after { height:2px; background:#69b7e8; }
+        .match, body[data-theme="dark"] .match, .participant-item, body[data-theme="dark"] .participant-item { border-color:var(--line); border-radius:7px; background:var(--card); box-shadow:none; }
+        .detail-item, body[data-theme="dark"] .detail-item, .match-team-row, body[data-theme="dark"] .match-team-row { border-color:var(--line); border-radius:6px; background:var(--soft); }
+        table { font-size:14px; }
+        th, td { border-color:var(--line); }
+        th { color:var(--muted); }
+        .live-refresh, body[data-theme="dark"] .live-refresh { border-color:#275b48; border-radius:6px; background:#10271f; color:#8bddb5; }
+        .progress-button { background:#a45522; box-shadow:none; }
+        .current-match-indicator, body[data-theme="dark"] .current-match-indicator { border-color:#6d5529; border-radius:6px; background:#2a2111; color:#edc779; }
+        .auth-card { max-width:430px; }
+        .auth-card-wide { max-width:620px; }
+        .danger-card { border-color:#713544; }
+        .danger-card h2 { color:#f09aab; }
+        a:hover { opacity:1; }
+        .btn, .top nav a, .nav-button, summary, .tournament-card { transition:border-color .14s, background-color .14s, color .14s, transform .1s; }
+        .btn:active:not(:disabled), .nav-button:active, .top nav a:active { transform:translateY(1px); }
+        @media(hover:hover) and (pointer:fine) {
+            .btn:hover:not(:disabled):not([aria-disabled="true"]) { filter:none; background:#4a91c2; }
+            .btn.secondary:hover:not(:disabled):not([aria-disabled="true"]) { border-color:#526172; background:#1b2631; }
+            .btn.danger:hover:not(:disabled) { background:#b64b60; }
+            .tournament-card:hover { border-color:#526172; background:#141c25; }
+            .participant-item details>.participant-summary:hover { background:#1b2530; }
+        }
+        @media(max-width:680px) {
+            .top .inner { min-height:56px; padding:7px 12px; }
+            .brand-logo-slot { width:72px; height:32px; }
+            .brand-name, .brand-short { display:none; }
+            .container, .viewer-shell .container { padding:14px 12px 36px; }
+            .card { padding:13px; }
+            .page-head { margin-bottom:13px; }
+            .page-head h1 { font-size:21px; }
+            .page-head > .actions { grid-template-columns:1fr 1fr; }
+            .btn { min-height:44px; }
+            .tabs { top:56px; margin-right:-12px; margin-left:-12px; padding:0 5px; background:#0a0f15; backdrop-filter:none; }
+            .tabs a { min-height:42px; padding:9px 10px; }
+            .form-grid { gap:0 12px; }
+            .mobile-popover, .language-popover { top:56px; right:12px; }
+            .admin-welcome { gap:14px; }
+        }
     </style>
     @stack('styles')
 </head>
-<body data-processing-label="{{ __('ui.processing') }}">
-@php($isAdmin = auth()->user()?->isAdmin() ?? false)
+@php
+    $isAdmin = auth()->user()?->isAdmin() ?? false;
+    $isPublicViewer = request()->routeIs('public.tournaments.*');
+@endphp
+<body class="{{ $isPublicViewer ? 'viewer-shell' : '' }}" data-theme="dark" data-processing-label="{{ __('ui.processing') }}">
 <header class="top">
     <div class="inner">
-        <a class="brand" href="{{ route('tournaments.index') }}">
-            <span class="brand-logos" aria-label="EasyKids Robotics Competition">
-                <span class="brand-logo-slot"><img class="brand-logo brand-logo--light" src="{{ asset('assets/logos/EasyKidsLogoB.png') }}" alt="EasyKids Robotics"><img class="brand-logo brand-logo--dark" src="{{ asset('assets/logos/EasyKidsLogoW.png') }}" alt=""></span>
-                <span class="brand-logo-divider" aria-hidden="true"></span>
-                <span class="brand-logo-slot"><img class="brand-logo brand-logo--light" src="{{ asset('assets/logos/EKRC LOGO black.png') }}" alt="EasyKids Robotics Competition"><img class="brand-logo brand-logo--dark" src="{{ asset('assets/logos/EKRC LOGO white.png') }}" alt=""></span>
-            </span>
+        <a class="brand" href="{{ $isPublicViewer ? url()->current() : route('tournaments.index') }}">
+            <span class="brand-logo-slot"><img class="brand-logo brand-logo--dark" src="{{ asset('assets/logos/EasyKidsLogoW.png') }}" alt="EasyKids Robotics"></span>
             <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v3a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v1a4 4 0 0 0 4 4M17 6h3v1a4 4 0 0 1-4 4"/></svg>
             <span class="brand-name">{{ __('ui.app_name') }}</span><span class="brand-short">EasyKids</span>
         </a>
         <nav>
-            <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">โหมดมืด</button>
-            <a class="desktop-only" href="{{ route('tournaments.index') }}">{{ __('ui.all_tournaments') }}</a>
+            @unless($isPublicViewer)
+            <a class="desktop-only {{ request()->routeIs('tournaments.index', 'tournaments.show', 'tournaments.bracket', 'tournaments.matches', 'tournaments.results', 'tournaments.settings', 'tournaments.edit') ? 'active' : '' }}" href="{{ route('tournaments.index') }}">{{ __('ui.all_tournaments') }}</a>
             @if($isAdmin)
-            <a class="desktop-only" href="{{ route('tournaments.create') }}">{{ __('ui.create') }}</a>
-            <a class="desktop-only" href="{{ route('admin.users.index') }}">{{ __('ui.users') }}</a>
-            <a class="desktop-only" href="{{ route('admin.api-token.show') }}">{{ __('ui.api_access') }}</a>
+            <a class="desktop-only {{ request()->routeIs('tournaments.create') ? 'active' : '' }}" href="{{ route('tournaments.create') }}">{{ __('ui.create') }}</a>
+            <a class="desktop-only {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">{{ __('ui.users') }}</a>
+            <a class="desktop-only {{ request()->routeIs('admin.api-token.*') ? 'active' : '' }}" href="{{ route('admin.api-token.show') }}">{{ __('ui.api_access') }}</a>
             @endif
             @auth
             <span class="account-label desktop-only" title="{{ auth()->user()->email }}">{{ auth()->user()->name }} · {{ __('ui.role_labels.'.auth()->user()->role->value) }}</span>
@@ -383,6 +510,7 @@
                     @auth<form class="nav-form" method="post" action="{{ route('logout') }}">@csrf<button class="nav-button">{{ __('ui.logout') }}</button></form>@else<a href="{{ route('login') }}">{{ __('ui.login') }}</a>@endauth
                 </div>
             </details>
+            @endunless
             <details class="language-menu">
                 <summary aria-label="{{ __('ui.select_language') }}">
                     <svg class="language-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
@@ -404,27 +532,10 @@
 <main class="container @yield('container-class')">
     @if(session('success'))<div class="alert success">{{ session('success') }}</div>@endif
     @if(isset($errors) && $errors->any())<div class="alert error"><strong>{{ __('ui.please_fix') }}</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-    @if(session('import_errors'))<div class="alert" style="background:#fffbeb;border-color:#fde68a;color:#92400e"><strong>{{ __('ui.csv_skipped_title') }}</strong><ul>@foreach(session('import_errors') as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    @if(session('import_errors'))<div class="alert warning"><strong>{{ __('ui.csv_skipped_title') }}</strong><ul>@foreach(session('import_errors') as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     @yield('content')
 </main>
 <script>
-(() => {
-    const storageKey = 'easykids-theme';
-    const button = document.querySelector('[data-theme-toggle]');
-    const savedTheme = localStorage.getItem(storageKey);
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const applyTheme = (theme) => {
-        document.body.dataset.theme = theme;
-        button.setAttribute('aria-pressed', String(theme === 'dark'));
-        button.textContent = theme === 'dark' ? 'โหมดสว่าง' : 'โหมดมืด';
-    };
-    applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
-    button.addEventListener('click', () => {
-        const nextTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
-        localStorage.setItem(storageKey, nextTheme);
-        applyTheme(nextTheme);
-    });
-})();
 document.addEventListener('submit', (event) => {
     const form = event.target;
     const message = event.target.dataset.confirm;

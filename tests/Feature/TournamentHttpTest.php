@@ -39,6 +39,9 @@ class TournamentHttpTest extends TestCase
             ->assertSee('data-format-panel="SINGLE_ELIMINATION"', false)
             ->assertSee('data-format-panel="DOUBLE_ELIMINATION"', false)
             ->assertSee('name="grand_final_matches"', false)
+            ->assertDontSee('name="win_points"', false)
+            ->assertDontSee('name="draw_points"', false)
+            ->assertDontSee('name="loss_points"', false)
             ->assertSee(__('ui.grand_final_one_match'))
             ->assertSee(__('ui.grand_final_two_matches'))
             ->assertSee('updateFormatFields', false);
@@ -50,7 +53,6 @@ class TournamentHttpTest extends TestCase
         $response = $this->post('/tournaments', [
             'name' => 'HTTP Tournament', 'competition' => 'EasyKids', 'division' => 'Junior',
             'format' => 'ROUND_ROBIN', 'seeding_method' => 'REGISTRATION_ORDER',
-            'win_points' => 3, 'draw_points' => 1, 'loss_points' => 0,
         ]);
         $response->assertSessionHasNoErrors();
 
@@ -62,6 +64,35 @@ class TournamentHttpTest extends TestCase
         $this->withToken($token)->getJson('/api/tournaments/'.$tournament->id)->assertOk()
             ->assertJsonPath('success', true)->assertJsonPath('data.name', 'HTTP Tournament');
         $this->assertDatabaseHas('external_stages', ['tournament_id' => $tournament->id]);
+        $this->assertSame(
+            ['ranking' => 'WINS_THEN_DRAWS_THEN_SCORE_DIFFERENCE'],
+            $tournament->round_robin_config,
+        );
+    }
+
+    public function test_adding_a_participant_returns_to_the_form_without_resetting_the_page_position(): void
+    {
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+        $tournament = Tournament::factory()->create([
+            'format' => TournamentFormat::ROUND_ROBIN,
+            'status' => TournamentStatus::DRAFT,
+        ]);
+
+        $this->get(route('tournaments.show', $tournament))
+            ->assertOk()
+            ->assertDontSee('data-schedule-planner', false)
+            ->assertSee('id="add-participant"', false);
+
+        $this->post(route('participants.store', $tournament), [
+            'team_name' => 'Next Team',
+        ])->assertSessionHasNoErrors()
+            ->assertRedirect(route('tournaments.show', $tournament).'#add-participant');
+
+        $this->post(route('participants.store', $tournament), [
+            'team_name' => '',
+            'team_code' => 'KEEP-ME',
+        ])->assertSessionHasErrors('team_name')
+            ->assertRedirect(route('tournaments.show', $tournament).'#add-participant');
     }
 
     public function test_double_elimination_grand_final_setting_is_saved_before_start(): void
@@ -92,8 +123,9 @@ class TournamentHttpTest extends TestCase
         $this->assertSame(2, $tournament->refresh()->double_elimination_config['grand_final_matches']);
     }
 
-    public function test_finished_match_shows_a_prefilled_score_editor_to_admin(): void
+    public function test_admin_match_view_redirects_to_bracket_with_a_prefilled_score_modal(): void
     {
+        $this->withoutMiddleware(ValidateCsrfToken::class);
         $tournament = Tournament::factory()->create([
             'format' => TournamentFormat::SINGLE_ELIMINATION,
             'status' => TournamentStatus::LIVE,
@@ -101,7 +133,7 @@ class TournamentHttpTest extends TestCase
         $stage = Stage::factory()->create(['tournament_id' => $tournament->id]);
         $participantA = Participant::factory()->create(['tournament_id' => $tournament->id, 'team_name' => 'Alpha']);
         $participantB = Participant::factory()->create(['tournament_id' => $tournament->id, 'team_name' => 'Beta']);
-        TournamentMatch::factory()->create([
+        $match = TournamentMatch::factory()->create([
             'tournament_id' => $tournament->id,
             'stage_id' => $stage->id,
             'status' => MatchStatus::FINISHED,
@@ -114,11 +146,30 @@ class TournamentHttpTest extends TestCase
         ]);
 
         $this->get(route('tournaments.matches', $tournament))
+            ->assertRedirect(route('tournaments.bracket', $tournament));
+
+        $this->get(route('tournaments.bracket', $tournament))
             ->assertOk()
             ->assertSee(__('ui.edit_score'))
-            ->assertSee('value="3"', false)
-            ->assertSee('value="1"', false)
-            ->assertSee(__('ui.save_corrected_score'));
+            ->assertSee('data-score-modal', false)
+            ->assertSee('data-score-modal-trigger', false)
+            ->assertSee('data-score-a="3"', false)
+            ->assertSee('data-score-b="1"', false)
+            ->assertDontSee('href="'.route('tournaments.matches', $tournament).'"', false)
+            ->assertDontSee('class="bracket-inline-score-form"', false);
+
+        $this->from(route('tournaments.bracket', $tournament))
+            ->post(route('matches.results.store', [$tournament, $match]), [
+                'score_a' => '',
+                'score_b' => '7',
+                'score_modal_match' => $match->id,
+            ])->assertRedirect(route('tournaments.bracket', $tournament))
+            ->assertSessionHasErrors('score_a');
+
+        $this->get(route('tournaments.bracket', $tournament))
+            ->assertOk()
+            ->assertSee('data-reopen-match="'.$match->id.'"', false)
+            ->assertSee('data-old-score-b="7"', false);
     }
 
     public function test_live_competition_and_participant_information_can_be_corrected_without_changing_bracket_settings(): void

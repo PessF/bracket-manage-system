@@ -134,7 +134,7 @@ class TournamentController extends Controller
     public function update(Request $request, Tournament $tournament): JsonResponse
     {
         $data = $request->validate($this->rules(! $request->isMethod('put')));
-        $structural = ['format', 'seeding_method', 'ranking_attempts', 'ranking_comparator', 'win_points', 'draw_points', 'loss_points', 'grand_final_matches'];
+        $structural = ['format', 'seeding_method', 'ranking_attempts', 'ranking_comparator', 'grand_final_matches'];
         $hasStructuralChanges = collect($structural)->contains(fn (string $key): bool => $request->exists($key));
 
         if ($hasStructuralChanges && ! $this->editable($tournament)) {
@@ -147,9 +147,6 @@ class TournamentController extends Controller
                 'seeding_method' => $data['seeding_method'] ?? $tournament->seeding_method->value,
                 'ranking_attempts' => $data['ranking_attempts'] ?? ($tournament->ranking_config['attempts'] ?? 3),
                 'ranking_comparator' => $data['ranking_comparator'] ?? ($tournament->ranking_config['comparator'] ?? 'BEST_SCORE_HIGHER'),
-                'win_points' => $data['win_points'] ?? ($tournament->round_robin_config['win_points'] ?? 3),
-                'draw_points' => $data['draw_points'] ?? ($tournament->round_robin_config['draw_points'] ?? 1),
-                'loss_points' => $data['loss_points'] ?? ($tournament->round_robin_config['loss_points'] ?? 0),
                 'grand_final_matches' => $data['grand_final_matches'] ?? ($tournament->double_elimination_config['grand_final_matches'] ?? 2),
             ];
             $data['ranking_config'] = $this->rankingConfig($configuration);
@@ -157,7 +154,7 @@ class TournamentController extends Controller
             $data['double_elimination_config'] = $this->doubleEliminationConfig($configuration);
         }
 
-        unset($data['ranking_attempts'], $data['ranking_comparator'], $data['win_points'], $data['draw_points'], $data['loss_points'], $data['grand_final_matches']);
+        unset($data['ranking_attempts'], $data['ranking_comparator'], $data['grand_final_matches']);
         $tournament->fill($data + ['source_updated_at' => now(), 'synced_at' => now()])->save();
         if ($hasStructuralChanges) {
             $tournament->stages()->update(['format' => $tournament->format]);
@@ -214,9 +211,6 @@ class TournamentController extends Controller
             'seeding_method' => [$required, Rule::enum(SeedingMethod::class)],
             'ranking_attempts' => ['sometimes', 'nullable', 'integer', 'between:1,20'],
             'ranking_comparator' => ['sometimes', 'nullable', Rule::in(['BEST_SCORE_HIGHER', 'BEST_TIME_LOWER'])],
-            'win_points' => ['sometimes', 'nullable', 'integer', 'between:0,100'],
-            'draw_points' => ['sometimes', 'nullable', 'integer', 'between:0,100'],
-            'loss_points' => ['sometimes', 'nullable', 'integer', 'between:0,100'],
             'grand_final_matches' => ['sometimes', 'nullable', 'integer', Rule::in([1, 2])],
         ];
     }
@@ -233,7 +227,7 @@ class TournamentController extends Controller
     private function roundRobinConfig(array $data): ?array
     {
         return $data['format'] === TournamentFormat::ROUND_ROBIN->value
-            ? ['win_points' => (int) ($data['win_points'] ?? 3), 'draw_points' => (int) ($data['draw_points'] ?? 1), 'loss_points' => (int) ($data['loss_points'] ?? 0)]
+            ? ['ranking' => 'WINS_THEN_DRAWS_THEN_SCORE_DIFFERENCE']
             : null;
     }
 

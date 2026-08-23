@@ -11,22 +11,31 @@ use App\Models\Tournament;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ParticipantController extends Controller
 {
     public function store(Request $request, Tournament $tournament): RedirectResponse
     {
         if (! $this->editable($tournament)) {
-            return back()->withErrors(__('ui.roster_locked'));
+            return $this->returnToAddParticipant($tournament)->withErrors(__('ui.roster_locked'));
         }
-        $data = $this->validated($request);
+
+        try {
+            $data = $this->validated($request);
+        } catch (ValidationException $exception) {
+            return $this->returnToAddParticipant($tournament)
+                ->withErrors($exception->validator)
+                ->withInput();
+        }
+
         $tournament->participants()->create($data + [
             'status' => $data['status'] ?? ParticipantStatus::ACTIVE,
             'source_created_at' => now(), 'synced_at' => now(),
         ]);
         $this->syncCount($tournament);
 
-        return back()->with('success', __('ui.participant_added'));
+        return $this->returnToAddParticipant($tournament)->with('success', __('ui.participant_added'));
     }
 
     public function update(Request $request, Tournament $tournament, Participant $participant): RedirectResponse
@@ -86,5 +95,10 @@ class ParticipantController extends Controller
     private function syncCount(Tournament $tournament): void
     {
         $tournament->update(['participant_count' => $tournament->participants()->count(), 'source_updated_at' => now(), 'synced_at' => now()]);
+    }
+
+    private function returnToAddParticipant(Tournament $tournament): RedirectResponse
+    {
+        return redirect()->to(route('tournaments.show', $tournament).'#add-participant');
     }
 }

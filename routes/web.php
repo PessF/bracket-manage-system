@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\FirstAdminSetupController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\MatchProgressController;
 use App\Http\Controllers\MatchResultController;
 use App\Http\Controllers\ParticipantController;
 use App\Http\Controllers\ParticipantImportController;
@@ -46,6 +47,7 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::post('/tournaments/{tournament}/complete', [TournamentLifecycleController::class, 'complete'])->name('tournaments.complete');
     Route::post('/tournaments/{tournament}/archive', [TournamentLifecycleController::class, 'archive'])->name('tournaments.archive');
     Route::post('/tournaments/{tournament}/matches/{match}/result', [MatchResultController::class, 'store'])->name('matches.results.store');
+    Route::post('/tournaments/{tournament}/matches/{match}/progress', [MatchProgressController::class, 'store'])->name('matches.progress.store');
     Route::post('/tournaments/{tournament}/participants/{participant}/attempts', [RankingAttemptController::class, 'store'])->name('ranking.attempts.store');
 
     Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
@@ -60,12 +62,12 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
 Route::middleware('tournament.visible')->group(function (): void {
     Route::get('/tournaments/{tournament}', [TournamentController::class, 'show'])->name('tournaments.show');
     Route::get('/tournaments/{tournament}/bracket', [TournamentWorkspaceController::class, 'bracket'])->name('tournaments.bracket');
-    Route::get('/tournaments/{tournament}/matches', [TournamentWorkspaceController::class, 'matches'])->name('tournaments.matches');
+    Route::get('/tournaments/{tournament}/matches', [TournamentWorkspaceController::class, 'adminMatches'])->name('tournaments.matches');
     Route::get('/tournaments/{tournament}/results', [TournamentWorkspaceController::class, 'results'])->name('tournaments.results');
 });
 
 Route::middleware('tournament.live')->prefix('view')->name('public.tournaments.')->group(function (): void {
-    Route::get('/{tournament:public_token}', [TournamentController::class, 'show'])->name('show');
+    Route::get('/{tournament:public_token}', [TournamentWorkspaceController::class, 'bracket'])->name('show');
     Route::get('/{tournament:public_token}/bracket', [TournamentWorkspaceController::class, 'bracket'])->name('bracket');
     Route::get('/{tournament:public_token}/matches', [TournamentWorkspaceController::class, 'matches'])->name('matches');
     Route::get('/{tournament:public_token}/results', [TournamentWorkspaceController::class, 'results'])->name('results');

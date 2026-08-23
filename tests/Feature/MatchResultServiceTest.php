@@ -128,13 +128,13 @@ class MatchResultServiceTest extends TestCase
         $standings = $tournament->standings()->get()->keyBy('participant_id');
         $this->assertSame(1, $standings[$participantA->id]->played);
         $this->assertSame(1, $standings[$participantA->id]->draws);
-        $this->assertSame(1, $standings[$participantA->id]->points);
-        $this->assertSame(1, $standings[$participantB->id]->points);
+        $this->assertSame(0, $standings[$participantA->id]->points);
+        $this->assertSame(0, $standings[$participantB->id]->points);
 
         app(MatchResultService::class)->confirm($source, '4', '2');
         $standings = $tournament->standings()->get()->keyBy('participant_id');
 
-        $this->assertSame(3, $standings[$participantA->id]->points);
+        $this->assertSame(1, $standings[$participantA->id]->points);
         $this->assertSame(1, $standings[$participantA->id]->wins);
         $this->assertSame(0, $standings[$participantA->id]->draws);
         $this->assertSame(0, $standings[$participantB->id]->points);

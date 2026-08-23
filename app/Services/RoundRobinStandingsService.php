@@ -12,17 +12,13 @@ class RoundRobinStandingsService
 {
     public function recompute(Tournament $tournament): void
     {
-        $config = $tournament->round_robin_config ?? [];
-        $winPoints = (int) ($config['win_points'] ?? 3);
-        $drawPoints = (int) ($config['draw_points'] ?? 1);
-        $lossPoints = (int) ($config['loss_points'] ?? 0);
         $rows = [];
 
         foreach ($tournament->participants()->get() as $participant) {
             $rows[(string) $participant->id] = [
                 'participant_id' => (string) $participant->id,
                 'played' => 0, 'wins' => 0, 'draws' => 0, 'losses' => 0,
-                'score_for' => 0.0, 'score_against' => 0.0, 'points' => 0,
+                'score_for' => 0.0, 'score_against' => 0.0,
             ];
         }
 
@@ -46,25 +42,20 @@ class RoundRobinStandingsService
 
             if ($scoreA > $scoreB) {
                 $a['wins']++;
-                $a['points'] += $winPoints;
                 $b['losses']++;
-                $b['points'] += $lossPoints;
             } elseif ($scoreB > $scoreA) {
                 $b['wins']++;
-                $b['points'] += $winPoints;
                 $a['losses']++;
-                $a['points'] += $lossPoints;
             } else {
                 $a['draws']++;
                 $b['draws']++;
-                $a['points'] += $drawPoints;
-                $b['points'] += $drawPoints;
             }
 
             unset($a, $b);
         }
 
-        usort($rows, fn (array $a, array $b): int => $b['points'] <=> $a['points']
+        usort($rows, fn (array $a, array $b): int => $b['wins'] <=> $a['wins']
+            ?: ($b['draws'] <=> $a['draws'])
             ?: (($b['score_for'] - $b['score_against']) <=> ($a['score_for'] - $a['score_against']))
             ?: ($b['score_for'] <=> $a['score_for'])
             ?: strcmp($a['participant_id'], $b['participant_id']));
@@ -80,8 +71,10 @@ class RoundRobinStandingsService
                     'score_for' => $row['score_for'],
                     'score_against' => $row['score_against'],
                     'score_difference' => $row['score_for'] - $row['score_against'],
-                    'points' => $row['points'],
-                    'format_data' => ['points' => ['win' => $winPoints, 'draw' => $drawPoints, 'loss' => $lossPoints]],
+                    // Retain the legacy column for API compatibility. It now
+                    // represents the number of wins, not configurable points.
+                    'points' => $row['wins'],
+                    'format_data' => ['ranking' => 'WINS_THEN_DRAWS_THEN_SCORE_DIFFERENCE'],
                     'synced_at' => now(),
                 ],
             );

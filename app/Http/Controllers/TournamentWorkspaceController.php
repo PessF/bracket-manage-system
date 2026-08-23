@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\BracketType;
 use App\Models\Tournament;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class TournamentWorkspaceController extends Controller
@@ -32,6 +33,11 @@ class TournamentWorkspaceController extends Controller
             ->mapWithKeys(fn ($match, int $index): array => [$match->id => $index + 1]);
 
         return view('tournaments.matches', compact('tournament', 'matches', 'grandFinalRounds'));
+    }
+
+    public function adminMatches(Tournament $tournament): RedirectResponse
+    {
+        return redirect()->route('tournaments.bracket', $tournament);
     }
 
     public function results(Tournament $tournament): View

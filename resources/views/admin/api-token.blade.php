@@ -12,4 +12,4 @@
     </div>
 </section>
 @endsection
-@push('styles')<style>.token-output{display:flex;align-items:center;gap:10px;margin-top:10px}.token-output code{display:block;max-width:100%;overflow:auto;padding:10px;border-radius:7px;background:#fff;color:#166534;white-space:nowrap}@media(max-width:680px){.token-output{align-items:stretch;flex-direction:column}.token-output .btn{width:100%}}</style>@endpush
+@push('styles')<style>.token-output{display:flex;align-items:center;gap:10px;margin-top:10px}.token-output code{display:block;max-width:100%;overflow:auto;padding:10px;border:1px solid var(--line);border-radius:6px;background:#0c1219;color:#8bddb5;white-space:nowrap}@media(max-width:680px){.token-output{align-items:stretch;flex-direction:column}.token-output .btn{width:100%}}</style>@endpush

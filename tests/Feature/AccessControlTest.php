@@ -46,7 +46,12 @@ class AccessControlTest extends TestCase
         $this->actingAs($viewer)->get(route('tournaments.index'))->assertOk()->assertDontSee(route('tournaments.create'));
         $this->actingAs($viewer)->get(route('tournaments.create'))->assertForbidden()->assertSee('ต้องใช้สิทธิ์ผู้ดูแลระบบ');
         $this->actingAs($admin)->get(route('tournaments.create'))->assertOk();
-        $this->actingAs($admin)->get(route('tournaments.index'))->assertOk()->assertSee('หน้าจัดการสำหรับผู้ดูแล')->assertSee('จัดการการแข่งขัน');
+        $this->actingAs($admin)->get(route('tournaments.index'))
+            ->assertOk()
+            ->assertSee('หน้าจัดการสำหรับผู้ดูแล')
+            ->assertSee(route('tournaments.create'))
+            ->assertSee('data-theme="dark"', false)
+            ->assertDontSee('data-theme-toggle', false);
         $this->actingAs($admin)->get(route('admin.users.index'))->assertOk()->assertSee($viewer->email);
     }
 

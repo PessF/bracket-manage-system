@@ -10,6 +10,7 @@ use App\Models\TournamentMatch;
 use App\Services\MatchResultService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class MatchResultController extends Controller
@@ -20,15 +21,22 @@ class MatchResultController extends Controller
     {
         abort_unless($match->tournament_id === $tournament->id, 404);
         $wasFinished = $match->status === MatchStatus::FINISHED;
-        $data = $request->validate(['score_a' => ['required', 'numeric', 'min:0'], 'score_b' => ['required', 'numeric', 'min:0']]);
+
         try {
+            $data = $request->validate([
+                'score_a' => ['required', 'numeric', 'min:0'],
+                'score_b' => ['required', 'numeric', 'min:0'],
+                'score_modal_match' => ['nullable', 'string'],
+            ]);
             $this->results->confirm($match, $data['score_a'], $data['score_b']);
 
             return back()->with('success', __($wasFinished ? 'ui.match_score_corrected' : 'ui.match_confirmed', ['number' => $match->match_number]));
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->validator)->withInput();
         } catch (Throwable $exception) {
             report($exception);
 
-            return back()->withErrors($exception->getMessage());
+            return back()->withErrors($exception->getMessage())->withInput();
         }
     }
 }

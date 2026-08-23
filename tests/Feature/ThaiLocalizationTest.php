@@ -25,9 +25,9 @@ class ThaiLocalizationTest extends TestCase
         $this->get(route('login'))->assertOk()->assertSee('เข้าสู่ระบบผู้ดูแล');
         $this->get(route('admin.setup'))->assertOk()->assertSee('สร้างผู้ดูแลระบบคนแรก');
         $this->get(route('api.docs'))->assertOk()->assertSee('คู่มือ REST API ภาษาไทย');
-        $this->get($live->publicShareUrl())->assertOk()->assertSee('อัปเดตผลสด')->assertSee('รายละเอียดการแข่งขัน');
+        $this->get($live->publicShareUrl())->assertOk()->assertSee('อัปเดตผลสด')->assertSee('สายการแข่งขันสด · ปัดด้านข้างเพื่อดูรอบถัดไป');
         $this->get(route('public.tournaments.bracket', ['tournament' => $live->public_token]))
-            ->assertOk()->assertSee('สายการแข่งขันจะอัปเดตอัตโนมัติเมื่อยืนยันผล');
+            ->assertOk()->assertSee('สายการแข่งขันสด · ปัดด้านข้างเพื่อดูรอบถัดไป');
         $this->get(route('public.tournaments.matches', ['tournament' => $live->public_token]))
             ->assertOk()->assertSee('สถานะแมตช์และคะแนนล่าสุด');
         $this->get(route('public.tournaments.results', ['tournament' => $live->public_token]))
