@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', __('ui.app_name'))</title>
     <style>
+        @font-face { font-family: "LINE Seed Sans TH"; src: url("/assets/fonts/LINESeedSansTH_W_Rg.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+        @font-face { font-family: "LINE Seed Sans TH"; src: url("/assets/fonts/LINESeedSansTH_W_Bd.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
         :root {
             --ink: #18181b; --muted: #71717a; --line: #e4e4e7; --line-strong: #cbd5e1;
             --card: #fff; --bg: #fafafa; --soft: #f4f4f5; --brand: #18181b;
@@ -251,6 +253,92 @@
             .top nav { gap:5px; }
             .mobile-menu summary { padding-right:10px; padding-left:10px; }
         }
+
+        /* EasyKids operational theme: high-contrast controls for event staff. */
+        :root {
+            --ink: #13243a; --muted: #5d7088; --line: #d7e1eb; --line-strong: #b9c8d8;
+            --card: #ffffff; --bg: #eef4f8; --soft: #f3f7fa; --brand: #1769aa;
+            --good: #087a52; --warn: #9b5b00; --bad: #b4233f; --blue: #1769aa;
+            --top-height: 76px;
+        }
+        html { color-scheme: light; }
+        body { font-family: "LINE Seed Sans TH", "Segoe UI", Tahoma, sans-serif; font-size: 16px; background: linear-gradient(180deg, #eaf3fb 0, #f5f8fb 240px, var(--bg) 100%); }
+        .top { border-bottom-color: #c5dbe9; background: rgba(255, 255, 255, .97); box-shadow: 0 4px 18px rgb(10 35 59 / .08); }
+        .top .inner { max-width: 1360px; min-height: var(--top-height); padding-top: 10px; padding-bottom: 10px; }
+        .brand { gap: 12px; color: #123756; font-size: 17px; letter-spacing: 0; }
+        .brand-logos { display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; }
+        .brand-logo-slot { display: grid; width: 108px; height: 46px; place-items: center; }
+        .brand-logo { grid-area: 1 / 1; width: 100%; height: 100%; object-fit: contain; }
+        .brand-logo-divider { width: 1px; height: 30px; background: #b9d3e5; }
+        .brand-logo--dark { display: none; }
+        .brand-mark { display: none; }
+        .top nav a, .nav-button, .account-label { color: #315675; }
+        .top nav a:hover, .nav-button:hover { background: #e7f3fa; color: #0d4f7e; }
+        .theme-toggle { min-height: 44px; padding: 10px 12px; border: 1px solid #b9d3e5; border-radius: 8px; background: #eef7fc; color: #164a70; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+        .theme-toggle:hover { background: #dceffa; }
+        .language-menu summary, .mobile-menu summary { border-color: #b9d3e5; background: #f4f9fc; color: #164a70; }
+        .language-icon, .language-chevron { color: #27628b; }
+        .container { max-width: 1360px; padding-top: 32px; }
+        .page-head h1 { color: #0d3558; font-size: 29px; font-weight: 700; letter-spacing: 0; }
+        .card { border-color: var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgb(25 63 95 / .07); }
+        .card::before { content: ""; display: block; width: 48px; height: 3px; margin: -21px 0 18px; border-radius: 3px; background: linear-gradient(90deg, #2ba8d8, #1769aa); }
+        .stat { border: 1px solid #dde7ef; background: #f6f9fc; }
+        .btn { border-radius: 7px; background: #1769aa; box-shadow: 0 3px 8px rgb(23 105 170 / .2); }
+        .btn.secondary { border-color: #c6d5e2; background: #ffffff; color: #173c61; box-shadow: none; }
+        .btn.danger { background: #b4233f; }
+        .badge { border-color: #c9dce9; background: #eff7fc; color: #245375; }
+        .badge.LIVE, .badge.READY { border-color: #a8d8c2; background: #eaf9f1; color: #087a52; }
+        .tabs a.active::after { background: #1aa4d7; }
+        .tabs a:hover, .tabs a.active { color: #0d5e99; }
+        input, select, textarea, .smart-select-trigger { border-color: #bdcfdd; background: #ffffff; }
+        input:focus, select:focus, textarea:focus, .smart-select-trigger:focus-visible, .smart-select-trigger[aria-expanded="true"] { border-color: #249ad0; box-shadow: 0 0 0 3px rgb(36 154 208 / .16); }
+        .score-stepper, .match, .participant-item { border-color: var(--line); background: var(--card); }
+        .score-stepper button { background: #e8f3fa; color: #0e5e91; }
+        .score-stepper button:hover { background: #d5eaf6; }
+
+        body[data-theme="dark"] {
+            --ink: #edf5ff; --muted: #b4c6d9; --line: #2b4964; --line-strong: #3e6282;
+            --card: #102237; --bg: #071524; --soft: #162d45; --brand: #45b5e8;
+            --good: #5bd69b; --warn: #ffd27a; --bad: #ff8299; --blue: #6fc7ef;
+        }
+        body[data-theme="dark"] { background: radial-gradient(circle at 4% 0%, rgb(53 181 227 / .15), transparent 25%), radial-gradient(circle at 98% 8%, rgb(93 106 255 / .13), transparent 28%), linear-gradient(180deg, #071524, #091827 48%, #06121e); }
+        body[data-theme="dark"] .top { border-bottom-color: #183d5d; background: rgba(7, 25, 43, .97); }
+        body[data-theme="dark"] .brand { color: #ffffff; }
+        body[data-theme="dark"] .brand-logo-divider { background: rgb(158 213 248 / .34); }
+        body[data-theme="dark"] .brand-logo--light { display: none; }
+        body[data-theme="dark"] .brand-logo--dark { display: block; }
+        body[data-theme="dark"] .top nav a, body[data-theme="dark"] .nav-button, body[data-theme="dark"] .account-label { color: #d5e6f5; }
+        body[data-theme="dark"] .top nav a:hover, body[data-theme="dark"] .nav-button:hover { background: rgb(103 182 235 / .18); color: #ffffff; }
+        body[data-theme="dark"] .theme-toggle, body[data-theme="dark"] .language-menu summary, body[data-theme="dark"] .mobile-menu summary { border-color: rgb(158 213 248 / .3); background: rgb(103 182 235 / .15); color: #ffffff; }
+        body[data-theme="dark"] .theme-toggle:hover { background: rgb(103 182 235 / .28); }
+        body[data-theme="dark"] .language-icon, body[data-theme="dark"] .language-chevron { color: #ccecff; }
+        body[data-theme="dark"] .card, body[data-theme="dark"] .match, body[data-theme="dark"] .participant-item { box-shadow: 0 11px 28px rgb(0 0 0 / .22); }
+        body[data-theme="dark"] .page-head h1 { color: #f2f8ff; }
+        body[data-theme="dark"] .stat, body[data-theme="dark"] .detail-item, body[data-theme="dark"] .bracket-team, body[data-theme="dark"] .match-team-row { border-color: #294862; background: #132b43; }
+        body[data-theme="dark"] .btn.secondary, body[data-theme="dark"] input, body[data-theme="dark"] select, body[data-theme="dark"] textarea, body[data-theme="dark"] .smart-select-trigger, body[data-theme="dark"] .smart-select-popover { border-color: #395b78; background: #0b1b2b; color: var(--ink); }
+        body[data-theme="dark"] .badge { border-color: #365c78; background: #142f49; color: #c5e8fc; }
+        body[data-theme="dark"] .badge.LIVE, body[data-theme="dark"] .badge.READY { border-color: #24785b; background: #103b31; color: #8aefbc; }
+        body[data-theme="dark"] .tabs { border-color: #2d4c66; }
+        body[data-theme="dark"] .tabs a.active::after { background: #45b5e8; }
+        body[data-theme="dark"] .tabs a:hover, body[data-theme="dark"] .tabs a.active { color: #77d1f5; }
+        body[data-theme="dark"] .score-stepper button { background: #18354e; color: #91daf8; }
+        body[data-theme="dark"] .score-stepper input { background: #0b1b2b; color: var(--ink); }
+        body[data-theme="dark"] .mobile-popover, body[data-theme="dark"] .language-popover { border-color: #365b77; background: #10243a; }
+        body[data-theme="dark"] .alert.success, body[data-theme="dark"] .live-refresh { border-color:#28775c; background:#103b31; color:#9af0c4; }
+        body[data-theme="dark"] .alert.error { border-color:#8d3d54; background:#3b1723; color:#ffb7c4; }
+        body[data-theme="dark"] .view-only-banner { border-color:#315f84; background:#102d47; color:#b9e5fb; }
+        body[data-theme="dark"] .participant-item, body[data-theme="dark"] .match-team-row, body[data-theme="dark"] .choice-card { border-color:#365a76; background:#10263b; }
+        body[data-theme="dark"] .participant-item details > .participant-summary:hover { background:#152e47; }
+        body[data-theme="dark"] .participant-edit, body[data-theme="dark"] .user-card-body, body[data-theme="dark"] .format-config-panel { border-color:#2c4b66; background:#0b1b2b; }
+        body[data-theme="dark"] .format-config-icon, body[data-theme="dark"] .short-link-input { border-color:#395b78; background:#10263b; color:#c7e5f7; }
+        body[data-theme="dark"] .choice-card:has(input:checked) { border-color:#45b5e8; background:#102f49; box-shadow:0 0 0 2px rgb(69 181 232 / .18); }
+        body[data-theme="dark"] .match-team-row.winner { background:#103b31; color:#94efc0; }
+        body[data-theme="dark"] .match:target { border-color:#57c6f2; box-shadow:0 0 0 3px rgb(87 198 242 / .18); }
+        body[data-theme="dark"] .token-output code { background:#0b1b2b; color:#9af0c4; }
+        body[data-theme="dark"] .api-content p { color:#c4d6e6; }
+        body[data-theme="dark"] .api-note { border-color:#d69b36; background:#3b2b11; color:#ffe09a; }
+        @media (max-width:680px) { body[data-theme="dark"] .standings-table th:first-child, body[data-theme="dark"] .standings-table td:first-child, body[data-theme="dark"] .standings-table th:nth-child(2), body[data-theme="dark"] .standings-table td:nth-child(2) { background:#102237; } }
+        @media (max-width: 680px) { .brand-logo-slot { width: 82px; height: 38px; } .brand-logo-divider { height: 25px; } .theme-toggle { min-height: 46px; padding-inline: 10px; } }
     </style>
     @stack('styles')
 </head>
@@ -259,10 +347,16 @@
 <header class="top">
     <div class="inner">
         <a class="brand" href="{{ route('tournaments.index') }}">
+            <span class="brand-logos" aria-label="EasyKids Robotics Competition">
+                <span class="brand-logo-slot"><img class="brand-logo brand-logo--light" src="{{ asset('assets/logos/EasyKidsLogoB.png') }}" alt="EasyKids Robotics"><img class="brand-logo brand-logo--dark" src="{{ asset('assets/logos/EasyKidsLogoW.png') }}" alt=""></span>
+                <span class="brand-logo-divider" aria-hidden="true"></span>
+                <span class="brand-logo-slot"><img class="brand-logo brand-logo--light" src="{{ asset('assets/logos/EKRC LOGO black.png') }}" alt="EasyKids Robotics Competition"><img class="brand-logo brand-logo--dark" src="{{ asset('assets/logos/EKRC LOGO white.png') }}" alt=""></span>
+            </span>
             <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v3a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v1a4 4 0 0 0 4 4M17 6h3v1a4 4 0 0 1-4 4"/></svg>
             <span class="brand-name">{{ __('ui.app_name') }}</span><span class="brand-short">EasyKids</span>
         </a>
         <nav>
+            <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">โหมดมืด</button>
             <a class="desktop-only" href="{{ route('tournaments.index') }}">{{ __('ui.all_tournaments') }}</a>
             @if($isAdmin)
             <a class="desktop-only" href="{{ route('tournaments.create') }}">{{ __('ui.create') }}</a>
@@ -314,6 +408,23 @@
     @yield('content')
 </main>
 <script>
+(() => {
+    const storageKey = 'easykids-theme';
+    const button = document.querySelector('[data-theme-toggle]');
+    const savedTheme = localStorage.getItem(storageKey);
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const applyTheme = (theme) => {
+        document.body.dataset.theme = theme;
+        button.setAttribute('aria-pressed', String(theme === 'dark'));
+        button.textContent = theme === 'dark' ? 'โหมดสว่าง' : 'โหมดมืด';
+    };
+    applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
+    button.addEventListener('click', () => {
+        const nextTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(storageKey, nextTheme);
+        applyTheme(nextTheme);
+    });
+})();
 document.addEventListener('submit', (event) => {
     const form = event.target;
     const message = event.target.dataset.confirm;
