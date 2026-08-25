@@ -36,7 +36,7 @@
 
 @if($isAdmin)
 <section class="card">
-    <div class="actions" style="justify-content:space-between;margin-bottom:10px"><div><h2 style="margin:0 0 3px">{{ __('ui.share_view_link') }}</h2><div class="muted">{{ __('ui.share_link_help') }}</div></div><span class="badge {{ in_array($tournament->status, [App\Enums\TournamentStatus::READY, App\Enums\TournamentStatus::LIVE], true) ? 'available-now' : $tournament->status->value }}">{{ in_array($tournament->status, [App\Enums\TournamentStatus::READY, App\Enums\TournamentStatus::LIVE], true) ? __('ui.available_now') : __('ui.available_when_live') }}</span></div>
+    <div class="actions split-actions" style="justify-content:space-between;margin-bottom:10px"><div><h2 style="margin:0 0 3px">{{ __('ui.share_view_link') }}</h2><div class="muted">{{ __('ui.share_link_help') }}</div></div><span class="badge {{ in_array($tournament->status, [App\Enums\TournamentStatus::READY, App\Enums\TournamentStatus::LIVE], true) ? 'available-now' : $tournament->status->value }}">{{ in_array($tournament->status, [App\Enums\TournamentStatus::READY, App\Enums\TournamentStatus::LIVE], true) ? __('ui.available_now') : __('ui.available_when_live') }}</span></div>
     @if($shareUrl)
     <div class="share-link-row"><input id="share-link" readonly value="{{ $shareUrl }}" aria-label="{{ __('ui.share_view_link') }}"><button class="btn secondary" type="button" data-copy-target="#share-link" data-copied="{{ __('ui.share_link_copied') }}">{{ __('ui.copy_share_link') }}</button>@if(in_array($tournament->status, [App\Enums\TournamentStatus::READY, App\Enums\TournamentStatus::LIVE], true))<a class="btn secondary" href="{{ $shareUrl }}" target="_blank" rel="noopener">{{ __('ui.open_view_page') }}</a>@else<span class="btn secondary" aria-disabled="true" style="opacity:.5;cursor:not-allowed">{{ __('ui.waiting_for_bracket') }}</span>@endif</div>
     <form class="short-link-form" method="post" action="{{ route('tournaments.share-link.update', $tournament) }}">@csrf @method('PATCH')
@@ -55,11 +55,11 @@
     <section class="card"><h2>{{ __('ui.import_csv') }}</h2><p class="muted">{{ __('ui.csv_help') }}</p><form method="post" enctype="multipart/form-data" action="{{ route('participants.import', $tournament) }}">@csrf<div class="field"><label for="csv_file">{{ __('ui.csv_file') }}</label><input id="csv_file" type="file" name="csv_file" accept=".csv,text/csv,text/plain,application/vnd.ms-excel" required></div><div class="actions"><button class="btn" type="submit">{{ __('ui.import_participants') }}</button><a class="btn secondary" href="{{ route('participants.import.template') }}">{{ __('ui.download_template') }}</a></div></form></section>
 </div>
 @elseif($isAdmin)
-<section class="card"><div class="actions" style="justify-content:space-between"><div><h2 style="margin-bottom:3px">{{ __('ui.import_csv') }}</h2><div class="muted">{{ __('ui.csv_locked_help') }}</div></div><a class="btn secondary" href="{{ route('participants.import.template') }}">{{ __('ui.download_template') }}</a></div></section>
+<section class="card"><div class="actions split-actions" style="justify-content:space-between"><div><h2 style="margin-bottom:3px">{{ __('ui.import_csv') }}</h2><div class="muted">{{ __('ui.csv_locked_help') }}</div></div><a class="btn secondary" href="{{ route('participants.import.template') }}">{{ __('ui.download_template') }}</a></div></section>
 @endif
 
 <section class="card">
-    <div class="actions" style="justify-content:space-between;margin-bottom:14px"><div><h2 style="margin:0">{{ __('ui.participants') }}</h2><div class="muted">{{ $isAdmin ? __('ui.participant_help') : __('ui.read_only_notice') }}</div></div>@if(!$rosterEditable)<span class="badge">{{ __('ui.seeds_locked') }}</span>@endif</div>
+    <div class="actions split-actions" style="justify-content:space-between;margin-bottom:14px"><div><h2 style="margin:0">{{ __('ui.participants') }}</h2><div class="muted">{{ $isAdmin ? __('ui.participant_help') : __('ui.read_only_notice') }}</div></div>@if(!$rosterEditable)<span class="badge">{{ __('ui.seeds_locked') }}</span>@endif</div>
     <div class="participant-list">
     <div class="participant-list-head" aria-hidden="true"><span>{{ __('ui.seed') }}</span><span>{{ __('ui.team_name') }}</span><span class="participant-hide-mobile">{{ __('ui.school') }}</span><span class="participant-hide-mobile">{{ __('ui.coach_name') }}</span><span>{{ __('ui.status') }}</span><span></span></div>
     @forelse($tournament->participants as $participant)

@@ -188,6 +188,7 @@
         .bracket-card-actions .bracket-icon-button,
         body[data-theme="easykids"] .bracket-card-actions .bracket-icon-button { width:36px; min-width:36px; height:36px; min-height:36px; }
     }
+    @media(max-width:380px){.score-modal-actions{grid-template-columns:1fr}.bracket-destinations{align-items:flex-start;flex-direction:column;gap:2px}.bracket-destinations span{white-space:normal}}
 </style>
 @endpush
 

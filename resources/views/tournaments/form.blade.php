@@ -40,7 +40,7 @@
 <div class="field full"><label for="notes">{{ __('ui.notes') }}</label><textarea id="notes" name="notes">{{ old('notes', $tournament->notes) }}</textarea></div>
 </div></section>
 
-<section class="card"><div class="actions" style="justify-content:space-between"><div><h2 style="margin-bottom:2px">{{ __('ui.competition_format') }}</h2><div class="muted">{{ __('ui.competition_format_help') }}</div></div>@if($structureLocked)<span class="badge">{{ __('ui.locked_after_start') }}</span>@endif</div>
+<section class="card"><div class="actions split-actions" style="justify-content:space-between"><div><h2 style="margin-bottom:2px">{{ __('ui.competition_format') }}</h2><div class="muted">{{ __('ui.competition_format_help') }}</div></div>@if($structureLocked)<span class="badge">{{ __('ui.locked_after_start') }}</span>@endif</div>
 @if($structureLocked)<div class="alert neutral" style="margin-top:15px">{{ __('ui.locked_help') }}</div>@endif
 <div class="form-grid" style="margin-top:16px">
 <div class="field full"><label for="structure">{{ __('ui.tournament_structure') }}</label><select id="structure" name="structure" required @disabled($structureLocked)>@foreach(App\Enums\TournamentStructure::cases() as $structure)<option value="{{ $structure->value }}" @selected($selectedStructure === $structure->value)>{{ __('ui.structure_labels.'.$structure->value) }}</option>@endforeach</select><small>{{ __('ui.tournament_structure_help') }}</small></div>
