@@ -10,6 +10,7 @@ use App\Models\Participant;
 use App\Models\Tournament;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -36,6 +37,69 @@ class ParticipantController extends Controller
         $this->syncCount($tournament);
 
         return $this->returnToAddParticipant($tournament)->with('success', __('ui.participant_added'));
+    }
+
+    public function bulkStore(Request $request, Tournament $tournament): RedirectResponse
+    {
+        if (! $this->editable($tournament)) {
+            return $this->returnToAddParticipant($tournament)->withErrors(__('ui.roster_locked'));
+        }
+
+        try {
+            $data = $request->validate([
+                'bulk_participants' => ['required', 'string', 'max:20000'],
+            ]);
+        } catch (ValidationException $exception) {
+            return $this->returnToAddParticipant($tournament)
+                ->withErrors($exception->validator)
+                ->withInput();
+        }
+
+        $names = collect(preg_split('/\R/u', (string) $data['bulk_participants']))
+            ->map(fn (string $line): string => trim($line))
+            ->filter()
+            ->map(function (string $line): string {
+                $line = preg_replace('/^\s*(?:[-*]|\d+[.)])\s*/u', '', $line) ?? $line;
+
+                return trim(str_getcsv($line)[0] ?? $line);
+            })
+            ->filter()
+            ->unique(fn (string $name): string => mb_strtolower($name))
+            ->values();
+
+        if ($names->isEmpty()) {
+            return $this->returnToAddParticipant($tournament)->withErrors(__('ui.bulk_participants_empty'))->withInput();
+        }
+
+        $existing = $tournament->participants()
+            ->whereIn('team_name', $names->all())
+            ->pluck('team_name')
+            ->map(fn (string $name): string => mb_strtolower($name))
+            ->all();
+
+        $names = $names->reject(fn (string $name): bool => in_array(mb_strtolower($name), $existing, true))->values();
+
+        if ($names->isEmpty()) {
+            return $this->returnToAddParticipant($tournament)->withErrors(__('ui.bulk_participants_all_duplicates'))->withInput();
+        }
+
+        DB::transaction(function () use ($tournament, $names): void {
+            $nextSeed = ((int) $tournament->participants()->max('seed_number')) + 1;
+
+            foreach ($names as $index => $name) {
+                $tournament->participants()->create([
+                    'team_name' => mb_substr($name, 0, 200),
+                    'seed_number' => $nextSeed + $index,
+                    'status' => ParticipantStatus::ACTIVE,
+                    'source_created_at' => now(),
+                    'synced_at' => now(),
+                ]);
+            }
+
+            $this->syncCount($tournament);
+        });
+
+        return $this->returnToAddParticipant($tournament)->with('success', __('ui.bulk_participants_added', ['count' => $names->count()]));
     }
 
     public function update(Request $request, Tournament $tournament, Participant $participant): RedirectResponse

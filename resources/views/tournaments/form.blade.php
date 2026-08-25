@@ -34,7 +34,7 @@
 <div class="format-config-panel full" data-format-panel="RANKING" @if($selectedFormat !== 'RANKING') hidden @endif>
     <div class="format-config-head"><span class="format-config-icon">#</span><div><strong>{{ __('ui.ranking_settings') }}</strong><span>{{ __('ui.ranking_format_help') }}</span></div></div>
     <div class="format-settings-grid">
-        <div class="field"><label for="ranking_attempts">{{ __('ui.ranking_attempts') }}</label><input id="ranking_attempts" type="number" min="1" max="20" name="ranking_attempts" value="{{ old('ranking_attempts', $tournament->ranking_config['attempts'] ?? 3) }}" @disabled($structureLocked)></div>
+        <div class="field"><label for="ranking_attempts">{{ __('ui.ranking_attempts') }}</label><input id="ranking_attempts" type="number" min="1" max="20" name="ranking_attempts" value="{{ old('ranking_attempts', $tournament->ranking_config['attempts'] ?? 2) }}" @disabled($structureLocked)></div>
         <div class="field"><label for="ranking_comparator">{{ __('ui.ranking_comparator') }}</label><select id="ranking_comparator" name="ranking_comparator" @disabled($structureLocked)><option value="BEST_SCORE_HIGHER" @selected(old('ranking_comparator', $tournament->ranking_config['comparator'] ?? '') === 'BEST_SCORE_HIGHER')>{{ __('ui.higher_score_wins') }}</option><option value="BEST_TIME_LOWER" @selected(old('ranking_comparator', $tournament->ranking_config['comparator'] ?? '') === 'BEST_TIME_LOWER')>{{ __('ui.lower_time_wins') }}</option></select></div>
     </div>
 </div>
@@ -83,8 +83,11 @@
     .choice-card input { flex:0 0 auto; width:20px; height:20px; min-height:20px; margin:1px 0 0; }
     .choice-card span { display:flex; min-width:0; flex-direction:column; }
     .choice-card small { margin-top:3px; color:var(--muted); font-weight:500; }
+    .danger-row { gap:14px; padding:12px 0; border-top:1px solid var(--line); }
+    .danger-row:first-of-type { border-top:0; padding-top:0; }
+    .danger-row:last-child { padding-bottom:0; }
     @media (max-width: 820px) { .format-settings-grid.three { grid-template-columns: 1fr; } }
-    @media (max-width: 680px) { .format-settings-grid, .choice-grid { grid-template-columns: 1fr; } .choice-card { min-height:86px; padding:16px; } }
+    @media (max-width: 680px) { .format-settings-grid, .choice-grid { grid-template-columns: 1fr; } .choice-card { min-height:86px; padding:16px; } .danger-row { align-items:flex-start; flex-direction:column; } }
 </style>
 @endpush
 

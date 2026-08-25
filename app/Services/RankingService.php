@@ -30,7 +30,7 @@ class RankingService
                 throw new DomainException(__('ui.participant_wrong_tournament'));
             }
 
-            $limit = max(1, min(20, (int) ($locked->ranking_config['attempts'] ?? 3)));
+            $limit = max(1, min(20, (int) ($locked->ranking_config['attempts'] ?? 2)));
 
             if ($number < 1 || $number > $limit) {
                 throw new InvalidArgumentException(__('ui.attempt_number_range', ['limit' => $limit]));

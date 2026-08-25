@@ -10,8 +10,10 @@ use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
 use App\Models\Stage;
 use App\Models\Tournament;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -22,10 +24,26 @@ class TournamentController extends Controller
     public function index(Request $request): View
     {
         $isAdmin = $request->user()?->isAdmin() ?? false;
-        $tournaments = Tournament::query()->withCount(['participants', 'matches'])
-            ->when(! $isAdmin, fn ($query) => $query->whereRaw('1 = 0'))
-            ->when($isAdmin && $request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
-            ->orderByDesc('source_created_at')->paginate(12)->withQueryString();
+
+        try {
+            $tournaments = Tournament::query()->withCount(['participants', 'matches'])
+                ->when(! $isAdmin, fn ($query) => $query->whereRaw('1 = 0'))
+                ->when($isAdmin && $request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+                ->orderByDesc('source_created_at')->paginate(12)->withQueryString();
+        } catch (QueryException $exception) {
+            throw_unless(app()->isLocal(), $exception);
+
+            $tournaments = new LengthAwarePaginator(
+                items: [],
+                total: 0,
+                perPage: 12,
+                currentPage: LengthAwarePaginator::resolveCurrentPage(),
+                options: [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                ],
+            );
+        }
 
         return view('tournaments.index', compact('tournaments'));
     }
@@ -157,7 +175,7 @@ class TournamentController extends Controller
     private function rankingConfig(array $data): ?array
     {
         return $data['format'] === TournamentFormat::RANKING->value
-            ? ['attempts' => (int) ($data['ranking_attempts'] ?? 3), 'comparator' => $data['ranking_comparator'] ?? 'BEST_SCORE_HIGHER'] : null;
+            ? ['attempts' => (int) ($data['ranking_attempts'] ?? 2), 'comparator' => $data['ranking_comparator'] ?? 'BEST_SCORE_HIGHER'] : null;
     }
 
     /** @param array<string, mixed> $data */

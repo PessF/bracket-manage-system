@@ -17,7 +17,8 @@ class EnsureTournamentIsLive
         $tournament = $request->route('tournament');
 
         abort_unless(
-            $tournament instanceof Tournament && $tournament->status === TournamentStatus::LIVE,
+            $tournament instanceof Tournament
+                && in_array($tournament->status, [TournamentStatus::LIVE, TournamentStatus::COMPLETED, TournamentStatus::ARCHIVED], true),
             404,
         );
 

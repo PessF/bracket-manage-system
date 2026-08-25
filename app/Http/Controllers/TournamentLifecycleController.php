@@ -23,6 +23,11 @@ class TournamentLifecycleController extends Controller
         return $this->execute(fn () => $this->lifecycle->complete($tournament), __('ui.tournament_completed'));
     }
 
+    public function resetBracket(Tournament $tournament): RedirectResponse
+    {
+        return $this->execute(fn () => $this->lifecycle->resetBracket($tournament), __('ui.bracket_reset'));
+    }
+
     public function archive(Tournament $tournament): RedirectResponse
     {
         return $this->execute(fn () => $this->lifecycle->archive($tournament), __('ui.tournament_archived'));

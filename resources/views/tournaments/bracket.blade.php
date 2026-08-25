@@ -11,6 +11,8 @@
     .bracket-section-head { display:flex; align-items:center; gap:10px; margin:0 0 10px; }
     .bracket-section-head h2 { margin:0; font-size:16px; }
     .bracket-count { color:var(--muted); font-size:12px; }
+    .bracket-admin-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .bracket-admin-actions form { margin:0; }
     .bracket-viewport { position:relative; overflow:auto; overscroll-behavior-inline:contain; min-height:190px; border:1px solid var(--line); border-radius:7px; background:#0c1219; scrollbar-color:#3a4653 transparent; -webkit-overflow-scrolling:touch; }
     .bracket-canvas { position:relative; min-width:100%; }
     .bracket-connectors { position:absolute; inset:0; z-index:1; overflow:visible; pointer-events:none; }
@@ -19,7 +21,9 @@
     .bracket-match-node { position:absolute; z-index:2; width:272px; min-height:126px; padding:10px; border:1px solid var(--line); border-radius:7px; background:var(--card); box-shadow:none; transition:border-color .14s; }
     .bracket-match-node:hover { z-index:4; border-color:var(--line-strong); box-shadow:none; transform:none; }
     .bracket-match-meta { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px; min-height:24px; margin-bottom:6px; color:var(--muted); font-size:11px; }
-    .bracket-match-number { font-weight:700; color:#52525b; }
+    .bracket-match-number { display:inline-flex; align-items:baseline; gap:4px; font-weight:700; color:#52525b; }
+    .bracket-match-number strong { font-size:16px; font-weight:900; }
+    .bracket-match-number span { font-size:10px; }
     .bracket-team { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; align-items:center; min-height:35px; margin:0; padding:6px 7px; background:var(--soft); border:1px solid transparent; border-radius:5px; font-weight:inherit; }
     .bracket-team + .bracket-team { margin-top:3px; }
     .bracket-team.winner { background:#f0fdf4; border-color:#dcfce7; color:#166534; font-weight:650; }
@@ -44,8 +48,11 @@
     .score-modal-team-name { display:flex; align-items:center; gap:7px; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
     .score-modal-team .score-stepper { min-width:0; }
     .score-modal-actions { display:flex; justify-content:flex-end; gap:7px; margin-top:14px; }
-    .bracket-destinations { display:flex; align-items:center; gap:9px; margin-top:7px; color:#71717a; font-size:12px; }
-    .bracket-destinations span { white-space:nowrap; }
+    .bracket-destinations { display:flex; align-items:center; gap:5px; margin-top:7px; color:#71717a; font-size:12px; }
+    .bracket-destination { display:inline-flex; align-items:center; gap:4px; min-width:0; height:20px; padding:0 6px; border:1px solid var(--line); border-radius:999px; background:var(--soft); white-space:nowrap; }
+    .bracket-destination strong { font-weight:800; }
+    .bracket-destination.win { border-color:#9bd9bf; background:#e8f8f0; color:#116f4f; }
+    .bracket-destination.loss { border-color:#c9d7e2; background:#f2f7fb; color:#5b6e7e; }
     .bracket-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px; padding:14px; }
     .bracket-grid .bracket-match-node { position:relative; width:auto; height:auto !important; min-height:118px; left:auto !important; top:auto !important; }
     .bracket-legend { display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); }
@@ -75,14 +82,28 @@
 @section('content')
 @php
     $isPublicView = request()->routeIs('public.tournaments.*');
-    $isAdmin = !$isPublicView && (auth()->user()?->isAdmin() ?? false);
+    $isAdmin = auth()->user()?->isAdmin() ?? false;
 @endphp
 @if($isPublicView)
 <div class="viewer-event-head">
     <div><h1>{{ $tournament->name }}</h1><p>{{ $tournament->competition }} · {{ $tournament->division }}</p></div>
     <span class="badge {{ $tournament->status->value }}">{{ __('ui.tournament_status_labels.'.$tournament->status->value) }}</span>
 </div>
-@include('tournaments._live_refresh')
+@includeWhen($tournament->status === App\Enums\TournamentStatus::LIVE, 'tournaments._live_refresh')
+@if($isAdmin)
+@include('tournaments._tabs')
+@if($tournament->status === App\Enums\TournamentStatus::LIVE)
+<div class="bracket-toolbar">
+    <div class="bracket-hint">{{ __('ui.bracket_updates') }}</div>
+    <div class="bracket-admin-actions">
+        <form method="post" action="{{ route('tournaments.complete', $tournament) }}" data-confirm="{{ __('ui.complete_tournament_confirm') }}">
+            @csrf
+            <button class="btn danger" type="submit">{{ __('ui.complete') }}</button>
+        </form>
+    </div>
+</div>
+@endif
+@endif
 <div class="viewer-bracket-help">{{ __('ui.viewer_bracket_help') }}</div>
 @else
 <div class="page-head">
@@ -95,17 +116,45 @@
 
 <div class="bracket-toolbar">
     <div class="bracket-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z"/></svg>{{ __('ui.bracket_updates') }}</div>
-    <div class="bracket-legend"><span><i class="legend-line"></i>{{ __('ui.advances_to') }}</span><span><i class="legend-win"></i>{{ __('ui.winner') }}</span><span>{{ __('ui.scroll_rounds') }}</span></div>
+    <div class="bracket-admin-actions">
+        <div class="bracket-legend"><span><i class="legend-line"></i>{{ __('ui.advances_to') }}</span><span><i class="legend-win"></i>{{ __('ui.winner') }}</span><span>{{ __('ui.scroll_rounds') }}</span></div>
+        @if($isAdmin && $tournament->status === App\Enums\TournamentStatus::LIVE)
+        <form method="post" action="{{ route('tournaments.complete', $tournament) }}" data-confirm="{{ __('ui.complete_tournament_confirm') }}">
+            @csrf
+            <button class="btn danger" type="submit">{{ __('ui.complete') }}</button>
+        </form>
+        @endif
+    </div>
 </div>
+@endif
+
+@if($tournament->status === App\Enums\TournamentStatus::COMPLETED && $podium->isNotEmpty())
+<section class="card bracket-results-summary">
+    <h2>{{ __('ui.results') }}</h2>
+    <div class="podium-grid">
+        @foreach($podium as $row)
+        <div class="podium-card rank-{{ $row['rank'] }}">
+            <span class="podium-rank">#{{ $row['rank'] }}</span>
+            <div>
+                <div class="podium-team" title="{{ $row['participant']->team_name }}">{{ $row['participant']->team_name }}</div>
+                @if($row['source'])
+                <div class="podium-source">{{ __('ui.match') }} #{{ $row['source']->match_number }}</div>
+                @endif
+            </div>
+        </div>
+        @endforeach
+    </div>
+</section>
 @endif
 
 @forelse($matches as $type => $group)
 @php
     $isGrid = in_array($type, ['ROUND_ROBIN', 'RANKING'], true);
+    $hasGrandFinal = $group->contains(fn ($match): bool => $match->bracket_type === App\Enums\BracketType::GRAND_FINAL);
 @endphp
 <section class="bracket-section">
     <div class="bracket-section-head"><h2>{{ __('ui.bracket_labels.'.$type) }}</h2><span class="bracket-count">{{ trans_choice('ui.match_count', $group->count(), ['count' => $group->count()]) }}</span></div>
-    <div class="bracket-viewport {{ $isGrid ? 'bracket-grid' : '' }}" data-bracket-section data-bracket-type="{{ $type }}">
+    <div class="bracket-viewport {{ $isGrid ? 'bracket-grid' : '' }}" data-bracket-section data-bracket-type="{{ $type }}" data-has-grand-final="{{ $hasGrandFinal ? 'true' : 'false' }}">
         @if(!$isGrid)<div class="bracket-canvas" data-bracket-canvas></div>@endif
         @foreach($group as $match)
         @php
@@ -119,11 +168,14 @@
                 && $tournament->status === App\Enums\TournamentStatus::LIVE
                 && $match->status === App\Enums\MatchStatus::FINISHED && !$match->is_bye
                 && $match->participant_a_id && $match->participant_b_id;
+            $isUnscored = !$match->is_bye && $match->participant_a_id && $match->participant_b_id
+                && in_array($match->status, [App\Enums\MatchStatus::READY, App\Enums\MatchStatus::LIVE], true)
+                && ($match->score_a === null || $match->score_b === null);
         @endphp
-        <article class="bracket-match-node"
+        <article class="bracket-match-node {{ $match->status === App\Enums\MatchStatus::LIVE ? 'in-progress' : '' }} {{ $match->status === App\Enums\MatchStatus::FINISHED ? 'is-finished' : '' }} {{ $match->status === App\Enums\MatchStatus::READY ? 'is-ready' : '' }} {{ $isUnscored ? 'is-unscored' : '' }}"
             data-match-id="{{ $match->id }}" data-round="{{ $match->round_number }}" data-number="{{ $match->match_number }}"
             data-winner-next="{{ $match->winner_next_match_id }}" data-loser-next="{{ $match->loser_next_match_id }}">
-            <div class="bracket-match-meta"><span class="bracket-match-number">{{ $type === 'GRAND_FINAL' ? __('ui.grand_final_match_number', ['number' => $loop->iteration]) : __('ui.match').' #'.$match->match_number }}</span><span class="badge {{ $match->status->value }}">{{ $match->is_bye ? __('ui.bye') : __('ui.match_status_labels.'.$match->status->value) }}</span></div>
+            <div class="bracket-match-meta"><span class="bracket-match-number"><span>{{ $type === 'GRAND_FINAL' ? __('ui.grand_final') : __('ui.match') }}</span><strong>#{{ $type === 'GRAND_FINAL' ? $loop->iteration : $match->match_number }}</strong></span><span class="badge {{ $match->status->value }}">{{ $match->is_bye ? __('ui.bye') : __('ui.match_status_labels.'.$match->status->value) }}</span></div>
             <div class="bracket-team {{ $match->winner_id && $match->winner_id === $match->participant_a_id ? 'winner' : '' }} {{ !$match->participant_a_id ? 'waiting' : '' }}">
                 <span class="bracket-team-name"><i class="match-side red">{{ __('ui.red_side') }}</i>@if($match->participantA?->seed_number)<i class="bracket-seed">{{ $match->participantA->seed_number }}</i>@endif<span title="{{ $nameA }}">{{ $nameA }}</span></span><span class="bracket-score">{{ $match->score_a !== null ? (float)$match->score_a : '—' }}</span>
             </div>
@@ -131,7 +183,7 @@
                 <span class="bracket-team-name"><i class="match-side blue">{{ __('ui.blue_side') }}</i>@if($match->participantB?->seed_number)<i class="bracket-seed">{{ $match->participantB->seed_number }}</i>@endif<span title="{{ $nameB }}">{{ $nameB }}</span></span><span class="bracket-score">{{ $match->score_b !== null ? (float)$match->score_b : '—' }}</span>
             </div>
             @if($canEnterScore || $canEditScore || $match->status === App\Enums\MatchStatus::LIVE)@include('tournaments._bracket-match-actions')@endif
-            @if($match->winnerNextMatch || $match->loserNextMatch)<div class="bracket-destinations">@if($match->winnerNextMatch)<span>{{ __('ui.winner_to_match', ['number' => $match->winnerNextMatch->match_number]) }}</span>@endif @if($match->loserNextMatch)<span>{{ __('ui.loser_to_match', ['number' => $match->loserNextMatch->match_number]) }}</span>@endif</div>@endif
+            @if($match->winnerNextMatch || $match->loserNextMatch)<div class="bracket-destinations">@if($match->winnerNextMatch)<span class="bracket-destination win">{{ __('ui.winner_to_match', ['number' => $match->winnerNextMatch->match_number]) }}</span>@endif @if($match->loserNextMatch)<span class="bracket-destination loss">{{ __('ui.loser_to_match', ['number' => $match->loserNextMatch->match_number]) }}</span>@endif</div>@endif
         </article>
         @endforeach
     </div>
@@ -147,8 +199,9 @@
         @csrf
         <input type="hidden" name="score_modal_match" data-score-modal-match>
         <div class="score-modal-teams">
-            <label class="score-modal-team"><span class="score-modal-team-name"><i class="match-side red">{{ __('ui.red_side') }}</i><span data-score-team-a></span></span><span class="score-stepper"><button type="button" data-score-step="-1" aria-label="{{ __('ui.subtract_point') }}">−</button><input type="number" inputmode="decimal" min="0" step="any" name="score_a" value="0" required><button type="button" data-score-step="1" aria-label="{{ __('ui.add_point') }}">+</button></span></label>
-            <label class="score-modal-team"><span class="score-modal-team-name"><i class="match-side blue">{{ __('ui.blue_side') }}</i><span data-score-team-b></span></span><span class="score-stepper"><button type="button" data-score-step="-1" aria-label="{{ __('ui.subtract_point') }}">−</button><input type="number" inputmode="decimal" min="0" step="any" name="score_b" value="0" required><button type="button" data-score-step="1" aria-label="{{ __('ui.add_point') }}">+</button></span></label>
+            <label class="score-modal-team" data-score-card-a><span class="score-modal-team-name"><i class="match-side red">{{ __('ui.red_side') }}</i><span data-score-team-a></span><em class="score-leader-badge">{{ __('ui.leading_score') }}</em></span><span class="score-stepper"><button type="button" data-score-step="-1" aria-label="{{ __('ui.subtract_point') }}">−</button><input type="number" inputmode="decimal" min="0" step="any" name="score_a" value="0" required><button type="button" data-score-step="1" aria-label="{{ __('ui.add_point') }}">+</button></span></label>
+            <div class="score-versus" aria-hidden="true">VS</div>
+            <label class="score-modal-team" data-score-card-b><span class="score-modal-team-name"><i class="match-side blue">{{ __('ui.blue_side') }}</i><span data-score-team-b></span><em class="score-leader-badge">{{ __('ui.leading_score') }}</em></span><span class="score-stepper"><button type="button" data-score-step="-1" aria-label="{{ __('ui.subtract_point') }}">−</button><input type="number" inputmode="decimal" min="0" step="any" name="score_b" value="0" required><button type="button" data-score-step="1" aria-label="{{ __('ui.add_point') }}">+</button></span></label>
         </div>
         <div class="score-modal-actions"><button class="btn secondary" type="button" data-score-modal-close>{{ __('ui.cancel') }}</button><button class="btn" type="submit" data-score-modal-submit>{{ __('ui.confirm_score') }}</button></div>
     </form>
@@ -169,6 +222,8 @@
     const teamB = dialog.querySelector('[data-score-team-b]');
     const scoreA = form.elements.score_a;
     const scoreB = form.elements.score_b;
+    const cardA = dialog.querySelector('[data-score-card-a]');
+    const cardB = dialog.querySelector('[data-score-card-b]');
     const matchId = form.elements.score_modal_match;
     const submit = dialog.querySelector('[data-score-modal-submit]');
     const titleTemplate = @json(__('ui.score_match_title', ['number' => '__NUMBER__']));
@@ -191,10 +246,28 @@
         submit.textContent = editing ? editLabel : enterLabel;
         if (editing) form.dataset.confirm = correctionConfirm;
         else delete form.dataset.confirm;
+        syncLeader();
 
         dialog.showModal();
         requestAnimationFrame(() => scoreA.focus());
     };
+
+    const scoreValue = (input) => {
+        const value = Number(input.value);
+        return Number.isFinite(value) ? value : null;
+    };
+
+    const syncLeader = () => {
+        const a = scoreValue(scoreA);
+        const b = scoreValue(scoreB);
+        cardA?.classList.remove('leading');
+        cardB?.classList.remove('leading');
+        if (a === null || b === null || a === b) return;
+        (a > b ? cardA : cardB)?.classList.add('leading');
+    };
+
+    scoreA.addEventListener('input', syncLeader);
+    scoreB.addEventListener('input', syncLeader);
 
     document.querySelectorAll('[data-score-modal-trigger]').forEach((trigger) => {
         trigger.addEventListener('click', () => openModal(trigger));
@@ -215,11 +288,15 @@
 
 (() => {
     const SVG_NS = 'http://www.w3.org/2000/svg';
-    const HEADER = 44;
-    const GAP_X = 86;
-    const GAP_Y = 32;
+    const HEADER = 58;
+    const GAP_X = 54;
+    const GAP_Y = 18;
+    const ACTION_GUTTER = 48;
     const ROUND_LABEL = @json(__('ui.round'));
     const FINAL_LABEL = @json(__('ui.final'));
+    const SEMIFINAL_LABEL = @json(__('ui.semifinals'));
+    const FINALS_LABEL = @json(__('ui.finals'));
+    const LOSERS_ROUND_LABEL = @json(__('ui.losers_round'));
 
     document.querySelectorAll('[data-bracket-section]:not(.bracket-grid)').forEach((viewport) => {
         const canvas = viewport.querySelector('[data-bracket-canvas]');
@@ -259,19 +336,38 @@
             });
 
             const maxY = Math.max(0, ...y.values());
-            const width = Math.max(viewport.clientWidth, rounds.length * columnWidth - GAP_X + 28);
+            const width = Math.max(viewport.clientWidth, rounds.length * columnWidth - GAP_X + ACTION_GUTTER + 28);
             const height = maxY + cardHeight + HEADER + 24;
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
 
+            const roundTitle = (round, index) => {
+                const type = viewport.dataset.bracketType;
+                const hasGrandFinal = viewport.dataset.hasGrandFinal === 'true';
+                const remaining = rounds.length - index;
+
+                if (type === 'LOSERS') return `${LOSERS_ROUND_LABEL} ${index + 1}`;
+                if (type === 'GRAND_FINAL') return rounds.length > 1 ? `${FINAL_LABEL} ${index + 1}` : FINAL_LABEL;
+                if (type === 'WINNERS') {
+                    if (hasGrandFinal && remaining === 1) return FINALS_LABEL;
+                    if (remaining === 1 || (hasGrandFinal && remaining === 2)) return SEMIFINAL_LABEL;
+                    return `${ROUND_LABEL} ${index + 1}`;
+                }
+
+                if (rounds.length === 1) return FINAL_LABEL;
+                if (remaining === 1) return FINALS_LABEL;
+                if (remaining === 2) return SEMIFINAL_LABEL;
+                return `${ROUND_LABEL} ${index + 1}`;
+            };
+
             rounds.forEach((round, index) => {
                 const title = document.createElement('div');
                 title.className = 'bracket-round-title';
+                title.dataset.roundTone = ['pink', 'blue', 'orange', 'cyan', 'green', 'violet'][index % 6];
                 title.style.left = `${index * columnWidth + 14}px`;
+                title.style.top = '10px';
                 title.style.width = `${cardWidth}px`;
-                title.textContent = viewport.dataset.bracketType === 'GRAND_FINAL'
-                    ? `${FINAL_LABEL} ${index + 1}`
-                    : (rounds.length === 1 ? FINAL_LABEL : (index === rounds.length - 1 ? FINAL_LABEL : `${ROUND_LABEL} ${index + 1}`));
+                title.textContent = roundTitle(round, index);
                 canvas.appendChild(title);
             });
 

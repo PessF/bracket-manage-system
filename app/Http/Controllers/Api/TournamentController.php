@@ -145,7 +145,7 @@ class TournamentController extends Controller
             $configuration = [
                 'format' => $data['format'] ?? $tournament->format->value,
                 'seeding_method' => $data['seeding_method'] ?? $tournament->seeding_method->value,
-                'ranking_attempts' => $data['ranking_attempts'] ?? ($tournament->ranking_config['attempts'] ?? 3),
+                'ranking_attempts' => $data['ranking_attempts'] ?? ($tournament->ranking_config['attempts'] ?? 2),
                 'ranking_comparator' => $data['ranking_comparator'] ?? ($tournament->ranking_config['comparator'] ?? 'BEST_SCORE_HIGHER'),
                 'grand_final_matches' => $data['grand_final_matches'] ?? ($tournament->double_elimination_config['grand_final_matches'] ?? 2),
             ];
@@ -219,7 +219,7 @@ class TournamentController extends Controller
     private function rankingConfig(array $data): ?array
     {
         return $data['format'] === TournamentFormat::RANKING->value
-            ? ['attempts' => (int) ($data['ranking_attempts'] ?? 3), 'comparator' => $data['ranking_comparator'] ?? 'BEST_SCORE_HIGHER']
+            ? ['attempts' => (int) ($data['ranking_attempts'] ?? 2), 'comparator' => $data['ranking_comparator'] ?? 'BEST_SCORE_HIGHER']
             : null;
     }
 

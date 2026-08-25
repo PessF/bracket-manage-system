@@ -40,10 +40,12 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::delete('/tournaments/{tournament}', [TournamentController::class, 'destroy'])->name('tournaments.destroy');
 
     Route::post('/tournaments/{tournament}/participants', [ParticipantController::class, 'store'])->name('participants.store');
+    Route::post('/tournaments/{tournament}/participants/bulk', [ParticipantController::class, 'bulkStore'])->name('participants.bulk-store');
     Route::put('/tournaments/{tournament}/participants/{participant}', [ParticipantController::class, 'update'])->name('participants.update');
     Route::delete('/tournaments/{tournament}/participants/{participant}', [ParticipantController::class, 'destroy'])->name('participants.destroy');
     Route::post('/tournaments/{tournament}/participants/import', [ParticipantImportController::class, 'store'])->name('participants.import');
     Route::post('/tournaments/{tournament}/start', [TournamentLifecycleController::class, 'start'])->name('tournaments.start');
+    Route::post('/tournaments/{tournament}/reset-bracket', [TournamentLifecycleController::class, 'resetBracket'])->name('tournaments.reset-bracket');
     Route::post('/tournaments/{tournament}/complete', [TournamentLifecycleController::class, 'complete'])->name('tournaments.complete');
     Route::post('/tournaments/{tournament}/archive', [TournamentLifecycleController::class, 'archive'])->name('tournaments.archive');
     Route::post('/tournaments/{tournament}/matches/{match}/result', [MatchResultController::class, 'store'])->name('matches.results.store');
@@ -65,6 +67,8 @@ Route::middleware('tournament.visible')->group(function (): void {
     Route::get('/tournaments/{tournament}/matches', [TournamentWorkspaceController::class, 'adminMatches'])->name('tournaments.matches');
     Route::get('/tournaments/{tournament}/results', [TournamentWorkspaceController::class, 'results'])->name('tournaments.results');
 });
+
+Route::view('/view', 'tournaments.public-index')->name('public.tournaments.index');
 
 Route::middleware('tournament.live')->prefix('view')->name('public.tournaments.')->group(function (): void {
     Route::get('/{tournament:public_token}', [TournamentWorkspaceController::class, 'bracket'])->name('show');
