@@ -6,7 +6,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\SeedingMethod;
 use App\Enums\StageStatus;
+use App\Enums\StageSourceType;
+use App\Enums\StageType;
 use App\Enums\TournamentFormat;
+use App\Enums\TournamentStructure;
 use App\Enums\TournamentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Participant;
@@ -108,6 +111,7 @@ class TournamentController extends Controller
             $now = now();
             $tournament = Tournament::query()->create($data + [
                 'status' => TournamentStatus::DRAFT,
+                'structure' => TournamentStructure::STANDARD,
                 'participant_count' => 0,
                 'ranking_config' => $this->rankingConfig($data),
                 'round_robin_config' => $this->roundRobinConfig($data),
@@ -120,8 +124,10 @@ class TournamentController extends Controller
                 'tournament_id' => $tournament->id,
                 'name' => 'Main Stage',
                 'stage_order' => 1,
+                'stage_type' => StageType::MAIN,
                 'format' => $tournament->format,
                 'status' => StageStatus::PENDING,
+                'source_type' => StageSourceType::REGISTRATION,
                 'source_created_at' => $now,
             ]);
 

@@ -18,7 +18,7 @@ class EnsureTournamentIsLive
 
         abort_unless(
             $tournament instanceof Tournament
-                && in_array($tournament->status, [TournamentStatus::LIVE, TournamentStatus::COMPLETED, TournamentStatus::ARCHIVED], true),
+                && in_array($tournament->status, [TournamentStatus::READY, TournamentStatus::LIVE, TournamentStatus::COMPLETED, TournamentStatus::ARCHIVED], true),
             404,
         );
 

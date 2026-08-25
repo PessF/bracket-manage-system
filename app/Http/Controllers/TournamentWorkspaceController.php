@@ -10,12 +10,13 @@ use App\Models\Participant;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class TournamentWorkspaceController extends Controller
 {
-    public function bracket(Tournament $tournament): View
+    public function bracket(Request $request, Tournament $tournament): View
     {
         $matches = $tournament->matches()->with([
             'participantA',
@@ -24,12 +25,27 @@ class TournamentWorkspaceController extends Controller
             'loser',
             'winnerNextMatch',
             'loserNextMatch',
+            'stageGroup',
         ])->orderBy('match_number')->get();
         $standings = $tournament->standings()->with('participant')->orderByRaw('CASE WHEN rank_number = 0 THEN 1 ELSE 0 END')->orderBy('rank_number')->get();
         $podium = $this->podium($matches, $standings);
-        $groupedMatches = $this->bracketGroupsForDisplay($matches);
+        $groups = $matches
+            ->filter(fn (TournamentMatch $match): bool => $match->stage_group_id !== null)
+            ->pluck('stageGroup')
+            ->filter()
+            ->unique('id')
+            ->sortBy('group_order')
+            ->values();
+        $activeBracketView = (string) $request->query('view', 'all');
+        $groupedMatches = $this->bracketGroupsForDisplay($matches, $activeBracketView);
 
-        return view('tournaments.bracket', ['tournament' => $tournament, 'matches' => $groupedMatches, 'podium' => $podium]);
+        return view('tournaments.bracket', [
+            'tournament' => $tournament,
+            'matches' => $groupedMatches,
+            'podium' => $podium,
+            'bracketViewGroups' => $groups,
+            'activeBracketView' => $activeBracketView,
+        ]);
     }
 
     public function matches(Tournament $tournament): View
@@ -60,8 +76,34 @@ class TournamentWorkspaceController extends Controller
         return view('tournaments.results', compact('tournament', 'standings', 'participants'));
     }
 
-    private function bracketGroupsForDisplay(Collection $matches): Collection
+    private function bracketGroupsForDisplay(Collection $matches, string $activeView = 'all'): Collection
     {
+        if ($matches->contains(fn (TournamentMatch $match): bool => $match->stage_group_id !== null)) {
+            $groupSections = $matches
+                ->filter(fn (TournamentMatch $match): bool => $match->stage_group_id !== null)
+                ->groupBy(fn (TournamentMatch $match): string => 'GROUP:'.$match->stage_group_id.':'.$match->bracket_type->value)
+                ->map(fn (Collection $group): Collection => $group->sortBy('match_number')->values());
+            $groupSections = $this->mergeGroupGrandFinalsIntoWinners($groupSections);
+            $playoffSections = $matches
+                ->filter(fn (TournamentMatch $match): bool => $match->stage_group_id === null)
+                ->groupBy(fn (TournamentMatch $match): string => 'PLAYOFF:'.$match->bracket_type->value)
+                ->map(fn (Collection $group): Collection => $group->sortBy('match_number')->values());
+
+            if (str_starts_with($activeView, 'group:')) {
+                $groupId = substr($activeView, 6);
+
+                return $groupSections
+                    ->filter(fn (Collection $group, string $key): bool => str_starts_with($key, 'GROUP:'.$groupId.':'))
+                    ->merge($playoffSections);
+            }
+
+            if ($activeView === 'playoff') {
+                return $playoffSections;
+            }
+
+            return $groupSections->merge($playoffSections);
+        }
+
         $groups = $matches->groupBy(fn (TournamentMatch $match): string => $match->bracket_type->value);
         $grandFinals = $groups->get(BracketType::GRAND_FINAL->value, collect());
 
@@ -83,6 +125,47 @@ class TournamentWorkspaceController extends Controller
         }
 
         return $groups;
+    }
+
+    private function mergeGroupGrandFinalsIntoWinners(Collection $sections): Collection
+    {
+        $merged = collect();
+        $grandFinalSections = $sections->filter(fn (Collection $group, string $key): bool => str_ends_with($key, ':'.BracketType::GRAND_FINAL->value));
+
+        foreach ($sections as $key => $group) {
+            if (str_ends_with((string) $key, ':'.BracketType::GRAND_FINAL->value)) {
+                continue;
+            }
+
+            if (! str_ends_with((string) $key, ':'.BracketType::WINNERS->value)) {
+                $merged->put($key, $group);
+                continue;
+            }
+
+            $prefix = substr((string) $key, 0, -strlen(':'.BracketType::WINNERS->value));
+            $grandFinals = $grandFinalSections->get($prefix.':'.BracketType::GRAND_FINAL->value, collect());
+
+            if ($grandFinals->isEmpty()) {
+                $merged->put($key, $group);
+                continue;
+            }
+
+            $nextRound = ((int) $group->max('round_number')) + 1;
+            $grandFinals->values()->each(function (TournamentMatch $match, int $index) use ($nextRound): void {
+                $match->setAttribute('round_number', $nextRound + $index);
+            });
+            $grandFinals->values()->each(function (TournamentMatch $match, int $index) use ($grandFinals): void {
+                $nextGrandFinal = $grandFinals->values()->get($index + 1);
+
+                if ($nextGrandFinal instanceof TournamentMatch && $match->winner_next_match_id === null) {
+                    $match->setAttribute('winner_next_match_id', $nextGrandFinal->id);
+                }
+            });
+
+            $merged->put($key, $group->concat($grandFinals)->sortBy('match_number')->values());
+        }
+
+        return $merged;
     }
 
     private function podium(Collection $matches, Collection $standings): Collection

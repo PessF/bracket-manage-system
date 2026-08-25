@@ -30,6 +30,7 @@ class TournamentMatch extends Model
         'id',
         'tournament_id',
         'stage_id',
+        'stage_group_id',
         'match_number',
         'bracket_type',
         'round_number',
@@ -81,6 +82,11 @@ class TournamentMatch extends Model
     public function stage(): BelongsTo
     {
         return $this->belongsTo(Stage::class);
+    }
+
+    public function stageGroup(): BelongsTo
+    {
+        return $this->belongsTo(StageGroup::class, 'stage_group_id');
     }
 
     public function participantA(): BelongsTo

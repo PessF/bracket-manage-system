@@ -82,7 +82,7 @@ class RankingService
             $rank = 0;
 
             if ($row['best'] !== null) {
-                $rank = $lastValue !== null && bccomp((string) $row['best'], (string) $lastValue, 6) === 0
+                $rank = $lastValue !== null && bccomp((string) $row['best'], (string) $lastValue, 2) === 0
                     ? $lastRank
                     : $index + 1;
                 $lastValue = $row['best'];
@@ -105,10 +105,10 @@ class RankingService
     {
         $text = trim((string) $value);
 
-        if (! preg_match('/^\d{1,12}(?:\.\d{1,6})?$/', $text)) {
+        if (! preg_match('/^\d{1,12}(?:\.\d{1,2})?$/', $text)) {
             throw new InvalidArgumentException(__('ui.attempt_value_invalid'));
         }
 
-        return bcadd($text, '0', 6);
+        return bcadd($text, '0', 2);
     }
 }

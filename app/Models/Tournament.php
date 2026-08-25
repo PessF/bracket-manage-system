@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\SeedingMethod;
 use App\Enums\TournamentFormat;
+use App\Enums\TournamentStructure;
 use App\Enums\TournamentStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -31,6 +32,7 @@ class Tournament extends Model
         'name',
         'competition',
         'division',
+        'structure',
         'format',
         'seeding_method',
         'status',
@@ -44,6 +46,7 @@ class Tournament extends Model
         'locked_at',
         'started_at',
         'completed_at',
+        'advanced_config',
         'source_created_at',
         'source_updated_at',
         'synced_at',
@@ -71,6 +74,7 @@ class Tournament extends Model
 
     protected $casts = [
         'format' => TournamentFormat::class,
+        'structure' => TournamentStructure::class,
         'seeding_method' => SeedingMethod::class,
         'status' => TournamentStatus::class,
         'participant_count' => 'integer',
@@ -81,6 +85,7 @@ class Tournament extends Model
         'locked_at' => 'datetime',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'advanced_config' => 'array',
         'source_created_at' => 'datetime',
         'source_updated_at' => 'datetime',
         'synced_at' => 'datetime',
@@ -89,6 +94,16 @@ class Tournament extends Model
     public function stages(): HasMany
     {
         return $this->hasMany(Stage::class);
+    }
+
+    public function groups(): HasMany
+    {
+        return $this->hasMany(StageGroup::class);
+    }
+
+    public function advancementRules(): HasMany
+    {
+        return $this->hasMany(StageAdvancementRule::class);
     }
 
     public function participants(): HasMany

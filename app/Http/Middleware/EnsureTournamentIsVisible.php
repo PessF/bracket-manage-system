@@ -15,7 +15,7 @@ class EnsureTournamentIsVisible
     {
         $tournament = $request->route('tournament');
         abort_unless(
-            $tournament instanceof Tournament && ($request->user()?->isAdmin() ?? false),
+            $tournament instanceof Tournament,
             404,
         );
 

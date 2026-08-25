@@ -116,7 +116,11 @@ document.querySelectorAll('.tabs').forEach((tabs) => {
         instance.trigger.title = selected?.textContent.trim() || '';
         instance.trigger.disabled = instance.select.disabled;
         instance.options.forEach((option, index) => {
+            const sourceOption = instance.select.options[index];
+            const unavailable = Boolean(sourceOption?.disabled || sourceOption?.hidden);
             const isSelected = index === selectedIndex;
+            option.disabled = unavailable;
+            option.hidden = unavailable;
             option.classList.toggle('selected', isSelected);
             option.setAttribute('aria-selected', String(isSelected));
         });

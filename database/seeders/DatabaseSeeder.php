@@ -6,7 +6,10 @@ namespace Database\Seeders;
 
 use App\Enums\SeedingMethod;
 use App\Enums\StageStatus;
+use App\Enums\StageSourceType;
+use App\Enums\StageType;
 use App\Enums\TournamentFormat;
+use App\Enums\TournamentStructure;
 use App\Enums\TournamentStatus;
 use App\Models\Participant;
 use App\Models\Stage;
@@ -32,6 +35,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'EasyKids 8-Team Double Elimination Demo',
             'competition' => 'EasyKids Robotics Championship',
             'division' => 'Junior Open',
+            'structure' => TournamentStructure::STANDARD,
             'format' => TournamentFormat::DOUBLE_ELIMINATION,
             'seeding_method' => SeedingMethod::MANUAL,
             'status' => TournamentStatus::READY,
@@ -48,8 +52,10 @@ class DatabaseSeeder extends Seeder
             'tournament_id' => $tournament->id,
             'name' => 'Main Bracket',
             'stage_order' => 1,
+            'stage_type' => StageType::MAIN,
             'format' => TournamentFormat::DOUBLE_ELIMINATION,
             'status' => StageStatus::PENDING,
+            'source_type' => StageSourceType::REGISTRATION,
             'source_created_at' => $now,
         ]);
 
