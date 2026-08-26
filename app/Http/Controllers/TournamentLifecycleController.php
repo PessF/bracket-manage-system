@@ -13,6 +13,11 @@ class TournamentLifecycleController extends Controller
 {
     public function __construct(private readonly TournamentLifecycleService $lifecycle) {}
 
+    public function prepareBracket(Tournament $tournament): RedirectResponse
+    {
+        return $this->execute(fn () => $this->lifecycle->prepareBracket($tournament), __('ui.bracket_prepared'));
+    }
+
     public function start(Tournament $tournament): RedirectResponse
     {
         return $this->execute(fn () => $this->lifecycle->start($tournament), __('ui.tournament_started'));
@@ -26,6 +31,11 @@ class TournamentLifecycleController extends Controller
     public function resetBracket(Tournament $tournament): RedirectResponse
     {
         return $this->execute(fn () => $this->lifecycle->resetBracket($tournament), __('ui.bracket_reset'));
+    }
+
+    public function createPlayoff(Tournament $tournament): RedirectResponse
+    {
+        return $this->execute(fn () => $this->lifecycle->createAdvancedPlayoff($tournament), __('ui.advanced_playoff_created'));
     }
 
     public function archive(Tournament $tournament): RedirectResponse

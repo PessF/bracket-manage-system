@@ -7,6 +7,8 @@ namespace App\Services;
 use App\Enums\BracketType;
 use App\Enums\MatchSlot;
 use App\Enums\MatchStatus;
+use App\Enums\StageType;
+use App\Enums\TournamentStructure;
 use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
 use App\Models\Participant;
@@ -20,7 +22,10 @@ use LogicException;
 
 class MatchResultService
 {
-    public function __construct(private readonly RoundRobinStandingsService $roundRobinStandings) {}
+    public function __construct(
+        private readonly RoundRobinStandingsService $roundRobinStandings,
+        private readonly TournamentLifecycleService $lifecycle,
+    ) {}
 
     /**
      * Confirm a result and atomically propagate its winner and loser.
@@ -69,6 +74,10 @@ class MatchResultService
             $isCorrection = $currentMatch->status === MatchStatus::FINISHED;
             $previousWinnerId = $currentMatch->winner_id;
             $previousLoserId = $currentMatch->loser_id;
+
+            if ($isCorrection && $currentMatch->stage_group_id !== null && $this->playoffMatchesExist($currentMatch)) {
+                throw new DomainException(__('ui.group_result_locked_after_playoff'));
+            }
 
             if ($currentMatch->is_bye) {
                 throw new DomainException(__('ui.bye_result_invalid'));
@@ -163,6 +172,10 @@ class MatchResultService
                 $this->roundRobinStandings->recompute($currentMatch->tournament);
             }
 
+            if ($currentMatch->tournament->structure === TournamentStructure::ADVANCED && $currentMatch->stage_group_id !== null) {
+                $this->createPlayoffWhenReady($currentMatch);
+            }
+
             return $currentMatch->refresh()->load([
                 'winner',
                 'loser',
@@ -170,6 +183,34 @@ class MatchResultService
                 'loserNextMatch',
             ]);
         }, 3);
+    }
+
+    private function createPlayoffWhenReady(TournamentMatch $match): void
+    {
+        try {
+            $this->lifecycle->createAdvancedPlayoff($match->tournament);
+        } catch (DomainException $exception) {
+            if (! in_array($exception->getMessage(), [
+                __('ui.advanced_group_stage_incomplete'),
+                __('ui.advanced_playoff_exists'),
+            ], true)) {
+                throw $exception;
+            }
+
+            // Group-stage results can be saved one by one. Until every group
+            // match is complete, Playoff creation should simply wait.
+        }
+    }
+
+    private function playoffMatchesExist(TournamentMatch $match): bool
+    {
+        return $match->tournament
+            ->stages()
+            ->where('stage_type', StageType::PLAYOFF)
+            ->whereHas('matches', function ($query): void {
+                $query->whereNotNull('participant_a_id')->orWhereNotNull('participant_b_id');
+            })
+            ->exists();
     }
 
     private function assertParticipantsBelongToTournament(TournamentMatch $match): void

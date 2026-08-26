@@ -10,5 +10,57 @@
 <a class="card tournament-card" href="{{ route('tournaments.show', $tournament) }}"><div class="actions" style="justify-content:space-between"><span class="badge {{ $tournament->status->value }}">{{ __('ui.tournament_status_labels.'.$tournament->status->value) }}</span><span class="muted">{{ __('ui.format_labels.'.$tournament->format->value) }}</span></div><h2>{{ $tournament->name }}</h2><p>{{ $tournament->competition }} · {{ $tournament->division }}</p><div class="stats"><div class="stat"><strong>{{ $tournament->participants_count }}</strong><span class="muted">{{ __('ui.teams') }}</span></div><div class="stat"><strong>{{ $tournament->matches_count }}</strong><span class="muted">{{ __('ui.matches') }}</span></div></div><span class="card-link-label">{{ $isAdmin ? __('ui.manage_competition') : __('ui.open_competition') }} →</span></a>
 @empty<div class="card empty">{{ $isAdmin ? __('ui.no_tournaments') : __('ui.share_link_required') }}</div>@endforelse
 </div>
+
+@if($canBrowseTournaments)
+    <form class="filter-bar inline-form" method="get">
+        <div class="field">
+            <label for="status">{{ __('ui.status') }}</label>
+            <select id="status" name="status">
+                <option value="">{{ __('ui.all_statuses') }}</option>
+                @foreach(App\Enums\TournamentStatus::cases() as $status)
+                    <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ __('ui.tournament_status_labels.'.$status->value) }}</option>
+                @endforeach
+            </select>
+        </div>
+        <button class="btn secondary">{{ __('ui.filter') }}</button>
+    </form>
+@endif
+
+<div class="grid">
+    @forelse($tournaments as $tournament)
+        @php
+            $isAdvancedTournament = $tournament->structure === App\Enums\TournamentStructure::ADVANCED;
+            $advancedConfig = $tournament->advanced_config ?? [];
+            $groupFormat = $advancedConfig['group_format'] ?? null;
+            $playoffFormat = $advancedConfig['playoff_format'] ?? null;
+        @endphp
+        <a class="card tournament-card" href="{{ route('tournaments.show', $tournament) }}">
+            <div class="actions tournament-card-badges">
+                <span class="badge {{ $tournament->status->value }}">{{ __('ui.tournament_status_labels.'.$tournament->status->value) }}</span>
+                <span class="badge structure-badge {{ $tournament->structure->value }}">{{ __('ui.structure_labels.'.$tournament->structure->value) }}</span>
+                @if($isAdvancedTournament)
+                    @if($groupFormat)
+                    <span class="badge stage-format-badge group {{ $groupFormat }}">{{ __('ui.group_stage_badge', ['format' => __('ui.format_labels.'.$groupFormat)]) }}</span>
+                    @endif
+                    @if($playoffFormat)
+                    <span class="badge stage-format-badge final {{ $playoffFormat }}">{{ __('ui.grand_final_badge', ['format' => __('ui.format_labels.'.$playoffFormat)]) }}</span>
+                    @endif
+                @else
+                    <span class="badge format-badge {{ $tournament->format->value }}">{{ __('ui.format_labels.'.$tournament->format->value) }}</span>
+                @endif
+            </div>
+            <h2>{{ $tournament->name }}</h2>
+            <p>{{ $tournament->competition }} · {{ $tournament->division }}</p>
+            <div class="stats">
+                <div class="stat"><strong>{{ $tournament->participants_count }}</strong><span class="muted">{{ __('ui.teams') }}</span></div>
+                <div class="stat"><strong>{{ $tournament->matches_count }}</strong><span class="muted">{{ __('ui.matches') }}</span></div>
+            </div>
+            <span class="card-link-label">{{ $isAdmin ? __('ui.manage_competition') : __('ui.open_competition') }} →</span>
+        </a>
+    @empty
+        <div class="card empty">{{ $canBrowseTournaments ? __('ui.no_tournaments') : __('ui.share_link_required') }}</div>
+    @endforelse
+</div>
+
 <div>{{ $tournaments->links() }}</div>
 @endsection

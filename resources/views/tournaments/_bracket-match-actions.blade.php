@@ -11,7 +11,7 @@
         type="button"
         data-score-modal-trigger
         data-match-id="{{ $match->id }}"
-        data-match-number="{{ $match->match_number }}"
+        data-match-number="{{ $displayMatchNumber ?? $match->match_number }}"
         data-action="{{ route('matches.results.store', [$tournament, $match]) }}"
         data-team-a="{{ $nameA }}"
         data-team-b="{{ $nameB }}"
