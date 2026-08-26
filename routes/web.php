@@ -47,6 +47,7 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::post('/tournaments/{tournament}/participants/import', [ParticipantImportController::class, 'store'])->name('participants.import');
     Route::get('/tournaments/{tournament}/groups', [TournamentGroupAssignmentController::class, 'edit'])->name('tournaments.groups.edit');
     Route::put('/tournaments/{tournament}/groups', [TournamentGroupAssignmentController::class, 'update'])->name('tournaments.groups.update');
+    Route::post('/tournaments/{tournament}/groups/randomize', [TournamentGroupAssignmentController::class, 'randomize'])->name('tournaments.groups.randomize');
     Route::post('/tournaments/{tournament}/randomize-participants', [TournamentLifecycleController::class, 'randomizeParticipants'])->name('tournaments.randomize-participants');
     Route::post('/tournaments/{tournament}/prepare-bracket', [TournamentLifecycleController::class, 'prepareBracket'])->name('tournaments.prepare-bracket');
     Route::post('/tournaments/{tournament}/start', [TournamentLifecycleController::class, 'start'])->name('tournaments.start');

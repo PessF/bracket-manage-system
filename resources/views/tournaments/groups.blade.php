@@ -15,7 +15,7 @@
             <h2 style="margin-bottom:3px">{{ __('ui.assign_teams_to_groups') }}</h2>
             <div class="muted">{{ __('ui.assign_teams_to_groups_help') }}</div>
         </div>
-        @if($locked)<span class="badge">{{ __('ui.seeds_locked') }}</span>@endif
+        @if($locked)<span class="badge">{{ __('ui.seeds_locked') }}</span>@else<form method="post" action="{{ route('tournaments.groups.randomize', $tournament) }}" data-confirm="{{ __('ui.randomize_group_assignments_confirm') }}">@csrf<button class="btn secondary" type="submit">{{ __('ui.randomize_group_assignments') }}</button></form>@endif
     </div>
 
     <div class="group-assignment-summary">

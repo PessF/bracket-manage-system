@@ -164,6 +164,8 @@ class TournamentController extends Controller
         return $request->validate([
             'name' => ['required', 'string', 'max:200'], 'competition' => ['required', 'string', 'max:200'],
             'division' => ['required', 'string', 'max:200'], 'competition_date' => ['nullable', 'date'],
+            'bracket_schedule_start_time' => ['nullable', 'date_format:H:i'],
+            'bracket_match_duration_minutes' => ['nullable', 'integer', 'between:1,240'],
             'venue' => ['nullable', 'string', 'max:255'], 'notes' => ['nullable', 'string'],
         ]);
     }

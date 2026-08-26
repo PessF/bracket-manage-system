@@ -40,6 +40,14 @@
 <div class="field full"><label for="notes">{{ __('ui.notes') }}</label><textarea id="notes" name="notes">{{ old('notes', $tournament->notes) }}</textarea></div>
 </div></section>
 
+<section class="card" data-bracket-schedule-fields>
+<h2>{{ __('ui.bracket_schedule') }}</h2><div class="muted" style="margin:-9px 0 17px">{{ __('ui.bracket_schedule_help') }}</div>
+<div class="form-grid">
+<div class="field"><label for="bracket_schedule_start_time">{{ __('ui.bracket_schedule_start_time') }}</label><input id="bracket_schedule_start_time" type="time" step="60" name="bracket_schedule_start_time" value="{{ old('bracket_schedule_start_time', $tournament->bracket_schedule_start_time ? substr((string) $tournament->bracket_schedule_start_time, 0, 5) : '') }}"><small>24 ชั่วโมง เช่น 09:00</small></div>
+<div class="field"><label for="bracket_match_duration_minutes">{{ __('ui.bracket_match_duration_minutes') }}</label><input id="bracket_match_duration_minutes" type="number" min="1" max="240" name="bracket_match_duration_minutes" value="{{ old('bracket_match_duration_minutes', $tournament->bracket_match_duration_minutes) }}" placeholder="6"></div>
+</div>
+</section>
+
 <section class="card"><div class="actions split-actions" style="justify-content:space-between"><div><h2 style="margin-bottom:2px">{{ __('ui.competition_format') }}</h2><div class="muted">{{ __('ui.competition_format_help') }}</div></div>@if($structureLocked)<span class="badge">{{ __('ui.locked_after_start') }}</span>@endif</div>
 @if($structureLocked)<div class="alert neutral" style="margin-top:15px">{{ __('ui.locked_help') }}</div>@endif
 <div class="form-grid" style="margin-top:16px">
@@ -162,6 +170,7 @@
     const groupLimitFields = Array.from(document.querySelectorAll('[data-group-limit-field]'));
     const groupLimitSummary = document.querySelector('[data-group-limit-summary]');
     const standardFields = Array.from(document.querySelectorAll('[data-standard-builder-field]'));
+    const bracketScheduleFields = document.querySelector('[data-bracket-schedule-fields]');
     const panels = Array.from(document.querySelectorAll('[data-format-panel]'));
     const structurePanels = Array.from(document.querySelectorAll('[data-structure-panel]'));
     const structureLocked = @js($structureLocked);
@@ -169,6 +178,7 @@
 
     const updateFormatFields = () => {
         const advancedActive = structure?.value === 'ADVANCED';
+        if (bracketScheduleFields) bracketScheduleFields.hidden = !advancedActive && format.value === 'RANKING';
         panels.forEach((panel) => {
             const active = !advancedActive && panel.dataset.formatPanel === format.value;
             panel.hidden = !active;

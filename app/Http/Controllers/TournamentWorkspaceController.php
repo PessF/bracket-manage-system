@@ -9,6 +9,7 @@ use App\Enums\MatchStatus;
 use App\Models\Participant;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -38,6 +39,7 @@ class TournamentWorkspaceController extends Controller
             ->values();
         $activeBracketView = (string) $request->query('view', 'all');
         $groupedMatches = $this->bracketGroupsForDisplay($matches, $activeBracketView);
+        $estimatedStartTimes = $this->estimatedStartTimes($tournament, $matches);
 
         return view('tournaments.bracket', [
             'tournament' => $tournament,
@@ -45,6 +47,7 @@ class TournamentWorkspaceController extends Controller
             'podium' => $podium,
             'bracketViewGroups' => $groups,
             'activeBracketView' => $activeBracketView,
+            'estimatedStartTimes' => $estimatedStartTimes,
         ]);
     }
 
@@ -125,6 +128,37 @@ class TournamentWorkspaceController extends Controller
         }
 
         return $groups;
+    }
+
+    /** @return array<string, string> */
+    private function estimatedStartTimes(Tournament $tournament, Collection $matches): array
+    {
+        if ($tournament->format === \App\Enums\TournamentFormat::RANKING
+            || ! $tournament->bracket_schedule_start_time
+            || ! $tournament->bracket_match_duration_minutes) {
+            return [];
+        }
+
+        $time = CarbonImmutable::createFromFormat('H:i', substr((string) $tournament->bracket_schedule_start_time, 0, 5));
+        $duration = (int) $tournament->bracket_match_duration_minutes;
+        $lunchStart = $time->setTime(12, 0);
+        $lunchEnd = $time->setTime(13, 0);
+        $estimatedStartTimes = [];
+
+        foreach ($matches->sortBy('match_number') as $match) {
+            if ($match->is_bye) {
+                continue;
+            }
+
+            if ($time->greaterThanOrEqualTo($lunchStart) && $time->lessThan($lunchEnd)) {
+                $time = $lunchEnd;
+            }
+
+            $estimatedStartTimes[(string) $match->id] = $time->format('H:i');
+            $time = $time->addMinutes($duration);
+        }
+
+        return $estimatedStartTimes;
     }
 
     private function mergeGroupGrandFinalsIntoWinners(Collection $sections): Collection

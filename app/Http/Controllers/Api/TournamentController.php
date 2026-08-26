@@ -211,6 +211,8 @@ class TournamentController extends Controller
             'competition' => [$required, 'string', 'max:200'],
             'division' => [$required, 'string', 'max:200'],
             'competition_date' => ['sometimes', 'nullable', 'date'],
+            'bracket_schedule_start_time' => ['sometimes', 'nullable', 'date_format:H:i'],
+            'bracket_match_duration_minutes' => ['sometimes', 'nullable', 'integer', 'between:1,240'],
             'venue' => ['sometimes', 'nullable', 'string', 'max:255'],
             'notes' => ['sometimes', 'nullable', 'string'],
             'format' => [$required, Rule::enum(TournamentFormat::class)],

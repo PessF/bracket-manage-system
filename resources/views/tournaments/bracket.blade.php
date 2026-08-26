@@ -119,6 +119,7 @@
     body[data-theme="easykids"] .bracket-match-node.in-progress .badge { border-color:#d4af37; background:#3f3518; color:#fff8df; }
     body[data-theme="easykids"] .bracket-match-node.is-unscored .bracket-score { color:#d4af37; }
     body[data-theme="easykids"] .bracket-match-meta { min-height:17px; margin-bottom:2px; font-size:9px; }
+    body[data-theme="easykids"] .bracket-scheduled-time { display:inline-flex; align-items:center; min-height:17px; padding:0 5px; border:1px solid rgb(212 175 55 / .44); border-radius:3px; background:#3f3518; color:#fff8df; font-size:9px; font-weight:900; }
     body[data-theme="easykids"] .bracket-match-number { color:#f5f6f7; }
     body[data-theme="easykids"] .bracket-award-badge.champion,
     body[data-theme="easykids"] .bracket-award-badge.third { border-color:#d4af37; background:#3f3518; color:#fff8df; box-shadow:none; }
@@ -412,7 +413,7 @@
             data-match-id="{{ $match->id }}" data-match-number="{{ $displayMatchNumber }}" data-round="{{ $match->round_number }}" data-number="{{ $layoutSortNumber }}"
             data-winner-next="{{ $match->winner_next_match_id }}" data-loser-next="{{ $match->loser_next_match_id }}" data-third-place="{{ $isThirdPlace ? 'true' : 'false' }}">
             <div class="bracket-match-meta">
-                <span class="bracket-match-number"><span>{{ __('ui.display_match') }}</span><strong>#{{ $displayMatchNumber }}</strong></span>
+                <span class="bracket-match-number"><span>{{ __('ui.display_match') }}</span><strong>#{{ $displayMatchNumber }}</strong>@if(isset($estimatedStartTimes[(string) $match->id]))<i class="bracket-scheduled-time">{{ $estimatedStartTimes[(string) $match->id] }}</i>@endif</span>
                 @if($isChampionship)
                 <span class="bracket-award-badge champion">{{ $championshipBadgeLabel }}</span>
                 @elseif($isThirdPlace)
@@ -566,6 +567,7 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
     const ROUND_LABEL = @json(__('ui.round'));
     const FINAL_LABEL = @json(__('ui.final'));
     const SEMIFINAL_LABEL = @json(__('ui.semifinals'));
+    const QUARTERFINAL_LABEL = @json(__('ui.quarterfinals'));
     const FINALS_LABEL = @json(__('ui.finals'));
     const LOSERS_ROUND_LABEL = @json(__('ui.losers_round'));
 
@@ -664,14 +666,16 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
                 if (sectionType === 'LOSERS') return `${LOSERS_ROUND_LABEL} ${index + 1}`;
                 if (sectionType === 'GRAND_FINAL') return rounds.length > 1 ? `${FINAL_LABEL} ${index + 1}` : FINAL_LABEL;
                 if (sectionType === 'WINNERS') {
-                    if (hasGrandFinal && remaining === 1) return FINALS_LABEL;
-                    if (remaining === 1 || (hasGrandFinal && remaining === 2)) return SEMIFINAL_LABEL;
+                    if (remaining === 1) return FINALS_LABEL;
+                    if (remaining === 2) return SEMIFINAL_LABEL;
+                    if (remaining === 3) return QUARTERFINAL_LABEL;
                     return `${ROUND_LABEL} ${index + 1}`;
                 }
 
                 if (rounds.length === 1) return FINAL_LABEL;
                 if (remaining === 1) return FINALS_LABEL;
                 if (remaining === 2) return SEMIFINAL_LABEL;
+                if (remaining === 3) return QUARTERFINAL_LABEL;
                 return `${ROUND_LABEL} ${index + 1}`;
             };
 
