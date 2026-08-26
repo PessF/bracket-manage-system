@@ -26,7 +26,10 @@
 <section class="card competition-detail-card">
     <h2>{{ __('ui.competition_details') }}</h2>
     <div class="detail-grid">
-        <div class="detail-item"><small>{{ __('ui.competition_date') }}</small><strong>{{ $tournament->competition_date?->translatedFormat('j M Y · H:i') ?? __('ui.not_specified') }}</strong></div>
+        <div class="detail-item"><small>{{ __('ui.competition_date') }}</small><strong>{{ $tournament->competition_date?->translatedFormat('j M Y · H:i') ? $tournament->competition_date->translatedFormat('j M Y · H:i').' น.' : __('ui.not_specified') }}</strong></div>
+        @if($tournament->bracket_schedule_start_time)
+        <div class="detail-item"><small>{{ __('ui.bracket_schedule_start_time') }}</small><strong>{{ substr((string) $tournament->bracket_schedule_start_time, 0, 5) }} น.</strong></div>
+        @endif
         <div class="detail-item"><small>{{ __('ui.venue') }}</small><strong>{{ $tournament->venue ?: __('ui.not_specified') }}</strong></div>
         <div class="detail-item"><small>{{ __('ui.division') }}</small><strong>{{ $tournament->division }}</strong></div>
         @if($tournament->format === App\Enums\TournamentFormat::DOUBLE_ELIMINATION)<div class="detail-item detail-item-accent"><small>{{ __('ui.grand_final_setting') }}</small><strong>{{ (int) ($tournament->double_elimination_config['grand_final_matches'] ?? 2) === 1 ? __('ui.grand_final_one_match') : __('ui.grand_final_two_matches') }}</strong></div>@endif

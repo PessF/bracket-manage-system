@@ -19,6 +19,9 @@
         }
         return intdiv($participantCount, $initialGroupCount) + ($order <= ($participantCount % $initialGroupCount) ? 1 : 0);
     })->all();
+    $compDateVal = old('competition_date', $tournament->competition_date?->format('Y-m-d\TH:i'));
+    $compDateOnly = $compDateVal ? substr((string)$compDateVal, 0, 10) : '';
+    $compTimeOnly = $compDateVal && strlen((string)$compDateVal) >= 16 ? substr((string)$compDateVal, 11, 5) : '';
 @endphp
 @section('title', ($editing ? __('ui.title_settings') : __('ui.title_new_tournament')).' · EasyKids')
 @section('content')
@@ -35,7 +38,21 @@
 <div class="field"><label for="name">{{ __('ui.tournament_name') }}</label><input id="name" name="name" required maxlength="200" value="{{ old('name', $tournament->name) }}"></div>
 <div class="field"><label for="competition">{{ __('ui.competition_event') }}</label><input id="competition" name="competition" required maxlength="200" value="{{ old('competition', $tournament->competition) }}"></div>
 <div class="field"><label for="division">{{ __('ui.division') }}</label><input id="division" name="division" required maxlength="200" value="{{ old('division', $tournament->division) }}"></div>
-<div class="field"><label for="competition_date">{{ __('ui.competition_date') }}</label><input id="competition_date" type="datetime-local" name="competition_date" value="{{ old('competition_date', $tournament->competition_date?->format('Y-m-d\TH:i')) }}"></div>
+<div class="field full">
+    <label for="comp_date_part">{{ __('ui.competition_date') }}</label>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+            <label for="comp_date_part" style="font-size:12px; color:var(--muted); font-weight:normal; margin-bottom:4px;">วันที่แข่งขัน</label>
+            <input id="comp_date_part" type="date" value="{{ $compDateOnly }}">
+        </div>
+        <div>
+            <label for="comp_time_part" style="font-size:12px; color:var(--muted); font-weight:normal; margin-bottom:4px;">เวลาแข่งขัน (24 ชั่วโมง)</label>
+            <input id="comp_time_part" type="text" inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" maxlength="5" placeholder="13:00" value="{{ $compTimeOnly }}" data-24-hour-time>
+        </div>
+    </div>
+    <input id="competition_date" type="hidden" name="competition_date" value="{{ $compDateVal }}">
+    <small class="muted">ระบุวันที่และเวลาแข่งขันในรูปแบบ 24 ชั่วโมง (เช่น 13:00)</small>
+</div>
 <div class="field full"><label for="venue">{{ __('ui.venue') }}</label><input id="venue" name="venue" maxlength="255" value="{{ old('venue', $tournament->venue) }}"></div>
 <div class="field full"><label for="notes">{{ __('ui.notes') }}</label><textarea id="notes" name="notes">{{ old('notes', $tournament->notes) }}</textarea></div>
 </div></section>
@@ -171,16 +188,36 @@
     const groupLimitSummary = document.querySelector('[data-group-limit-summary]');
     const standardFields = Array.from(document.querySelectorAll('[data-standard-builder-field]'));
     const bracketScheduleFields = document.querySelector('[data-bracket-schedule-fields]');
-    const scheduleStartTime = document.querySelector('[data-24-hour-time]');
+    const compDatePart = document.getElementById('comp_date_part');
+    const compTimePart = document.getElementById('comp_time_part');
+    const compDateHidden = document.getElementById('competition_date');
     const panels = Array.from(document.querySelectorAll('[data-format-panel]'));
     const structurePanels = Array.from(document.querySelectorAll('[data-structure-panel]'));
     const structureLocked = @js($structureLocked);
-    if (!format || !panels.length) return;
 
-    scheduleStartTime?.addEventListener('input', () => {
-        const digits = scheduleStartTime.value.replace(/\D/g, '').slice(0, 4);
-        scheduleStartTime.value = digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits;
+    const updateCompDateHidden = () => {
+        if (!compDatePart || !compDateHidden) return;
+        if (compDatePart.value) {
+            const timeVal = compTimePart?.value || '09:00';
+            compDateHidden.value = `${compDatePart.value}T${timeVal}`;
+        } else {
+            compDateHidden.value = '';
+        }
+    };
+
+    compDatePart?.addEventListener('change', updateCompDateHidden);
+    compTimePart?.addEventListener('input', updateCompDateHidden);
+    compTimePart?.addEventListener('change', updateCompDateHidden);
+
+    document.querySelectorAll('[data-24-hour-time]').forEach((timeInput) => {
+        timeInput.addEventListener('input', () => {
+            const digits = timeInput.value.replace(/\D/g, '').slice(0, 4);
+            timeInput.value = digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits;
+            if (timeInput === compTimePart) updateCompDateHidden();
+        });
     });
+
+    if (!format || !panels.length) return;
 
     const updateFormatFields = () => {
         const advancedActive = structure?.value === 'ADVANCED';

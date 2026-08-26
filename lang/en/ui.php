@@ -21,7 +21,7 @@ return [
     'competition_settings' => 'Competition settings and format',
     'competition_information' => 'Competition information', 'competition_information_help' => 'Names and event details can be corrected at any time.',
     'tournament_name' => 'Competition name', 'competition_event' => 'Event name', 'division' => 'Division',
-    'competition_date' => 'Competition date', 'venue' => 'Venue', 'notes' => 'Notes',
+    'competition_date' => 'Competition date', 'venue' => 'Venue', 'notes' => 'Notes', 'start_time' => 'Start time',
     'competition_format' => 'Competition format', 'competition_format_help' => 'Controls bracket generation, scoring, and seeding.',
     'locked_after_start' => 'LOCKED AFTER START', 'locked_help' => 'The bracket is already running, so format and seeding cannot change. Competition names and event information are still editable.',
     'tournament_structure' => 'Competition mode', 'tournament_structure_help' => 'Use Basic Tournament for one format, or Advanced Tournament for group stages followed by a Grand Final.',

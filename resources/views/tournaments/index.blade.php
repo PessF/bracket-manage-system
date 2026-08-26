@@ -63,6 +63,20 @@
             </div>
             <h2>{{ $tournament->name }}</h2>
             <p>{{ $tournament->competition }} · {{ $tournament->division }}</p>
+            @if($tournament->competition_date || $tournament->bracket_schedule_start_time)
+            <div class="tournament-time-badge" style="display:inline-flex; align-items:center; gap:6px; margin:2px 0 10px; padding:4px 9px; border-radius:5px; background:var(--soft); color:var(--muted); font-size:12px; font-weight:600;">
+                <svg style="width:13px; height:13px; flex:0 0 auto; stroke:currentColor; fill:none; stroke-width:2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>
+                    @if($tournament->competition_date)
+                        {{ $tournament->competition_date->translatedFormat('j M Y · H:i') }} น.
+                    @endif
+                    @if($tournament->bracket_schedule_start_time)
+                        @if($tournament->competition_date) · @endif
+                        {{ __('ui.start_time') }}: {{ substr((string) $tournament->bracket_schedule_start_time, 0, 5) }} น.
+                    @endif
+                </span>
+            </div>
+            @endif
             <div class="stats">
                 <div class="stat"><strong>{{ $tournament->participants_count }}</strong><span class="muted">{{ __('ui.teams') }}</span></div>
                 <div class="stat"><strong>{{ $tournament->matches_count }}</strong><span class="muted">{{ __('ui.matches') }}</span></div>
