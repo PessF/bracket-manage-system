@@ -525,6 +525,7 @@
             .mobile-popover, .language-popover { max-height:calc(100dvh - 64px); }
         }
     </style>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
 @php
