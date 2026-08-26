@@ -21,8 +21,11 @@
     .bracket-round-lane { position:absolute; z-index:0; top:48px; bottom:12px; border-inline:1px solid rgb(148 163 184 / .08); border-radius:6px; background:rgb(148 163 184 / .025); pointer-events:none; }
     .bracket-round-lane.is-alternate { background:rgb(148 163 184 / .04); }
     .bracket-connectors { position:absolute; inset:0; z-index:1; overflow:visible; pointer-events:none; }
-    .bracket-connector { fill:none; stroke:#cbd5e1; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; opacity:.9; vector-effect:non-scaling-stroke; }
-    .bracket-connector.is-loss { stroke-dasharray:4 4; opacity:.82; }
+    .bracket-connector-outline { fill:none; stroke:#080d16; stroke-width:5.5; stroke-linecap:round; stroke-linejoin:round; opacity:.96; vector-effect:non-scaling-stroke; }
+    .bracket-connector { fill:none; stroke:#cbd5e1; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; opacity:1; vector-effect:non-scaling-stroke; }
+    .bracket-connector-outline.is-loss,
+    .bracket-connector.is-loss { stroke-dasharray:6 5; }
+    .bracket-connector-port { stroke:#080d16; stroke-width:2; vector-effect:non-scaling-stroke; }
     .bracket-round-title { position:absolute; top:0; z-index:3; height:44px; display:flex; align-items:center; color:#71717a; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.055em; }
     .bracket-match-node { position:absolute; z-index:2; width:272px; min-height:126px; padding:10px; border:1px solid var(--line); border-radius:7px; background:var(--card); box-shadow:none; transition:border-color .14s; }
     .bracket-match-node:hover { z-index:4; border-color:var(--line-strong); box-shadow:none; transform:none; }
@@ -103,15 +106,15 @@
     body[data-theme="easykids"] .bracket-round-title,
     body[data-theme="easykids"] .bracket-destinations { color:#718395; }
     body[data-theme="easykids"] .bracket-round-title { justify-content:flex-start; height:32px; padding:0 12px; border:1px solid rgb(116 147 202 / .20); border-top:4px solid var(--round-accent,#66d7ed); border-radius:6px; background:linear-gradient(180deg, rgb(27 35 52 / .98), rgb(12 16 25 / .98)); color:#f3f7ff; font-size:12px; letter-spacing:0; text-transform:none; box-shadow:0 10px 24px rgb(0 0 0 / .24); }
-    body[data-theme="easykids"] .bracket-match-node { width:236px; min-height:92px; padding:7px; border-color:rgb(116 147 202 / .16); background:linear-gradient(180deg, rgb(18 24 38 / .96), rgb(10 14 23 / .98)); box-shadow:0 0 0 1px rgb(113 150 218 / .06), 0 12px 28px rgb(0 0 0 / .24); }
-    body[data-theme="easykids"] .bracket-match-node.is-finished { border-color:rgb(116 147 202 / .20); background:linear-gradient(180deg, rgb(20 26 39 / .96), rgb(11 16 26 / .98)); box-shadow:0 0 0 1px rgb(113 150 218 / .06), 0 10px 22px rgb(0 0 0 / .22); }
-    body[data-theme="easykids"] .bracket-match-node.is-finished::after { content:""; position:absolute; inset:0 auto 0 0; width:4px; border-radius:7px 0 0 7px; background:#8290aa; }
+    body[data-theme="easykids"] .bracket-match-node { width:236px; min-height:92px; padding:7px; border-color:var(--round-accent-border,rgb(102 215 237 / .55)); background:linear-gradient(180deg, rgb(18 24 38 / .98), rgb(10 14 23 / .99)); box-shadow:inset 3px 0 0 var(--round-accent,#66d7ed), 0 12px 28px rgb(0 0 0 / .28); }
+    body[data-theme="easykids"] .bracket-match-node.is-finished { border-color:var(--round-accent-border,rgb(102 215 237 / .55)); background:linear-gradient(180deg, rgb(20 26 39 / .98), rgb(11 16 26 / .99)); box-shadow:inset 3px 0 0 var(--round-accent,#66d7ed), 0 10px 22px rgb(0 0 0 / .26); }
+    body[data-theme="easykids"] .bracket-match-node.is-finished::after { content:""; position:absolute; inset:0 auto 0 0; width:4px; border-radius:7px 0 0 7px; background:var(--round-accent,#66d7ed); }
     body[data-theme="easykids"] .bracket-match-node.is-finished .badge.FINISHED { font-weight:850; }
-    body[data-theme="easykids"] .bracket-match-node.is-ready { border-color:rgb(102 215 237 / .24); }
-    body[data-theme="easykids"] .bracket-match-node.is-unscored { border-color:rgb(240 190 114 / .58); box-shadow:0 0 0 1px rgb(240 190 114 / .14), 0 0 24px rgb(240 190 114 / .08), 0 12px 28px rgb(0 0 0 / .24); }
+    body[data-theme="easykids"] .bracket-match-node.is-ready { border-color:var(--round-accent-strong,#66d7ed); }
+    body[data-theme="easykids"] .bracket-match-node.is-unscored { border-color:rgb(240 190 114 / .78); box-shadow:inset 3px 0 0 var(--round-accent,#66d7ed), 0 12px 28px rgb(0 0 0 / .28); }
     body[data-theme="easykids"] .bracket-match-node.is-unscored .bracket-score { color:#f0be72; }
-    body[data-theme="easykids"] .bracket-match-node.in-progress { border-color:rgb(255 117 145 / .62); box-shadow:0 0 0 2px rgb(255 117 145 / .13), 0 0 28px rgb(255 117 145 / .12), 0 12px 28px rgb(0 0 0 / .26); }
-    body[data-theme="easykids"] .bracket-match-node:hover { border-color:rgb(102 215 237 / .34); box-shadow:0 0 0 1px rgb(102 215 237 / .08), 0 16px 34px rgb(0 0 0 / .30); }
+    body[data-theme="easykids"] .bracket-match-node.in-progress { border-color:rgb(255 117 145 / .82); box-shadow:inset 3px 0 0 var(--round-accent,#66d7ed), 0 12px 28px rgb(0 0 0 / .30); }
+    body[data-theme="easykids"] .bracket-match-node:hover { border-color:var(--round-accent-strong,#66d7ed); box-shadow:inset 3px 0 0 var(--round-accent,#66d7ed), 0 16px 34px rgb(0 0 0 / .34); }
     body[data-theme="easykids"] .bracket-match-meta { min-height:20px; margin-bottom:4px; font-size:10px; }
     body[data-theme="easykids"] .bracket-match-number { color:#dff5ff; }
     body[data-theme="easykids"] .bracket-award-badge.champion { border-color:rgb(240 190 114 / .56); background:linear-gradient(135deg, rgb(84 58 20 / .92), rgb(240 190 114 / .20)); color:#ffe7aa; box-shadow:0 0 18px rgb(240 190 114 / .14); }
@@ -663,9 +666,14 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
             });
 
             matches.forEach((match) => {
-                match.node.style.left = `${(roundIndex.get(match.round) || 0) * columnWidth + 14}px`;
+                const index = roundIndex.get(match.round) || 0;
+                const accent = ROUND_COLORS[(sectionColorOffset + index) % ROUND_COLORS.length];
+                match.node.style.left = `${index * columnWidth + 14}px`;
                 match.node.style.top = `${(y.get(match.id) || 0) + HEADER}px`;
                 match.node.style.width = `${cardWidth}px`;
+                match.node.style.setProperty('--round-accent', accent);
+                match.node.style.setProperty('--round-accent-border', `${accent}8c`);
+                match.node.style.setProperty('--round-accent-strong', `${accent}d1`);
             });
 
             const svg = document.createElementNS(SVG_NS, 'svg');
@@ -693,10 +701,22 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
                 const y2 = (y.get(edge.target.id) || 0) + HEADER + edge.target.node.offsetHeight / 2 + portOffset;
                 const trackX = x1 + (x2 - x1) * trackRatio;
                 const path = document.createElementNS(SVG_NS, 'path');
+                const outline = document.createElementNS(SVG_NS, 'path');
+                outline.setAttribute('class', `bracket-connector-outline is-${edge.outcome}`);
+                outline.setAttribute('d', `M ${x1} ${y1} H ${trackX} V ${y2} H ${x2}`);
+                svg.appendChild(outline);
                 path.setAttribute('class', `bracket-connector is-${edge.outcome}`);
                 path.setAttribute('d', `M ${x1} ${y1} H ${trackX} V ${y2} H ${x2}`);
                 path.style.stroke = ROUND_COLORS[(sectionColorOffset + (roundIndex.get(edge.source.round) || 0)) % ROUND_COLORS.length];
                 svg.appendChild(path);
+
+                const port = document.createElementNS(SVG_NS, 'circle');
+                port.setAttribute('class', 'bracket-connector-port');
+                port.setAttribute('cx', x2);
+                port.setAttribute('cy', y2);
+                port.setAttribute('r', 3.5);
+                port.style.fill = path.style.stroke;
+                svg.appendChild(port);
             });
             canvas.prepend(svg);
         };
