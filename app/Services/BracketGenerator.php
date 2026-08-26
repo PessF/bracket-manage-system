@@ -389,12 +389,36 @@ class BracketGenerator
             fn (array $match): bool => ! $match['is_bye'],
         ));
 
+        usort($matches, fn (array $left, array $right): int => $this->bracketScheduleRound($left) <=> $this->bracketScheduleRound($right)
+            ?: $this->bracketSchedulePriority($left['bracket_type']) <=> $this->bracketSchedulePriority($right['bracket_type'])
+            ?: (int) $left['match_number'] <=> (int) $right['match_number']);
+
         foreach ($matches as $index => &$match) {
             $match['match_number'] = $index + 1;
         }
         unset($match);
 
         return $matches;
+    }
+
+    /** @param array<string, mixed> $match */
+    private function bracketScheduleRound(array $match): int
+    {
+        return match ($match['bracket_type']) {
+            BracketType::LOSERS => max(1, (int) $match['round_number'] - 2),
+            BracketType::GRAND_FINAL => PHP_INT_MAX,
+            default => (int) $match['round_number'],
+        };
+    }
+
+    private function bracketSchedulePriority(BracketType $bracketType): int
+    {
+        return match ($bracketType) {
+            BracketType::WINNERS => 1,
+            BracketType::LOSERS => 2,
+            BracketType::GRAND_FINAL => 3,
+            default => 4,
+        };
     }
 
     /**

@@ -14,15 +14,15 @@
     .bracket-count { color:var(--muted); font-size:12px; }
     .bracket-admin-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .bracket-admin-actions form { margin:0; }
-    .bracket-viewport { --section-accent:#66d7ed; position:relative; overflow:auto; overscroll-behavior-inline:contain; min-height:190px; border:1px solid var(--line); border-top:2px solid var(--section-accent); border-radius:7px; background:#0c1219; scrollbar-color:#3a4653 transparent; -webkit-overflow-scrolling:touch; }
-    .bracket-viewport[data-bracket-type$="LOSERS"] { --section-accent:#ff7f9c; }
-    .bracket-viewport[data-bracket-type$="GRAND_FINAL"] { --section-accent:#f0be72; }
+    .bracket-viewport { --section-accent:#d4af37; position:relative; overflow:auto; overscroll-behavior-inline:contain; min-height:190px; border:1px solid var(--line); border-top:2px solid var(--section-accent); border-radius:7px; background:#0c1219; scrollbar-color:#3a4653 transparent; -webkit-overflow-scrolling:touch; }
+    .bracket-viewport[data-bracket-type$="LOSERS"],
+    .bracket-viewport[data-bracket-type$="GRAND_FINAL"] { --section-accent:#d4af37; }
     .bracket-canvas { position:relative; min-width:100%; }
     .bracket-round-lane { position:absolute; z-index:0; top:48px; bottom:12px; border-inline:1px solid rgb(148 163 184 / .08); border-radius:6px; background:rgb(148 163 184 / .025); pointer-events:none; }
     .bracket-round-lane.is-alternate { background:rgb(148 163 184 / .04); }
     .bracket-connectors { position:absolute; inset:0; z-index:1; overflow:visible; pointer-events:none; }
-    .bracket-connector-outline { fill:none; stroke:#080d16; stroke-width:5.5; stroke-linecap:round; stroke-linejoin:round; opacity:.96; vector-effect:non-scaling-stroke; }
-    .bracket-connector { fill:none; stroke:#cbd5e1; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; opacity:1; vector-effect:non-scaling-stroke; }
+    .bracket-connector-outline { fill:none; stroke:#080d16; stroke-width:4.5; stroke-linecap:round; stroke-linejoin:round; opacity:.96; vector-effect:non-scaling-stroke; }
+    .bracket-connector { fill:none; stroke:#b0b5bd; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; opacity:1; vector-effect:non-scaling-stroke; }
     .bracket-connector-outline.is-loss,
     .bracket-connector.is-loss { stroke-dasharray:6 5; }
     .bracket-connector-port { stroke:#080d16; stroke-width:2; vector-effect:non-scaling-stroke; }
@@ -93,57 +93,69 @@
     .viewer-event-head p { margin:2px 0 0; color:var(--muted); font-size:13px; }
     .viewer-bracket-help { margin:0 0 10px; color:var(--muted); font-size:12px; }
     body[data-theme="dark"] .viewer-event-head h1 { color:#f2f8ff; }
-    body[data-theme="easykids"] .bracket-toolbar { padding:10px 12px; border:1px solid rgb(116 147 202 / .14); border-radius:8px; background:rgb(16 22 34 / .92); }
+    body[data-theme="easykids"] .bracket-toolbar { padding:8px 10px; border:1px solid #2a2f37; border-radius:6px; background:#171a20; }
     body[data-theme="easykids"] .bracket-hint,
     body[data-theme="easykids"] .bracket-legend,
-    body[data-theme="easykids"] .bracket-count { color:#667789; }
-    body[data-theme="easykids"] .bracket-section-head h2 { color:#f3f7ff; }
-    body[data-theme="easykids"] .bracket-viewport { padding-top:12px; border-color:rgb(116 147 202 / .16); background:radial-gradient(circle at top left, rgb(102 215 237 / .08), transparent 26%), radial-gradient(circle at top right, rgb(140 136 255 / .10), transparent 32%), linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px), #080d16; background-size:auto, auto, 28px 28px, 28px 28px, auto; box-shadow:inset 0 1px 0 rgb(255 255 255 / .04), 0 18px 44px rgb(6 9 17 / .42); scrollbar-color:#36516d transparent; }
-    body[data-theme="easykids"] .bracket-canvas { padding-top:22px; }
-    body[data-theme="easykids"] .bracket-round-lane { border-color:rgb(116 147 202 / .10); background:rgb(116 147 202 / .025); }
+    body[data-theme="easykids"] .bracket-count { color:#a6abb3; }
+    body[data-theme="easykids"] .bracket-section-head h2 { color:#f5f6f7; }
+    body[data-theme="easykids"] .bracket-viewport { padding-top:8px; border-color:#2a2f37; border-top-color:#d4af37; border-radius:6px; background:#0f1115; box-shadow:0 10px 26px rgb(0 0 0 / .22); scrollbar-color:#d4af37 transparent; }
+    body[data-theme="easykids"] .bracket-canvas { padding-top:8px; }
+    body[data-theme="easykids"] .bracket-round-lane { top:0; border-color:#2a2f37; border-radius:6px; background:#171a20; box-shadow:inset 0 1px 0 rgb(255 255 255 / .025); }
+    body[data-theme="easykids"] .bracket-round-lane.is-alternate { background:#171a20; }
+    body[data-theme="easykids"] .bracket-connector-outline { stroke:#0f1115; }
     body[data-theme="easykids"] .bracket-connector,
-    body[data-theme="easykids"] .legend-line { stroke:rgb(180 205 255 / .68); border-color:rgb(180 205 255 / .68); }
+    body[data-theme="easykids"] .legend-line { stroke:#b0b5bd; border-color:#b0b5bd; }
     body[data-theme="easykids"] .bracket-round-title,
-    body[data-theme="easykids"] .bracket-destinations { color:#718395; }
-    body[data-theme="easykids"] .bracket-round-title { justify-content:flex-start; height:32px; padding:0 12px; border:1px solid rgb(116 147 202 / .20); border-top:4px solid var(--round-accent,#66d7ed); border-radius:6px; background:linear-gradient(180deg, rgb(27 35 52 / .98), rgb(12 16 25 / .98)); color:#f3f7ff; font-size:12px; letter-spacing:0; text-transform:none; box-shadow:0 10px 24px rgb(0 0 0 / .24); }
-    body[data-theme="easykids"] .bracket-match-node { width:236px; min-height:92px; padding:7px; border-color:var(--round-accent-border,rgb(102 215 237 / .55)); background:linear-gradient(180deg, rgb(18 24 38 / .98), rgb(10 14 23 / .99)); box-shadow:inset 3px 0 0 var(--round-accent,#66d7ed), 0 12px 28px rgb(0 0 0 / .28); }
-    body[data-theme="easykids"] .bracket-match-node.is-finished { border-color:var(--round-accent-border,rgb(102 215 237 / .55)); background:linear-gradient(180deg, rgb(20 26 39 / .98), rgb(11 16 26 / .99)); box-shadow:inset 3px 0 0 var(--round-accent,#66d7ed), 0 10px 22px rgb(0 0 0 / .26); }
+    body[data-theme="easykids"] .bracket-destinations { color:#a6abb3; }
+    body[data-theme="easykids"] .bracket-round-title { justify-content:center; height:42px; padding:0 9px; border:0; border-bottom:1px solid #2a2f37; border-radius:0; background:transparent; color:#f5f6f7; font-size:12px; letter-spacing:0; text-transform:none; box-shadow:none; }
+    body[data-theme="easykids"] .bracket-match-node { width:220px; min-height:0; padding:5px; border-color:#3a4049; border-radius:6px; background:#1f232a; box-shadow:inset 3px 0 0 var(--round-accent,#d4af37); }
+    body[data-theme="easykids"] .bracket-match-node.is-finished { border-color:#3a4049; background:#1f232a; box-shadow:inset 3px 0 0 var(--round-accent,#d4af37); }
     body[data-theme="easykids"] .bracket-match-node.is-finished::after { content:""; position:absolute; inset:0 auto 0 0; width:4px; border-radius:7px 0 0 7px; background:var(--round-accent,#66d7ed); }
     body[data-theme="easykids"] .bracket-match-node.is-finished .badge.FINISHED { font-weight:850; }
-    body[data-theme="easykids"] .bracket-match-node.is-ready { border-color:var(--round-accent-strong,#66d7ed); }
-    body[data-theme="easykids"] .bracket-match-node.is-unscored { border-color:rgb(240 190 114 / .78); box-shadow:inset 3px 0 0 var(--round-accent,#66d7ed), 0 12px 28px rgb(0 0 0 / .28); }
-    body[data-theme="easykids"] .bracket-match-node.is-unscored .bracket-score { color:#f0be72; }
-    body[data-theme="easykids"] .bracket-match-node.in-progress { border-color:rgb(255 117 145 / .82); box-shadow:inset 3px 0 0 var(--round-accent,#66d7ed), 0 12px 28px rgb(0 0 0 / .30); }
-    body[data-theme="easykids"] .bracket-match-node:hover { border-color:var(--round-accent-strong,#66d7ed); box-shadow:inset 3px 0 0 var(--round-accent,#66d7ed), 0 16px 34px rgb(0 0 0 / .34); }
-    body[data-theme="easykids"] .bracket-match-meta { min-height:20px; margin-bottom:4px; font-size:10px; }
-    body[data-theme="easykids"] .bracket-match-number { color:#dff5ff; }
-    body[data-theme="easykids"] .bracket-award-badge.champion { border-color:rgb(240 190 114 / .56); background:linear-gradient(135deg, rgb(84 58 20 / .92), rgb(240 190 114 / .20)); color:#ffe7aa; box-shadow:0 0 18px rgb(240 190 114 / .14); }
-    body[data-theme="easykids"] .bracket-award-badge.third { border-color:rgb(202 132 88 / .56); background:linear-gradient(135deg, rgb(89 52 32 / .92), rgb(202 132 88 / .18)); color:#ffd2b8; box-shadow:0 0 18px rgb(202 132 88 / .12); }
-    body[data-theme="easykids"] .bracket-team { min-height:28px; padding:4px 5px; gap:5px; border-color:rgb(116 147 202 / .12); background:rgb(20 26 39 / .88); color:#eef3ff; }
+    body[data-theme="easykids"] .bracket-match-node.is-unscored,
+    body[data-theme="easykids"] .bracket-match-node.in-progress,
+    body[data-theme="easykids"] .bracket-match-node:hover { border-color:#d4af37; box-shadow:inset 3px 0 0 #d4af37, 0 5px 12px rgb(0 0 0 / .24); }
+    body[data-theme="easykids"] .bracket-match-node.is-ready .badge,
+    body[data-theme="easykids"] .bracket-match-node.in-progress .badge { border-color:#d4af37; background:#3f3518; color:#fff8df; }
+    body[data-theme="easykids"] .bracket-match-node.is-unscored .bracket-score { color:#d4af37; }
+    body[data-theme="easykids"] .bracket-match-meta { min-height:17px; margin-bottom:2px; font-size:9px; }
+    body[data-theme="easykids"] .bracket-match-number { color:#f5f6f7; }
+    body[data-theme="easykids"] .bracket-award-badge.champion,
+    body[data-theme="easykids"] .bracket-award-badge.third { border-color:#d4af37; background:#3f3518; color:#fff8df; box-shadow:none; }
+    body[data-theme="easykids"] .bracket-team { min-height:24px; padding:2px 5px; gap:5px; border-color:#353b44; background:#2a2f37; color:#f5f6f7; }
     body[data-theme="easykids"] .bracket-team.winner,
-    body[data-theme="easykids"] .legend-win { border-color:rgb(73 207 155 / .42); background:rgb(22 82 59 / .84); color:#e8fff5; box-shadow:inset 3px 0 0 #49cf9b, 0 0 24px rgb(73 207 155 / .12); }
+    body[data-theme="easykids"] .legend-win { border-color:rgb(212 175 55 / .68); background:rgb(83 68 25 / .72); color:#fff8df; box-shadow:inset 3px 0 0 #d4af37; }
+    body[data-theme="easykids"] .bracket-team.winner.advancing { border-color:#d4af37; box-shadow:inset 4px 0 0 #d4af37, 0 0 0 1px rgb(212 175 55 / .14); }
     body[data-theme="easykids"] .bracket-team.winner .bracket-team-name { font-weight:800; }
-    body[data-theme="easykids"] .bracket-team.winner .bracket-score { color:#dffef2; font-weight:900; }
-    body[data-theme="easykids"] .bracket-team.waiting { color:#8290aa; background:rgb(12 17 27 / .64); }
-    body[data-theme="easykids"] .bracket-team-name { gap:5px; font-size:13px; }
+    body[data-theme="easykids"] .bracket-team.winner .bracket-score { align-self:stretch; display:grid; place-items:center; margin:-2px -5px -2px 0; background:#d4af37; color:#171a20; font-size:14px; font-weight:950; }
+    body[data-theme="easykids"] .bracket-team:not(.waiting) { border-color:rgb(212 175 55 / .26); background:#2e3130; }
+    body[data-theme="easykids"] .bracket-team:not(.waiting) .bracket-team-name::before { content:""; width:6px; height:6px; flex:0 0 auto; border-radius:50%; background:#d4af37; box-shadow:0 0 0 3px rgb(212 175 55 / .12); }
+    body[data-theme="easykids"] .bracket-team.waiting { border-style:dashed; border-color:#414750; background:#252a31; color:#a6abb3; }
+    body[data-theme="easykids"] .bracket-team.waiting .bracket-team-name::before { content:"?"; display:grid; width:15px; height:15px; flex:0 0 auto; place-items:center; border:1px solid #59616c; border-radius:50%; color:#a6abb3; font-size:10px; font-weight:900; }
+    body[data-theme="easykids"] .bracket-team-name { gap:5px; font-size:12px; }
     body[data-theme="easykids"] .bracket-team-name span { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-    body[data-theme="easykids"] .bracket-seed { min-width:19px; height:19px; padding:0 4px; background:rgb(31 43 70 / .92); color:#d8e8ff; font-size:10px; }
-    body[data-theme="easykids"] .bracket-score { min-width:20px; color:#8be9ff; font-size:13px; }
+    body[data-theme="easykids"] .bracket-seed { display:none; }
+    body[data-theme="easykids"] .bracket-seed { min-width:18px; height:18px; padding:0 4px; background:#171a20; color:#a6abb3; font-size:10px; }
+    body[data-theme="easykids"] .bracket-score { min-width:18px; color:#d4af37; font-size:12px; }
     body[data-theme="easykids"] .match-side { min-width:38px; height:20px; padding:0 7px; border-color:transparent; color:#fff; font-size:10px; font-weight:900; box-shadow:inset 0 -1px 0 rgb(0 0 0 / .12); }
     body[data-theme="easykids"] .match-side.red { background:#5b1d2f; color:#fff1f5; border-color:rgb(255 117 145 / .46); }
     body[data-theme="easykids"] .match-side.blue { background:#122f5f; color:#dff7ff; border-color:rgb(102 215 237 / .42); }
+    body[data-theme="easykids"] .bracket-destinations { display:flex; min-height:14px; margin-top:3px; color:#a6abb3; font-size:9px; }
+    body[data-theme="easykids"] .bracket-destination { height:14px; padding:0; border:0; border-radius:0; background:transparent; color:inherit; }
+    body[data-theme="easykids"] .bracket-destination.win { background:transparent; color:#d4af37; }
+    body[data-theme="easykids"] .bracket-destination.loss { background:transparent; color:#a6abb3; }
     body[data-theme="easykids"] .bracket-card-actions { position:absolute; right:-39px; top:50%; z-index:5; flex-direction:column; transform:translateY(-50%); margin-top:0; }
-    body[data-theme="easykids"] .bracket-card-actions::before { content:""; position:absolute; top:50%; right:100%; width:9px; border-top:2px solid #b3cada; transform:translateY(-50%); }
+    body[data-theme="easykids"] .bracket-card-actions::before { content:""; position:absolute; top:50%; right:100%; width:7px; border-top:2px solid #b0b5bd; transform:translateY(-50%); }
     body[data-theme="easykids"] .bracket-card-actions form { margin:0; }
     body[data-theme="easykids"] .bracket-card-actions .bracket-icon-button { width:32px; min-width:32px; height:32px; min-height:32px; border-radius:7px; box-shadow:0 4px 10px rgb(31 143 207 / .18); }
-    body[data-theme="easykids"] .record-result-button { border:1px solid rgb(102 215 237 / .34); background:linear-gradient(135deg,#5b89ff,#7b7fff); color:#fff; box-shadow:0 12px 24px rgb(73 117 255 / .22); }
-    body[data-theme="easykids"] .edit-result-button { border:1px solid rgb(102 215 237 / .20); background:rgb(26 34 51 / .92); color:#dff5ff; box-shadow:0 8px 18px rgb(0 0 0 / .22); }
-    body[data-theme="easykids"] .edit-result-button:hover { background:rgb(31 43 70 / .92); color:#8be9ff; }
-    body[data-theme="easykids"] .progress-button { border-color:rgb(240 190 114 / .38); background:rgb(84 58 20 / .82); color:#fff0d6; box-shadow:0 8px 18px rgb(0 0 0 / .22); }
+    body[data-theme="easykids"] .record-result-button { border:1px solid #d4af37; background:#d4af37; color:#171a20; box-shadow:0 5px 12px rgb(0 0 0 / .22); }
+    body[data-theme="easykids"] .edit-result-button { border:1px solid #3a4049; background:#2a2f37; color:#f5f6f7; box-shadow:none; }
+    body[data-theme="easykids"] .edit-result-button:hover { background:#353b44; color:#f5f6f7; }
+    body[data-theme="easykids"] .progress-button { border-color:#d4af37; background:#3f3518; color:#fff8df; box-shadow:none; }
     body[data-theme="easykids"] .bracket-icon-button svg { width:17px; height:17px; }
     body[data-theme="easykids"] .bracket-match-node.in-progress .badge.LIVE { font-weight:900; }
     body[data-theme="easykids"] .bracket-current { display:none; }
-    body[data-theme="easykids"] .bracket-match-node.in-progress::before { content:""; position:absolute; inset:0 auto 0 0; width:4px; border-radius:7px 0 0 7px; background:#ff7591; }
+    body[data-theme="easykids"] .bracket-match-node.in-progress::before { content:""; position:absolute; inset:0 auto 0 0; width:4px; border-radius:7px 0 0 7px; background:#d4af37; }
     body[data-theme="easykids"] .bracket-destinations { min-height:18px; margin-top:4px; padding-right:0; gap:4px; font-size:10px; }
     body[data-theme="easykids"] .bracket-destination { height:18px; padding:0 5px; border-color:rgb(116 147 202 / .14); background:rgb(17 23 35 / .88); }
     body[data-theme="easykids"] .bracket-destination.win { border-color:rgb(102 215 237 / .32); background:rgb(31 43 70 / .72); color:#8be9ff; }
@@ -171,10 +183,12 @@
     body[data-theme="easykids"] .viewer-event-head h1 { color:#f3f7ff; }
     body[data-theme="easykids"] .bracket-results-summary { margin:0 0 18px; }
     body[data-theme="easykids"] .podium-grid { display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; margin-top:10px; }
-    body[data-theme="easykids"] .podium-card { display:flex; align-items:center; gap:10px; min-width:0; padding:12px; border:1px solid rgb(116 147 202 / .16); border-radius:10px; background:rgb(17 23 35 / .88); }
-    body[data-theme="easykids"] .podium-card.rank-1 { border-color:rgb(240 190 114 / .44); background:linear-gradient(135deg, rgb(84 58 20 / .82), rgb(17 23 35 / .92)); }
-    body[data-theme="easykids"] .podium-rank { display:grid; place-items:center; width:36px; height:36px; flex:0 0 auto; border-radius:999px; background:rgb(31 43 70 / .92); color:#dff7ff; font-weight:900; }
-    body[data-theme="easykids"] .podium-card.rank-1 .podium-rank { background:#f0be72; color:#221608; }
+    body[data-theme="easykids"] .podium-card { display:flex; align-items:center; gap:12px; min-width:0; padding:12px; border:1px solid #3a4049; border-radius:8px; background:#1f232a; }
+    body[data-theme="easykids"] .podium-card.rank-1 { border-color:#d4af37; background:linear-gradient(135deg, rgb(212 175 55 / .18), #1f232a 64%); }
+    body[data-theme="easykids"] .podium-card.rank-2 { border-color:#a6abb3; }
+    body[data-theme="easykids"] .podium-card.rank-3 { border-color:#b86b3f; }
+    body[data-theme="easykids"] .podium-medal { width:64px; height:64px; flex:0 0 auto; object-fit:contain; }
+    body[data-theme="easykids"] .podium-rank { display:grid; place-items:center; width:48px; height:48px; flex:0 0 auto; border-radius:8px; background:#2a2f37; color:#f5f6f7; font-weight:900; }
     body[data-theme="easykids"] .podium-team { min-width:0; overflow:hidden; color:#f3f7ff; font-weight:850; white-space:nowrap; text-overflow:ellipsis; }
     body[data-theme="easykids"] .podium-source { color:#b7c2d8; font-size:11px; }
     @media(max-width:820px){body[data-theme="easykids"] .podium-grid{grid-template-columns:1fr}}
@@ -287,12 +301,26 @@
 @endif
 
 @if($tournament->status === App\Enums\TournamentStatus::COMPLETED && $podium->isNotEmpty())
+@php
+    $podiumMedalPaths = [
+        1 => 'assets/images/medals/1st.png',
+        2 => 'assets/images/medals/2nd.png',
+        3 => 'assets/images/medals/3nd.png',
+    ];
+@endphp
 <section class="card bracket-results-summary">
     <h2>{{ __('ui.results') }}</h2>
     <div class="podium-grid">
         @foreach($podium as $row)
         <div class="podium-card rank-{{ $row['rank'] }}">
+            @php
+                $medalPath = $podiumMedalPaths[$row['rank']] ?? null;
+            @endphp
+            @if($medalPath && is_file(public_path($medalPath)))
+            <img class="podium-medal" src="{{ asset($medalPath) }}" alt="{{ __('ui.rank') }} {{ $row['rank'] }}">
+            @else
             <span class="podium-rank">#{{ $row['rank'] }}</span>
+            @endif
             <div>
                 <div class="podium-team" title="{{ $row['participant']->team_name }}">{{ $row['participant']->team_name }}</div>
                 @if($row['source'])
@@ -393,7 +421,7 @@
                 <span class="badge {{ $match->is_bye ? 'BYE' : $match->status->value }}">{{ $match->is_bye ? __('ui.bye') : __('ui.match_status_labels.'.$match->status->value) }}</span>
                 @endif
             </div>
-            <div class="bracket-team {{ $match->winner_id && $match->winner_id === $match->participant_a_id ? 'winner' : '' }} {{ !$match->participant_a_id ? 'waiting' : '' }}">
+            <div class="bracket-team {{ $match->winner_id && $match->winner_id === $match->participant_a_id ? 'winner' : '' }} {{ $match->winner_id && $match->winner_id === $match->participant_a_id && $match->winner_next_match_id ? 'advancing' : '' }} {{ !$match->participant_a_id ? 'waiting' : '' }}" data-bracket-slot-state="{{ $match->participant_a_id ? 'confirmed' : 'waiting' }}">
                 <span class="bracket-team-name">
                     <i class="match-side red">{{ __('ui.red_side') }}</i>
                     @if($match->participantA?->seed_number)
@@ -403,7 +431,7 @@
                 </span>
                 <span class="bracket-score">{{ $match->score_a !== null ? (float)$match->score_a : '—' }}</span>
             </div>
-            <div class="bracket-team {{ $match->winner_id && $match->winner_id === $match->participant_b_id ? 'winner' : '' }} {{ !$match->participant_b_id ? 'waiting' : '' }}">
+            <div class="bracket-team {{ $match->winner_id && $match->winner_id === $match->participant_b_id ? 'winner' : '' }} {{ $match->winner_id && $match->winner_id === $match->participant_b_id && $match->winner_next_match_id ? 'advancing' : '' }} {{ !$match->participant_b_id ? 'waiting' : '' }}" data-bracket-slot-state="{{ $match->participant_b_id ? 'confirmed' : 'waiting' }}">
                 <span class="bracket-team-name">
                     <i class="match-side blue">{{ __('ui.blue_side') }}</i>
                     @if($match->participantB?->seed_number)
@@ -530,11 +558,11 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
 
 (() => {
     const SVG_NS = 'http://www.w3.org/2000/svg';
-    const HEADER = 58;
-    const GAP_X = 96;
-    const GAP_Y = 18;
-    const ACTION_GUTTER = 48;
-    const ROUND_COLORS = ['#66d7ed','#72b9f2','#78a7ff','#8794f5','#9b8cff','#b889ec','#d889e8','#ed83c6','#ff7f9c','#ff8c80','#ff9f6e','#f0be72','#d2d873','#a9d87b','#7fd6a5','#67d2c5','#6bc9df','#8bb8ef','#aa9fe8','#d49adf'];
+    const HEADER = 54;
+    const GAP_X = 56;
+    const GAP_Y = 12;
+    const ACTION_GUTTER = 44;
+    const ROUND_COLORS = ['#d4af37'];
     const ROUND_LABEL = @json(__('ui.round'));
     const FINAL_LABEL = @json(__('ui.final'));
     const SEMIFINAL_LABEL = @json(__('ui.semifinals'));
@@ -692,14 +720,12 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
 
             edges.forEach((edge) => {
                 const incoming = edges.filter((candidate) => candidate.targetId === edge.targetId);
-                const incomingIndex = incoming.indexOf(edge);
-                const portOffset = (incomingIndex - (incoming.length - 1) / 2) * 8;
-                const trackRatio = incoming.length === 1 ? .66 : .55 + .23 * incomingIndex / (incoming.length - 1);
                 const x1 = (roundIndex.get(edge.source.round) || 0) * columnWidth + 14 + cardWidth;
                 const y1 = (y.get(edge.source.id) || 0) + HEADER + edge.source.node.offsetHeight / 2;
                 const x2 = (roundIndex.get(edge.target.round) || 0) * columnWidth + 14;
-                const y2 = (y.get(edge.target.id) || 0) + HEADER + edge.target.node.offsetHeight / 2 + portOffset;
-                const trackX = x1 + (x2 - x1) * trackRatio;
+                const y2 = (y.get(edge.target.id) || 0) + HEADER + edge.target.node.offsetHeight / 2;
+                const furthestSourceX = Math.max(...incoming.map((candidate) => (roundIndex.get(candidate.source.round) || 0) * columnWidth + 14 + cardWidth));
+                const trackX = furthestSourceX + (x2 - furthestSourceX) * (incoming.length === 1 ? .66 : .5);
                 const path = document.createElementNS(SVG_NS, 'path');
                 const outline = document.createElementNS(SVG_NS, 'path');
                 outline.setAttribute('class', `bracket-connector-outline is-${edge.outcome}`);
@@ -707,7 +733,7 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
                 svg.appendChild(outline);
                 path.setAttribute('class', `bracket-connector is-${edge.outcome}`);
                 path.setAttribute('d', `M ${x1} ${y1} H ${trackX} V ${y2} H ${x2}`);
-                path.style.stroke = ROUND_COLORS[(sectionColorOffset + (roundIndex.get(edge.source.round) || 0)) % ROUND_COLORS.length];
+                path.style.stroke = '#b0b5bd';
                 svg.appendChild(path);
 
                 const port = document.createElementNS(SVG_NS, 'circle');

@@ -99,9 +99,9 @@
                     <td><strong>{{ $standing->wins }}</strong></td>
                     <td>{{ $standing->draws }}</td>
                     <td>{{ $standing->losses }}</td>
-                    <td>{{ number_format((float) $standing->score_for, 2, '.', '') }}</td>
-                    <td>{{ number_format((float) $standing->score_against, 2, '.', '') }}</td>
-                    <td>{{ number_format((float) $standing->score_difference, 2, '.', '') }}</td>
+                    <td>{{ number_format((float) $standing->score_for, 0) }}</td>
+                    <td>{{ number_format((float) $standing->score_against, 0) }}</td>
+                    <td>{{ number_format((float) $standing->score_difference, 0) }}</td>
                     @endif
                 </tr>
                 @empty

@@ -41,6 +41,25 @@ class TournamentLifecycleServiceTest extends TestCase
         $this->assertSame(StageStatus::LIVE, $tournament->stages()->first()->status);
     }
 
+    public function test_double_elimination_match_numbers_alternate_winners_and_losers_rounds(): void
+    {
+        $tournament = $this->draft(TournamentFormat::DOUBLE_ELIMINATION, 32);
+        app(TournamentLifecycleService::class)->prepareBracket($tournament);
+
+        $firstLowerBracketMatch = $tournament->matches()
+            ->where('bracket_type', BracketType::LOSERS)
+            ->where('round_number', 3)
+            ->min('match_number');
+        $firstWinnersRoundTwoMatch = $tournament->matches()
+            ->where('bracket_type', BracketType::WINNERS)
+            ->where('round_number', 2)
+            ->min('match_number');
+
+        $this->assertNotNull($firstLowerBracketMatch);
+        $this->assertNotNull($firstWinnersRoundTwoMatch);
+        $this->assertLessThan($firstWinnersRoundTwoMatch, $firstLowerBracketMatch);
+    }
+
     public function test_twenty_two_team_double_elimination_uses_standard_match_count_and_complete_routing(): void
     {
         $tournament = $this->draft(TournamentFormat::DOUBLE_ELIMINATION, 22);
