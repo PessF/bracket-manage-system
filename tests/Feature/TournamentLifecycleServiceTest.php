@@ -135,6 +135,41 @@ class TournamentLifecycleServiceTest extends TestCase
         ], $sourceTypes->all());
     }
 
+    public function test_upper_drop_downs_from_the_same_round_have_balanced_lower_paths(): void
+    {
+        $tournament = $this->draft(TournamentFormat::DOUBLE_ELIMINATION, 22);
+        app(TournamentLifecycleService::class)->prepareBracket($tournament);
+
+        $matches = $tournament->matches()->get()->keyBy('id');
+        $winnersRounds = $matches->where('bracket_type', BracketType::WINNERS)->groupBy('round_number');
+
+        foreach ($winnersRounds as $round => $roundMatches) {
+            $pathLengths = $roundMatches->map(function ($match) use ($matches): int {
+                $length = 0;
+                $destinationId = $match->loser_next_match_id;
+
+                while ($destinationId !== null) {
+                    $destination = $matches->get($destinationId);
+
+                    if ($destination?->bracket_type !== BracketType::LOSERS) {
+                        break;
+                    }
+
+                    $length++;
+                    $destinationId = $destination->winner_next_match_id;
+                }
+
+                return $length;
+            });
+
+            $this->assertLessThanOrEqual(
+                1,
+                $pathLengths->max() - $pathLengths->min(),
+                "Upper round {$round} feeds uneven lower-bracket paths.",
+            );
+        }
+    }
+
     public function test_explicit_randomization_changes_and_preserves_the_prepared_seed_order(): void
     {
         $tournament = $this->draft(TournamentFormat::DOUBLE_ELIMINATION, 8);
