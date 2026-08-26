@@ -15,9 +15,11 @@
     .bracket-admin-actions form { margin:0; }
     .bracket-viewport { position:relative; overflow:auto; overscroll-behavior-inline:contain; min-height:190px; border:1px solid var(--line); border-radius:7px; background:#0c1219; scrollbar-color:#3a4653 transparent; -webkit-overflow-scrolling:touch; }
     .bracket-canvas { position:relative; min-width:100%; }
+    .bracket-round-lane { position:absolute; z-index:0; top:48px; bottom:12px; border-inline:1px solid rgb(148 163 184 / .08); border-radius:6px; background:rgb(148 163 184 / .025); pointer-events:none; }
+    .bracket-round-lane.is-alternate { background:rgb(148 163 184 / .04); }
     .bracket-connectors { position:absolute; inset:0; z-index:1; overflow:visible; pointer-events:none; }
     .bracket-connector { fill:none; stroke:#cbd5e1; stroke-width:2; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
-    .bracket-round-title { position:absolute; top:0; height:44px; display:flex; align-items:center; color:#71717a; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.055em; }
+    .bracket-round-title { position:absolute; top:0; z-index:3; height:44px; display:flex; align-items:center; color:#71717a; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.055em; }
     .bracket-match-node { position:absolute; z-index:2; width:272px; min-height:126px; padding:10px; border:1px solid var(--line); border-radius:7px; background:var(--card); box-shadow:none; transition:border-color .14s; }
     .bracket-match-node:hover { z-index:4; border-color:var(--line-strong); box-shadow:none; transform:none; }
     .bracket-match-meta { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px; min-height:24px; margin-bottom:6px; color:var(--muted); font-size:11px; }
@@ -51,7 +53,7 @@
     .score-modal-team-name { display:flex; align-items:center; gap:7px; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
     .score-modal-team .score-stepper { min-width:0; }
     .score-modal-actions { display:flex; justify-content:flex-end; gap:7px; margin-top:14px; }
-    .bracket-destinations { display:flex; align-items:center; gap:5px; margin-top:7px; color:#71717a; font-size:12px; }
+    .bracket-destinations { display:flex; align-items:center; gap:5px; min-height:18px; margin-top:5px; color:#71717a; font-size:10px; }
     .bracket-destination { display:inline-flex; align-items:center; gap:4px; min-width:0; height:20px; padding:0 6px; border:1px solid var(--line); border-radius:999px; background:var(--soft); white-space:nowrap; }
     .bracket-destination strong { font-weight:800; }
     .bracket-destination.win { border-color:#9bd9bf; background:#e8f8f0; color:#116f4f; }
@@ -69,6 +71,7 @@
     .legend-line { display:inline-block; width:22px; border-top:2px solid #cbd5e1; }
     .legend-win { display:inline-block; width:12px; height:12px; border-radius:3px; background:#f0fdf4; border:1px solid #dcfce7; }
     body[data-theme="dark"] .bracket-viewport { background:#0c1219; box-shadow:none; scrollbar-color:#3a4653 transparent; }
+    body[data-theme="dark"] .bracket-round-lane { border-color:rgb(148 163 184 / .08); background:rgb(148 163 184 / .018); }
     body[data-theme="dark"] .bracket-connector, body[data-theme="dark"] .legend-line { stroke:#4e7797; border-color:#4e7797; }
     body[data-theme="dark"] .bracket-round-title, body[data-theme="dark"] .bracket-destinations { color:#afc8dd; }
     body[data-theme="dark"] .bracket-match-node { border-color:var(--line); background:var(--card); box-shadow:none; }
@@ -90,6 +93,7 @@
     body[data-theme="easykids"] .bracket-section-head h2 { color:#f3f7ff; }
     body[data-theme="easykids"] .bracket-viewport { padding-top:12px; border-color:rgb(116 147 202 / .16); background:radial-gradient(circle at top left, rgb(102 215 237 / .08), transparent 26%), radial-gradient(circle at top right, rgb(140 136 255 / .10), transparent 32%), linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px), #080d16; background-size:auto, auto, 28px 28px, 28px 28px, auto; box-shadow:inset 0 1px 0 rgb(255 255 255 / .04), 0 18px 44px rgb(6 9 17 / .42); scrollbar-color:#36516d transparent; }
     body[data-theme="easykids"] .bracket-canvas { padding-top:22px; }
+    body[data-theme="easykids"] .bracket-round-lane { border-color:rgb(116 147 202 / .10); background:rgb(116 147 202 / .025); }
     body[data-theme="easykids"] .bracket-connector,
     body[data-theme="easykids"] .legend-line { stroke:rgb(180 205 255 / .68); border-color:rgb(180 205 255 / .68); }
     body[data-theme="easykids"] .bracket-round-title,
@@ -298,37 +302,12 @@
 @endif
 
 @php
-    $displayMatchNumbersById = collect();
-    $displayNumberGroups = collect();
+    $displayMatchNumbersById = $matches
+        ->flatten(1)
+        ->unique('id')
+        ->mapWithKeys(fn ($match): array => [(string) $match->id => (int) $match->match_number]);
     $isThirdPlaceMatch = fn ($match): bool => $match->participant_a_source_outcome === App\Enums\MatchOutcome::LOSER
         && $match->participant_b_source_outcome === App\Enums\MatchOutcome::LOSER;
-
-    foreach ($matches as $type => $sectionMatches) {
-        $typeKey = (string) $type;
-        $displayGroupKey = $typeKey;
-
-        if (str_starts_with($typeKey, 'GROUP:')) {
-            $parts = explode(':', $typeKey);
-            $displayGroupKey = 'GROUP:'.($parts[1] ?? '');
-        } elseif (str_starts_with($typeKey, 'PLAYOFF:')) {
-            $displayGroupKey = 'PLAYOFF';
-        }
-
-        $displayNumberGroups->put(
-            $displayGroupKey,
-            $displayNumberGroups->get($displayGroupKey, collect())->concat($sectionMatches)
-        );
-    }
-
-    foreach ($displayNumberGroups as $sectionMatches) {
-        $sectionMatches->sort(function ($a, $b) use ($isThirdPlaceMatch): int {
-            return ((int) $a->round_number <=> (int) $b->round_number)
-                ?: ((int) $isThirdPlaceMatch($b) <=> (int) $isThirdPlaceMatch($a))
-                ?: ((int) $a->match_number <=> (int) $b->match_number);
-        })->values()->each(function ($sectionMatch, int $index) use ($displayMatchNumbersById): void {
-            $displayMatchNumbersById->put((string) $sectionMatch->id, $index + 1);
-        });
-    }
 
     $participantDisplayName = function ($match, string $side) use ($displayMatchNumbersById): string {
         $participant = $side === 'a' ? $match->participantA : $match->participantB;
@@ -389,6 +368,8 @@
                 && in_array($match->status, [App\Enums\MatchStatus::READY, App\Enums\MatchStatus::LIVE], true)
                 && ($match->score_a === null || $match->score_b === null);
             $displayMatchNumber = $displayMatchNumbersById->get((string) $match->id, $loop->iteration);
+            $winnerDestinationNumber = $displayMatchNumbersById->get((string) $match->winner_next_match_id, $match->winnerNextMatch?->match_number);
+            $loserDestinationNumber = $displayMatchNumbersById->get((string) $match->loser_next_match_id, $match->loserNextMatch?->match_number);
             $isAwardMatch = !$isGrid && in_array($match->bracket_type, [App\Enums\BracketType::WINNERS, App\Enums\BracketType::GRAND_FINAL], true);
             $isThirdPlace = $isAwardMatch && $isThirdPlaceMatch($match);
             $isChampionship = $isAwardMatch && !$isThirdPlace && (int) $match->round_number === $lastRoundNumber && $match->winner_next_match_id === null;
@@ -396,7 +377,7 @@
             $layoutSortNumber = $isThirdPlace ? $match->match_number + 100000 : $match->match_number;
         @endphp
         <article class="bracket-match-node {{ $match->status === App\Enums\MatchStatus::LIVE ? 'in-progress' : '' }} {{ $match->status === App\Enums\MatchStatus::FINISHED ? 'is-finished' : '' }} {{ $match->status === App\Enums\MatchStatus::READY ? 'is-ready' : '' }} {{ $isUnscored ? 'is-unscored' : '' }}"
-            data-match-id="{{ $match->id }}" data-round="{{ $match->round_number }}" data-number="{{ $layoutSortNumber }}"
+            data-match-id="{{ $match->id }}" data-match-number="{{ $displayMatchNumber }}" data-round="{{ $match->round_number }}" data-number="{{ $layoutSortNumber }}"
             data-winner-next="{{ $match->winner_next_match_id }}" data-loser-next="{{ $match->loser_next_match_id }}" data-third-place="{{ $isThirdPlace ? 'true' : 'false' }}">
             <div class="bracket-match-meta">
                 <span class="bracket-match-number"><span>{{ __('ui.display_match') }}</span><strong>#{{ $displayMatchNumber }}</strong></span>
@@ -428,6 +409,12 @@
                 </span>
                 <span class="bracket-score">{{ $match->score_b !== null ? (float)$match->score_b : '—' }}</span>
             </div>
+            @if($winnerDestinationNumber || $loserDestinationNumber)
+            <div class="bracket-destinations" aria-label="{{ __('ui.match_destinations') }}">
+                @if($winnerDestinationNumber)<span class="bracket-destination win"><strong>{{ __('ui.winner_short') }}</strong> → #{{ $winnerDestinationNumber }}</span>@endif
+                @if($loserDestinationNumber)<span class="bracket-destination loss"><strong>{{ __('ui.loser_short') }}</strong> → #{{ $loserDestinationNumber }}</span>@endif
+            </div>
+            @endif
             @if($canEnterScore || $canEditScore || $match->status === App\Enums\MatchStatus::LIVE)
             @include('tournaments._bracket-match-actions')
             @endif
@@ -563,28 +550,60 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
         const rounds = [...new Set(matches.map((match) => match.round))].sort((a,b) => a-b);
         const roundIndex = new Map(rounds.map((round, index) => [round, index]));
         const layout = () => {
-            canvas.querySelectorAll('.bracket-connectors, .bracket-round-title').forEach((element) => element.remove());
+            canvas.querySelectorAll('.bracket-connectors, .bracket-round-title, .bracket-round-lane').forEach((element) => element.remove());
             nodes.forEach((node) => { node.style.width = ''; });
 
             const cardWidth = Math.max(...nodes.map((node) => node.offsetWidth));
             const cardHeight = Math.max(...nodes.map((node) => node.offsetHeight));
             const base = cardHeight + GAP_Y;
             const columnWidth = cardWidth + GAP_X;
+            const matchesByRound = rounds.map((round) => matches.filter((match) => match.round === round).sort((a,b) => a.number-b.number));
+            const anchorIndex = matchesByRound.reduce((best, inRound, index) => inRound.length > matchesByRound[best].length ? index : best, 0);
+            const anchorCount = matchesByRound[anchorIndex].length;
             const y = new Map();
-
-            rounds.forEach((round) => {
-                const inRound = matches.filter((match) => match.round === round).sort((a,b) => a.number-b.number);
-                let leafIndex = 0;
-                let previousY = -base;
-                inRound.forEach((match) => {
-                    const feeders = match.thirdPlace ? [] : matches.filter((source) => source.winnerNext === match.id || source.loserNext === match.id);
-                    const feederY = feeders.map((source) => y.get(source.id)).filter((value) => value !== undefined);
-                    let proposed = feederY.length ? feederY.reduce((sum,value) => sum+value, 0) / feederY.length : leafIndex++ * base;
-                    proposed = Math.max(proposed, previousY + base);
-                    y.set(match.id, proposed);
-                    previousY = proposed;
+            const fallbackY = (index, count) => ((index + .5) * anchorCount / count - .5) * base;
+            const placeRound = (inRound, ideals) => {
+                let previous = -base;
+                inRound.forEach((match, index) => {
+                    const position = Math.max(ideals[index], previous + base);
+                    y.set(match.id, position);
+                    previous = position;
                 });
-            });
+            };
+
+            placeRound(matchesByRound[anchorIndex], matchesByRound[anchorIndex].map((_, index) => index * base));
+
+            for (let index = anchorIndex + 1; index < matchesByRound.length; index++) {
+                const inRound = matchesByRound[index];
+                const ideals = inRound.map((match, matchIndex) => {
+                    const feeders = matches.filter((source) => source.winnerNext === match.id || source.loserNext === match.id);
+                    const positions = feeders.map((source) => y.get(source.id)).filter((value) => value !== undefined);
+                    return positions.length ? positions.reduce((sum, value) => sum + value, 0) / positions.length : fallbackY(matchIndex, inRound.length);
+                });
+                placeRound(inRound, ideals);
+            }
+
+            for (let index = anchorIndex - 1; index >= 0; index--) {
+                const inRound = matchesByRound[index];
+                const targets = new Map();
+                inRound.forEach((match) => {
+                    const targetId = [match.winnerNext, match.loserNext].find((id) => id && ids.has(id));
+                    if (!targetId) return;
+                    if (!targets.has(targetId)) targets.set(targetId, []);
+                    targets.get(targetId).push(match.id);
+                });
+                const ideals = inRound.map((match, matchIndex) => {
+                    const targetId = [match.winnerNext, match.loserNext].find((id) => id && y.has(id));
+                    if (!targetId) return fallbackY(matchIndex, inRound.length);
+                    const siblings = targets.get(targetId) || [match.id];
+                    const siblingIndex = siblings.indexOf(match.id);
+                    return y.get(targetId) + (siblingIndex - (siblings.length - 1) / 2) * base;
+                });
+                placeRound(inRound, ideals);
+            }
+
+            const minY = Math.min(0, ...y.values());
+            if (minY < 0) y.forEach((value, id) => y.set(id, value - minY));
 
             const maxY = Math.max(0, ...y.values());
             const width = Math.max(viewport.clientWidth, rounds.length * columnWidth - GAP_X + ACTION_GUTTER + 28);
@@ -594,12 +613,13 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
 
             const roundTitle = (round, index) => {
                 const type = viewport.dataset.bracketType;
+                const sectionType = type.split(':').pop();
                 const hasGrandFinal = viewport.dataset.hasGrandFinal === 'true';
                 const remaining = rounds.length - index;
 
-                if (type === 'LOSERS') return `${LOSERS_ROUND_LABEL} ${index + 1}`;
-                if (type === 'GRAND_FINAL') return rounds.length > 1 ? `${FINAL_LABEL} ${index + 1}` : FINAL_LABEL;
-                if (type === 'WINNERS') {
+                if (sectionType === 'LOSERS') return `${LOSERS_ROUND_LABEL} ${index + 1}`;
+                if (sectionType === 'GRAND_FINAL') return rounds.length > 1 ? `${FINAL_LABEL} ${index + 1}` : FINAL_LABEL;
+                if (sectionType === 'WINNERS') {
                     if (hasGrandFinal && remaining === 1) return FINALS_LABEL;
                     if (remaining === 1 || (hasGrandFinal && remaining === 2)) return SEMIFINAL_LABEL;
                     return `${ROUND_LABEL} ${index + 1}`;
@@ -612,6 +632,12 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
             };
 
             rounds.forEach((round, index) => {
+                const lane = document.createElement('div');
+                lane.className = `bracket-round-lane${index % 2 ? ' is-alternate' : ''}`;
+                lane.style.left = `${index * columnWidth + 7}px`;
+                lane.style.width = `${cardWidth + 14}px`;
+                canvas.appendChild(lane);
+
                 const title = document.createElement('div');
                 title.className = 'bracket-round-title';
                 title.dataset.roundTone = ['pink', 'blue', 'orange', 'cyan', 'green', 'violet'][index % 6];

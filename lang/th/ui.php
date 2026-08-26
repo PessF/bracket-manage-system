@@ -72,7 +72,7 @@ return [
     'randomize_participants' => 'สุ่มลำดับ', 'randomize_participants_confirm' => 'ยืนยันสุ่มลำดับผู้เข้าแข่งขัน? ระบบจะใช้ลำดับที่แสดงนี้เมื่อสร้างสายการแข่งขัน', 'participants_randomized' => 'สุ่มลำดับผู้เข้าแข่งขันแล้ว ระบบจะใช้ลำดับนี้เมื่อสร้างสายการแข่งขัน', 'randomize_participants_status_invalid' => 'สุ่มลำดับผู้เข้าแข่งขันได้เฉพาะก่อนเริ่มการแข่งขัน', 'randomize_participants_bracket_exists' => 'โปรดรีเซ็ตสายการแข่งขันที่สร้างไว้ก่อนสุ่มลำดับผู้เข้าแข่งขัน',
     'match_scoring' => 'บันทึกคะแนนคู่แข่งขัน', 'open_bracket' => 'เปิดสายการแข่งขัน',
     'confirm_score' => 'บันทึกผล', 'enter_score' => 'บันทึกผล', 'edit_score' => 'แก้ไขผล', 'save_corrected_score' => 'บันทึกผลแก้ไข', 'score_match_title' => 'ผลคู่ที่ #:number', 'winner' => 'ผู้ชนะ', 'round' => 'รอบ', 'match' => 'คู่แข่งขัน', 'display_match' => 'คู่ที่',
-    'bracket_updates' => 'สายการแข่งขันจะอัปเดตอัตโนมัติเมื่อยืนยันผล', 'advances_to' => 'ผ่านเข้าสู่',
+    'bracket_updates' => 'สายการแข่งขันจะอัปเดตอัตโนมัติเมื่อยืนยันผล', 'advances_to' => 'ผ่านเข้าสู่', 'match_destinations' => 'เส้นทางการแข่งขัน', 'winner_short' => 'ชนะ', 'loser_short' => 'แพ้',
     'scroll_rounds' => 'เลื่อนไปทางขวาเพื่อดูรอบถัดไป →', 'winners_bracket' => 'สายผู้ชนะ',
     'losers_bracket' => 'สายผู้แพ้', 'grand_final' => 'รอบชิงชนะเลิศ', 'round_robin_matches' => 'คู่แข่งขันแบบพบกันหมด',
     'match_list' => 'รายการคู่แข่งขัน', 'final' => 'รอบชิงชนะเลิศ',

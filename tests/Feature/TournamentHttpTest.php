@@ -14,6 +14,7 @@ use App\Models\Stage;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Models\User;
+use App\Services\TournamentLifecycleService;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -116,6 +117,33 @@ class TournamentHttpTest extends TestCase
             ->assertSessionHas('success', __('ui.participants_randomized'));
 
         $this->assertSame(SeedingMethod::MANUAL, $tournament->refresh()->seeding_method);
+    }
+
+    public function test_double_elimination_bracket_displays_one_global_match_sequence(): void
+    {
+        $tournament = Tournament::factory()->create([
+            'format' => TournamentFormat::DOUBLE_ELIMINATION,
+            'seeding_method' => SeedingMethod::MANUAL,
+            'status' => TournamentStatus::DRAFT,
+        ]);
+        Stage::factory()->create(['tournament_id' => $tournament->id, 'format' => TournamentFormat::DOUBLE_ELIMINATION]);
+        Participant::factory()->count(8)->sequence(fn ($sequence) => ['seed_number' => $sequence->index + 1])->create(['tournament_id' => $tournament->id]);
+        app(TournamentLifecycleService::class)->start($tournament);
+
+        $lowerFirst = $tournament->matches()->where('bracket_type', 'LOSERS')->orderBy('match_number')->firstOrFail();
+        $lowerFinal = $tournament->matches()->where('bracket_type', 'LOSERS')->orderByDesc('match_number')->firstOrFail();
+        $grandFinal = $tournament->matches()->where('bracket_type', 'GRAND_FINAL')->firstOrFail();
+
+        $this->get(route('tournaments.bracket', $tournament))
+            ->assertOk()
+            ->assertSee('data-match-id="'.$lowerFirst->id.'" data-match-number="8"', false)
+            ->assertSee('data-match-id="'.$lowerFinal->id.'" data-match-number="13"', false)
+            ->assertSee('data-match-id="'.$grandFinal->id.'" data-match-number="14"', false)
+            ->assertSee(__('ui.source_loser_label', ['number' => 1]))
+            ->assertSee(__('ui.match_destinations'))
+            ->assertSee('→ #14', false)
+            ->assertSee('bracket-round-lane', false)
+            ->assertSee('const anchorIndex', false);
     }
 
     public function test_double_elimination_grand_final_setting_is_saved_before_start(): void

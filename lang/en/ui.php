@@ -72,7 +72,7 @@ return [
     'randomize_participants' => 'Shuffle order', 'randomize_participants_confirm' => 'Randomize the competitor order? The displayed order will be kept when the bracket is prepared.', 'participants_randomized' => 'Competitor order randomized. This draw will be kept when the bracket is prepared.', 'randomize_participants_status_invalid' => 'Competitors can only be randomized before the competition starts.', 'randomize_participants_bracket_exists' => 'Reset the prepared bracket before randomizing competitors.',
     'match_scoring' => 'Record match score', 'open_bracket' => 'Open bracket',
     'confirm_score' => 'Save result', 'enter_score' => 'Record result', 'edit_score' => 'Edit result', 'save_corrected_score' => 'Save correction', 'score_match_title' => 'Match #:number result', 'winner' => 'Winner', 'round' => 'Round', 'match' => 'Match', 'display_match' => 'Match',
-    'bracket_updates' => 'Bracket updates automatically when a result is confirmed.', 'advances_to' => 'Advances to',
+    'bracket_updates' => 'Bracket updates automatically when a result is confirmed.', 'advances_to' => 'Advances to', 'match_destinations' => 'Match progression', 'winner_short' => 'W', 'loser_short' => 'L',
     'scroll_rounds' => 'Scroll horizontally to see later rounds →', 'winners_bracket' => 'Winners Bracket',
     'losers_bracket' => 'Losers Bracket', 'grand_final' => 'Grand Final', 'round_robin_matches' => 'Round Robin Matches',
     'match_list' => 'Match list', 'final' => 'Final',
