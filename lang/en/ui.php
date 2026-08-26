@@ -191,7 +191,7 @@ return [
     'bracket_schedule' => 'Estimated schedule', 'bracket_schedule_help' => 'Shows estimated bracket start times and automatically observes a 12:00 - 13:00 lunch break.',
     'bracket_schedule_start_time' => 'Tournament start time', 'bracket_match_duration_minutes' => 'Minutes per match',
     'semifinals' => 'Semifinals', 'quarterfinals' => 'Quarterfinals', 'finals' => 'Final', 'losers_round' => 'Losers Round', 'leading_score' => 'Winning',
-    'auto_assign_bracket' => 'Randomly assign bracket',
+    'auto_assign_bracket' => 'Randomize participants',
     'randomize_group_assignments' => 'Randomly assign groups', 'randomize_group_assignments_confirm' => 'Randomly redistribute teams across all groups?',
     'advanced_group_assignments_randomized' => 'Teams were randomly assigned to groups.', 'advanced_group_capacity_insufficient' => 'Group capacity is insufficient for eligible teams.',
     'championship_match_badge' => 'Championship', 'group_championship_match_badge' => ':group Championship', 'third_place_match_badge' => '3rd Place',

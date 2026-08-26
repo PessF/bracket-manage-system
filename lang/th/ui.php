@@ -191,7 +191,7 @@ return [
     'bracket_schedule' => 'กำหนดการโดยประมาณ', 'bracket_schedule_help' => 'แสดงเวลาเริ่มโดยประมาณในสายการแข่งขัน และพักกลางวันอัตโนมัติระหว่าง 12:00 - 13:00 น.',
     'bracket_schedule_start_time' => 'เวลาเริ่มการแข่งขัน', 'bracket_match_duration_minutes' => 'นาทีต่อคู่แข่งขัน',
     'semifinals' => 'รอบรองชนะเลิศ', 'quarterfinals' => 'รอบก่อนรองชนะเลิศ', 'finals' => 'รอบชิงชนะเลิศ', 'losers_round' => 'สายผู้แพ้รอบที่', 'leading_score' => 'ชนะ',
-    'auto_assign_bracket' => 'เข้าสายอัตโนมัติแบบสุ่ม',
+    'auto_assign_bracket' => 'สุ่มผู้เข้าแข่งขัน',
     'randomize_group_assignments' => 'สุ่มสายโดยอัตโนมัติ', 'randomize_group_assignments_confirm' => 'สุ่มจัดทีมใหม่ในทุกกลุ่มหรือไม่?',
     'advanced_group_assignments_randomized' => 'สุ่มจัดทีมเข้าสายเรียบร้อยแล้ว', 'advanced_group_capacity_insufficient' => 'จำนวนที่นั่งในกลุ่มไม่เพียงพอสำหรับทีมที่ใช้งานอยู่',
     'championship_match_badge' => 'ชิงชนะเลิศ', 'group_championship_match_badge' => 'ชิงชนะเลิศ :group', 'third_place_match_badge' => 'ชิงอันดับ 3',
