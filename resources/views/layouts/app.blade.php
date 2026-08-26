@@ -440,6 +440,26 @@
             -webkit-text-fill-color:#e7edf4;
             caret-color:#e7edf4;
         }
+        body[data-theme="easykids"] .smart-select-trigger,
+        body[data-theme="easykids"] .smart-select-trigger:hover:not(:disabled),
+        body[data-theme="easykids"] .smart-select-trigger:focus-visible,
+        body[data-theme="easykids"] .smart-select-trigger[aria-expanded="true"] {
+            border-color:#3a4a59;
+            background:#0c1219;
+            color:#e7edf4;
+            box-shadow:none;
+        }
+        body[data-theme="easykids"] .smart-select-trigger[aria-expanded="true"] { border-color:#5f91b2; }
+        body[data-theme="easykids"] .smart-select-popover {
+            padding:4px;
+            border-color:#344351;
+            background:#111820;
+            box-shadow:none;
+        }
+        body[data-theme="easykids"] .smart-select-option { min-height:38px; padding:7px 9px; color:#dce5ee; }
+        body[data-theme="easykids"] .smart-select-option:hover,
+        body[data-theme="easykids"] .smart-select-option.focused { background:#1a2530; }
+        body[data-theme="easykids"] .smart-select-option.selected { background:#223342; color:#f4f8fc; }
         .smart-select-popover, body[data-theme="dark"] .smart-select-popover { border-color:var(--line); border-radius:7px; background:#111820; box-shadow:0 14px 28px rgb(0 0 0 / .38); }
         .smart-select-option:hover, .smart-select-option.focused, .smart-select-option.selected { background:var(--soft); }
         .tabs { margin-bottom:18px; border-color:var(--line); }
@@ -544,6 +564,8 @@
     </style>
     @if(file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @else
+        <script src="{{ asset('assets/js/smart-select-fallback.js') }}" defer></script>
     @endif
     @stack('styles')
 </head>
