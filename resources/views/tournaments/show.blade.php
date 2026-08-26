@@ -59,7 +59,7 @@
 @endif
 
 <section class="card">
-    <div class="actions split-actions" style="justify-content:space-between;margin-bottom:14px"><div><h2 style="margin:0">{{ __('ui.participants') }}</h2><div class="muted">{{ $isAdmin ? __('ui.participant_help') : __('ui.read_only_notice') }}</div></div>@if(!$rosterEditable)<span class="badge">{{ __('ui.seeds_locked') }}</span>@endif</div>
+    <div class="actions split-actions" style="justify-content:space-between;margin-bottom:14px"><div><h2 style="margin:0">{{ __('ui.participants') }}</h2><div class="muted">{{ $isAdmin ? __('ui.participant_help') : __('ui.read_only_notice') }}</div></div>@if($isAdmin && $rosterEditable && $tournament->participants_count > 1)<form method="post" action="{{ route('tournaments.randomize-participants', $tournament) }}" data-confirm="{{ __('ui.randomize_participants_confirm') }}">@csrf<button class="btn secondary small" type="submit">{{ __('ui.randomize_participants') }}</button></form>@elseif(!$rosterEditable)<span class="badge">{{ __('ui.seeds_locked') }}</span>@endif</div>
     <div class="participant-list">
     <div class="participant-list-head" aria-hidden="true"><span>{{ __('ui.seed') }}</span><span>{{ __('ui.team_name') }}</span><span class="participant-hide-mobile">{{ __('ui.school') }}</span><span class="participant-hide-mobile">{{ __('ui.coach_name') }}</span><span>{{ __('ui.status') }}</span><span></span></div>
     @forelse($tournament->participants as $participant)

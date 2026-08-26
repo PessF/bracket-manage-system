@@ -95,6 +95,29 @@ class TournamentHttpTest extends TestCase
             ->assertRedirect(route('tournaments.show', $tournament).'#add-participant');
     }
 
+    public function test_admin_can_randomize_competitors_before_preparing_the_bracket(): void
+    {
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+        $tournament = Tournament::factory()->create([
+            'format' => TournamentFormat::DOUBLE_ELIMINATION,
+            'seeding_method' => SeedingMethod::RANDOM,
+            'status' => TournamentStatus::DRAFT,
+        ]);
+        Stage::factory()->create(['tournament_id' => $tournament->id, 'format' => TournamentFormat::DOUBLE_ELIMINATION]);
+        Participant::factory()->count(4)->sequence(fn ($sequence) => ['seed_number' => $sequence->index + 1])->create(['tournament_id' => $tournament->id]);
+
+        $this->get(route('tournaments.show', $tournament))
+            ->assertOk()
+            ->assertSee(route('tournaments.randomize-participants', $tournament), false)
+            ->assertSee(__('ui.randomize_participants'));
+
+        $this->post(route('tournaments.randomize-participants', $tournament))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success', __('ui.participants_randomized'));
+
+        $this->assertSame(SeedingMethod::MANUAL, $tournament->refresh()->seeding_method);
+    }
+
     public function test_double_elimination_grand_final_setting_is_saved_before_start(): void
     {
         $this->withoutMiddleware(ValidateCsrfToken::class);

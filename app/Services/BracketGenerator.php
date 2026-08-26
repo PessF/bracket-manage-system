@@ -36,14 +36,15 @@ class BracketGenerator
     public function generatePlaceholder(TournamentFormat $format, array $labels, bool $thirdPlace = false): array
     {
         return match ($format) {
-            TournamentFormat::SINGLE_ELIMINATION, TournamentFormat::DOUBLE_ELIMINATION => $this->withThirdPlace($this->placeholderWinnersBracket($labels, 'PO'), $thirdPlace, 'PO'),
+            TournamentFormat::SINGLE_ELIMINATION => $this->withThirdPlace($this->placeholderWinnersBracket($labels, 'PO')['matches'], $thirdPlace, 'PO'),
+            TournamentFormat::DOUBLE_ELIMINATION => $this->buildDoubleElimination($this->placeholderWinnersBracket($labels, 'PO')),
             default => [],
         };
     }
 
     /**
      * @param  list<string>  $labels
-     * @return list<array<string, mixed>>
+     * @return array{matches: list<array<string, mixed>>, round_keys: list<list<string>>, total_rounds: int}
      */
     private function placeholderWinnersBracket(array $labels, string $prefix): array
     {
@@ -66,13 +67,18 @@ class BracketGenerator
 
         for ($index = 0; $index < $size / 2; $index++) {
             $key = "{$prefix}R1M".($index + 1);
+            $participantALabel = $labelsBySeed[$seedOrder[$index * 2]] ?? null;
+            $participantBLabel = $labelsBySeed[$seedOrder[$index * 2 + 1]] ?? null;
+            $isBye = $participantALabel === null || $participantBLabel === null;
             $firstRoundKeys[] = $key;
             $matches[] = $this->draft([
                 'key' => $key,
                 'match_number' => $matchNumber++,
-                'participant_a_label' => $labelsBySeed[$seedOrder[$index * 2]] ?? 'BYE',
-                'participant_b_label' => $labelsBySeed[$seedOrder[$index * 2 + 1]] ?? 'BYE',
-                'status' => MatchStatus::PENDING,
+                'participant_a_label' => $participantALabel,
+                'participant_b_label' => $participantBLabel ?? 'BYE',
+                'is_bye' => $isBye,
+                'status' => $isBye ? MatchStatus::FINISHED : MatchStatus::PENDING,
+                'winner_label' => $isBye ? ($participantALabel ?? $participantBLabel) : null,
             ]);
         }
 
@@ -89,15 +95,29 @@ class BracketGenerator
                 $nextRoundKeys[] = $key;
                 $sourceAIndex = $this->indexByKey($matches, $currentRoundKeys[$index * 2]);
                 $sourceBIndex = $this->indexByKey($matches, $currentRoundKeys[$index * 2 + 1]);
-                $matches[$sourceAIndex]['winner_next_key'] = $key;
-                $matches[$sourceAIndex]['winner_next_slot'] = MatchSlot::A;
-                $matches[$sourceBIndex]['winner_next_key'] = $key;
-                $matches[$sourceBIndex]['winner_next_slot'] = MatchSlot::B;
+                $participantALabel = $matches[$sourceAIndex]['is_bye']
+                    ? $matches[$sourceAIndex]['winner_label']
+                    : null;
+                $participantBLabel = $matches[$sourceBIndex]['is_bye']
+                    ? $matches[$sourceBIndex]['winner_label']
+                    : null;
+
+                if (! $matches[$sourceAIndex]['is_bye']) {
+                    $matches[$sourceAIndex]['winner_next_key'] = $key;
+                    $matches[$sourceAIndex]['winner_next_slot'] = MatchSlot::A;
+                }
+
+                if (! $matches[$sourceBIndex]['is_bye']) {
+                    $matches[$sourceBIndex]['winner_next_key'] = $key;
+                    $matches[$sourceBIndex]['winner_next_slot'] = MatchSlot::B;
+                }
 
                 $matches[] = $this->draft([
                     'key' => $key,
                     'round_number' => $round,
                     'match_number' => $matchNumber++,
+                    'participant_a_label' => $participantALabel,
+                    'participant_b_label' => $participantBLabel,
                     'status' => MatchStatus::PENDING,
                 ]);
             }
@@ -106,7 +126,11 @@ class BracketGenerator
             $currentRoundKeys = $nextRoundKeys;
         }
 
-        return $matches;
+        return [
+            'matches' => $matches,
+            'round_keys' => $roundKeys,
+            'total_rounds' => $totalRounds,
+        ];
     }
 
     /**
@@ -265,8 +289,16 @@ class BracketGenerator
      */
     private function doubleElimination(array $participants): array
     {
+        return $this->buildDoubleElimination($this->winnersBracket($participants, 'WB'));
+    }
+
+    /**
+     * @param  array{matches: list<array<string, mixed>>, round_keys: list<list<string>>, total_rounds: int}  $winnersBracket
+     * @return list<array<string, mixed>>
+     */
+    private function buildDoubleElimination(array $winnersBracket): array
+    {
         $this->losersMatchCounter = 0;
-        $winnersBracket = $this->winnersBracket($participants, 'WB');
         $matches = $winnersBracket['matches'];
         $roundKeys = $winnersBracket['round_keys'];
         $winnersRoundCount = $winnersBracket['total_rounds'];
@@ -289,7 +321,7 @@ class BracketGenerator
                 : $this->mergeAndAdvance(
                     $matches,
                     $losersPool,
-                    $winnersLosers,
+                    $this->crossWinnersBracketDropDowns($winnersLosers),
                     $winnersRound * 2,
                     $matchNumber,
                 );
@@ -322,6 +354,45 @@ class BracketGenerator
         if (isset($losersPool[0])) {
             $this->wireToken($matches, $losersPool[0], $grandFinalKey, MatchSlot::B);
         }
+
+        return $this->withoutByeMatches($matches);
+    }
+
+    /**
+     * Cross adjacent drop-downs so a participant cannot immediately replay the
+     * opponent they just faced in the winners bracket.
+     *
+     * @param  list<array{match_key: string, outcome: string}>  $tokens
+     * @return list<array{match_key: string, outcome: string}>
+     */
+    private function crossWinnersBracketDropDowns(array $tokens): array
+    {
+        for ($index = 0; $index + 1 < count($tokens); $index += 2) {
+            [$tokens[$index], $tokens[$index + 1]] = [$tokens[$index + 1], $tokens[$index]];
+        }
+
+        return $tokens;
+    }
+
+    /**
+     * A bye advances a seeded participant directly and is not a played match.
+     * Keeping it out of double-elimination produces the standard 2N - 2 base
+     * match count while retaining the participant already copied to round two.
+     *
+     * @param  list<array<string, mixed>>  $matches
+     * @return list<array<string, mixed>>
+     */
+    private function withoutByeMatches(array $matches): array
+    {
+        $matches = array_values(array_filter(
+            $matches,
+            fn (array $match): bool => ! $match['is_bye'],
+        ));
+
+        foreach ($matches as $index => &$match) {
+            $match['match_number'] = $index + 1;
+        }
+        unset($match);
 
         return $matches;
     }
@@ -452,6 +523,7 @@ class BracketGenerator
             'winner_next_slot' => null,
             'loser_next_key' => null,
             'loser_next_slot' => null,
+            'winner_label' => null,
         ], $overrides);
     }
 

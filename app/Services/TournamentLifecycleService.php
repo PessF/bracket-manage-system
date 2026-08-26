@@ -11,12 +11,12 @@ use App\Enums\SeedingMethod;
 use App\Enums\StageStatus;
 use App\Enums\StageType;
 use App\Enums\TournamentFormat;
-use App\Enums\TournamentStructure;
 use App\Enums\TournamentStatus;
+use App\Enums\TournamentStructure;
 use App\Models\Participant;
+use App\Models\Stage;
 use App\Models\StageGroup;
 use App\Models\Standing;
-use App\Models\Stage;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use DomainException;
@@ -27,6 +27,67 @@ use Illuminate\Support\Str;
 class TournamentLifecycleService
 {
     public function __construct(private readonly BracketGenerator $brackets) {}
+
+    public function randomizeParticipants(Tournament|string $tournament): Tournament
+    {
+        $id = $tournament instanceof Tournament ? (string) $tournament->getKey() : $tournament;
+
+        return DB::transaction(function () use ($id): Tournament {
+            /** @var Tournament $locked */
+            $locked = Tournament::query()->lockForUpdate()->findOrFail($id);
+
+            if (! in_array($locked->status, [TournamentStatus::DRAFT, TournamentStatus::READY], true)) {
+                throw new DomainException(__('ui.randomize_participants_status_invalid'));
+            }
+
+            if ($locked->matches()->exists()) {
+                throw new DomainException(__('ui.randomize_participants_bracket_exists'));
+            }
+
+            $eligible = $locked->participants()
+                ->whereIn('status', [ParticipantStatus::ACTIVE, ParticipantStatus::CHECKED_IN])
+                ->orderByRaw('seed_number is null')
+                ->orderBy('seed_number')
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->all();
+
+            if (count($eligible) < 2) {
+                throw new DomainException(__('ui.two_participants_required'));
+            }
+
+            $originalOrder = array_map(fn (Participant $participant): string => (string) $participant->id, $eligible);
+            shuffle($eligible);
+
+            if (array_map(fn (Participant $participant): string => (string) $participant->id, $eligible) === $originalOrder) {
+                $eligible[] = array_shift($eligible);
+            }
+
+            $ineligible = $locked->participants()
+                ->whereNotIn('status', [ParticipantStatus::ACTIVE, ParticipantStatus::CHECKED_IN])
+                ->orderByRaw('seed_number is null')
+                ->orderBy('seed_number')
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->all();
+
+            foreach (array_merge($eligible, $ineligible) as $index => $participant) {
+                $participant->fill(['seed_number' => $index + 1, 'synced_at' => now()])->save();
+            }
+
+            $now = now();
+            $locked->fill([
+                // Preserve the visible draw when the bracket is prepared later.
+                'seeding_method' => SeedingMethod::MANUAL,
+                'source_updated_at' => $now,
+                'synced_at' => $now,
+            ])->save();
+
+            return $locked->refresh();
+        }, 3);
+    }
 
     public function prepareBracket(Tournament|string $tournament): Tournament
     {

@@ -18,6 +18,11 @@ class TournamentLifecycleController extends Controller
         return $this->execute(fn () => $this->lifecycle->prepareBracket($tournament), __('ui.bracket_prepared'));
     }
 
+    public function randomizeParticipants(Tournament $tournament): RedirectResponse
+    {
+        return $this->execute(fn () => $this->lifecycle->randomizeParticipants($tournament), __('ui.participants_randomized'));
+    }
+
     public function start(Tournament $tournament): RedirectResponse
     {
         return $this->execute(fn () => $this->lifecycle->start($tournament), __('ui.tournament_started'));
