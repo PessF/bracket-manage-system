@@ -18,7 +18,8 @@
     .bracket-round-lane { position:absolute; z-index:0; top:48px; bottom:12px; border-inline:1px solid rgb(148 163 184 / .08); border-radius:6px; background:rgb(148 163 184 / .025); pointer-events:none; }
     .bracket-round-lane.is-alternate { background:rgb(148 163 184 / .04); }
     .bracket-connectors { position:absolute; inset:0; z-index:1; overflow:visible; pointer-events:none; }
-    .bracket-connector { fill:none; stroke:#cbd5e1; stroke-width:2; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
+    .bracket-connector { fill:none; stroke:#cbd5e1; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
+    .bracket-connector.is-loss { stroke-dasharray:4 4; opacity:.82; }
     .bracket-round-title { position:absolute; top:0; z-index:3; height:44px; display:flex; align-items:center; color:#71717a; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.055em; }
     .bracket-match-node { position:absolute; z-index:2; width:272px; min-height:126px; padding:10px; border:1px solid var(--line); border-radius:7px; background:var(--card); box-shadow:none; transition:border-color .14s; }
     .bracket-match-node:hover { z-index:4; border-color:var(--line-strong); box-shadow:none; transform:none; }
@@ -98,10 +99,7 @@
     body[data-theme="easykids"] .legend-line { stroke:rgb(180 205 255 / .68); border-color:rgb(180 205 255 / .68); }
     body[data-theme="easykids"] .bracket-round-title,
     body[data-theme="easykids"] .bracket-destinations { color:#718395; }
-    body[data-theme="easykids"] .bracket-round-title { justify-content:flex-start; height:32px; padding:0 12px; border:1px solid rgb(116 147 202 / .16); border-top:3px solid #66d7ed; border-radius:6px; background:linear-gradient(180deg, rgb(24 31 47 / .98), rgb(12 16 25 / .98)); color:#dff5ff; font-size:12px; letter-spacing:0; text-transform:none; box-shadow:0 0 0 1px rgb(102 215 237 / .04), 0 10px 24px rgb(0 0 0 / .24); }
-    body[data-theme="easykids"] .bracket-round-title[data-round-tone="red"] { border-top-color:#ff7591; }
-    body[data-theme="easykids"] .bracket-round-title[data-round-tone="green"] { border-top-color:#8c88ff; }
-    body[data-theme="easykids"] .bracket-round-title[data-round-tone="orange"] { border-top-color:#f0be72; }
+    body[data-theme="easykids"] .bracket-round-title { justify-content:flex-start; height:32px; padding:0 12px; border:1px solid rgb(116 147 202 / .16); border-top:3px solid var(--round-accent,#66d7ed); border-radius:6px; background:linear-gradient(180deg, rgb(24 31 47 / .98), rgb(12 16 25 / .98)); color:#dff5ff; font-size:12px; letter-spacing:0; text-transform:none; box-shadow:0 10px 24px rgb(0 0 0 / .24); }
     body[data-theme="easykids"] .bracket-match-node { width:236px; min-height:92px; padding:7px; border-color:rgb(116 147 202 / .16); background:linear-gradient(180deg, rgb(18 24 38 / .96), rgb(10 14 23 / .98)); box-shadow:0 0 0 1px rgb(113 150 218 / .06), 0 12px 28px rgb(0 0 0 / .24); }
     body[data-theme="easykids"] .bracket-match-node.is-finished { border-color:rgb(116 147 202 / .20); background:linear-gradient(180deg, rgb(20 26 39 / .96), rgb(11 16 26 / .98)); box-shadow:0 0 0 1px rgb(113 150 218 / .06), 0 10px 22px rgb(0 0 0 / .22); }
     body[data-theme="easykids"] .bracket-match-node.is-finished::after { content:""; position:absolute; inset:0 auto 0 0; width:4px; border-radius:7px 0 0 7px; background:#8290aa; }
@@ -527,15 +525,17 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
 (() => {
     const SVG_NS = 'http://www.w3.org/2000/svg';
     const HEADER = 58;
-    const GAP_X = 54;
+    const GAP_X = 72;
     const GAP_Y = 18;
     const ACTION_GUTTER = 48;
+    const ROUND_COLORS = ['#66d7ed','#72b9f2','#78a7ff','#8794f5','#9b8cff','#b889ec','#d889e8','#ed83c6','#ff7f9c','#ff8c80','#ff9f6e','#f0be72','#d2d873','#a9d87b','#7fd6a5','#67d2c5','#6bc9df','#8bb8ef','#aa9fe8','#d49adf'];
     const ROUND_LABEL = @json(__('ui.round'));
     const FINAL_LABEL = @json(__('ui.final'));
     const SEMIFINAL_LABEL = @json(__('ui.semifinals'));
     const FINALS_LABEL = @json(__('ui.finals'));
     const LOSERS_ROUND_LABEL = @json(__('ui.losers_round'));
 
+    let nextRoundColorIndex = 0;
     document.querySelectorAll('[data-bracket-section]:not(.bracket-grid)').forEach((viewport) => {
         const canvas = viewport.querySelector('[data-bracket-canvas]');
         const nodes = [...viewport.querySelectorAll('.bracket-match-node')];
@@ -549,6 +549,8 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
         const ids = new Set(matches.map((match) => match.id));
         const rounds = [...new Set(matches.map((match) => match.round))].sort((a,b) => a-b);
         const roundIndex = new Map(rounds.map((round, index) => [round, index]));
+        const sectionColorOffset = nextRoundColorIndex;
+        nextRoundColorIndex += rounds.length;
         const layout = () => {
             canvas.querySelectorAll('.bracket-connectors, .bracket-round-title, .bracket-round-lane').forEach((element) => element.remove());
             nodes.forEach((node) => { node.style.width = ''; });
@@ -602,6 +604,14 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
                 placeRound(inRound, ideals);
             }
 
+            const layoutCenter = (anchorCount - 1) * base / 2;
+            matchesByRound.forEach((inRound) => {
+                const positions = inRound.map((match) => y.get(match.id));
+                const roundCenter = (Math.min(...positions) + Math.max(...positions)) / 2;
+                const shift = layoutCenter - roundCenter;
+                inRound.forEach((match) => y.set(match.id, y.get(match.id) + shift));
+            });
+
             const minY = Math.min(0, ...y.values());
             if (minY < 0) y.forEach((value, id) => y.set(id, value - minY));
 
@@ -636,14 +646,15 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
                 lane.className = `bracket-round-lane${index % 2 ? ' is-alternate' : ''}`;
                 lane.style.left = `${index * columnWidth + 7}px`;
                 lane.style.width = `${cardWidth + 14}px`;
+                lane.style.setProperty('--round-accent', ROUND_COLORS[(sectionColorOffset + index) % ROUND_COLORS.length]);
                 canvas.appendChild(lane);
 
                 const title = document.createElement('div');
                 title.className = 'bracket-round-title';
-                title.dataset.roundTone = ['pink', 'blue', 'orange', 'cyan', 'green', 'violet'][index % 6];
                 title.style.left = `${index * columnWidth + 14}px`;
                 title.style.top = '10px';
                 title.style.width = `${cardWidth}px`;
+                title.style.setProperty('--round-accent', ROUND_COLORS[(sectionColorOffset + index) % ROUND_COLORS.length]);
                 title.textContent = roundTitle(round, index);
                 canvas.appendChild(title);
             });
@@ -660,21 +671,30 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
             svg.setAttribute('height', height);
             svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
 
-            matches.forEach((source) => {
-                [source.winnerNext, source.loserNext].forEach((targetId) => {
-                    if (!targetId || !ids.has(targetId)) return;
-                    const target = matches.find((candidate) => candidate.id === targetId);
-                    if (!target || target.thirdPlace) return;
-                    const x1 = (roundIndex.get(source.round) || 0) * columnWidth + 14 + cardWidth;
-                    const y1 = (y.get(source.id) || 0) + HEADER + source.node.offsetHeight / 2;
-                    const x2 = (roundIndex.get(target.round) || 0) * columnWidth + 14;
-                    const y2 = (y.get(target.id) || 0) + HEADER + target.node.offsetHeight / 2;
-                    const midX = x1 + (x2 - x1) / 2;
-                    const path = document.createElementNS(SVG_NS, 'path');
-                    path.setAttribute('class', 'bracket-connector');
-                    path.setAttribute('d', `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`);
-                    svg.appendChild(path);
-                });
+            const edges = matches.flatMap((source) => [
+                {source, targetId:source.winnerNext, outcome:'winner'},
+                {source, targetId:source.loserNext, outcome:'loser'},
+            ])
+                .filter((edge) => edge.targetId && ids.has(edge.targetId))
+                .map((edge) => ({...edge, target:matches.find((candidate) => candidate.id === edge.targetId)}))
+                .filter((edge) => edge.target && !edge.target.thirdPlace);
+
+            edges.forEach((edge) => {
+                const incoming = edges.filter((candidate) => candidate.targetId === edge.targetId);
+                const incomingIndex = incoming.indexOf(edge);
+                const portOffset = (incomingIndex - (incoming.length - 1) / 2) * 8;
+                const gapPeers = edges.filter((candidate) => candidate.source.round === edge.source.round && candidate.target.round === edge.target.round);
+                const gapIndex = gapPeers.indexOf(edge);
+                const trackRatio = .34 + .32 * (gapIndex + 1) / (gapPeers.length + 1);
+                const x1 = (roundIndex.get(edge.source.round) || 0) * columnWidth + 14 + cardWidth;
+                const y1 = (y.get(edge.source.id) || 0) + HEADER + edge.source.node.offsetHeight / 2;
+                const x2 = (roundIndex.get(edge.target.round) || 0) * columnWidth + 14;
+                const y2 = (y.get(edge.target.id) || 0) + HEADER + edge.target.node.offsetHeight / 2 + portOffset;
+                const trackX = x1 + (x2 - x1) * trackRatio;
+                const path = document.createElementNS(SVG_NS, 'path');
+                path.setAttribute('class', `bracket-connector is-${edge.outcome}`);
+                path.setAttribute('d', `M ${x1} ${y1} H ${trackX} V ${y2} H ${x2}`);
+                svg.appendChild(path);
             });
             canvas.prepend(svg);
         };

@@ -104,6 +104,37 @@ class TournamentLifecycleServiceTest extends TestCase
         $this->assertSame([2], $losses->map(fn ($count): int => (int) $count)->unique()->values()->all());
     }
 
+    public function test_partial_lower_round_survivors_are_evenly_distributed_against_upper_drop_downs(): void
+    {
+        $tournament = $this->draft(TournamentFormat::DOUBLE_ELIMINATION, 22);
+        app(TournamentLifecycleService::class)->prepareBracket($tournament);
+
+        $matches = $tournament->matches()->get()->keyBy('id');
+        $consolidationRound = $matches
+            ->where('bracket_type', BracketType::LOSERS)
+            ->where('round_number', 5)
+            ->sortBy('match_number')
+            ->values();
+
+        $this->assertCount(4, $consolidationRound);
+
+        $sourceTypes = $consolidationRound->map(function ($match) use ($matches): array {
+            return collect([$match->participant_a_source_match_id, $match->participant_b_source_match_id])
+                ->map(fn ($id): ?BracketType => $matches->get($id)?->bracket_type)
+                ->filter()
+                ->sortBy(fn (BracketType $type): string => $type->value)
+                ->values()
+                ->all();
+        });
+
+        $this->assertSame([
+            [BracketType::LOSERS, BracketType::WINNERS],
+            [BracketType::LOSERS, BracketType::WINNERS],
+            [BracketType::LOSERS, BracketType::WINNERS],
+            [BracketType::WINNERS, BracketType::WINNERS],
+        ], $sourceTypes->all());
+    }
+
     public function test_explicit_randomization_changes_and_preserves_the_prepared_seed_order(): void
     {
         $tournament = $this->draft(TournamentFormat::DOUBLE_ELIMINATION, 8);

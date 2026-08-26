@@ -439,6 +439,7 @@ class BracketGenerator
         int &$matchNumber,
     ): array {
         $winners = [];
+        $passThroughs = [];
 
         for ($index = 0; $index < max(count($firstPool), count($secondPool)); $index++) {
             $first = $firstPool[$index] ?? null;
@@ -453,13 +454,29 @@ class BracketGenerator
                     $matchNumber,
                 );
             } elseif ($first !== null) {
-                $winners[] = $first;
+                $passThroughs[] = $first;
             } elseif ($second !== null) {
-                $winners[] = $second;
+                $passThroughs[] = $second;
             }
         }
 
-        return $winners;
+        if ($winners === [] || $passThroughs === []) {
+            return array_merge($winners, $passThroughs);
+        }
+
+        // Spread lower-bracket survivors across available drop-down byes so
+        // they do not get clustered against one another in the next round.
+        $balanced = [];
+
+        foreach ($winners as $winner) {
+            $balanced[] = $winner;
+
+            if ($passThroughs !== []) {
+                $balanced[] = array_shift($passThroughs);
+            }
+        }
+
+        return array_merge($balanced, $passThroughs);
     }
 
     /**

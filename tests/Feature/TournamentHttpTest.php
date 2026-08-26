@@ -143,7 +143,20 @@ class TournamentHttpTest extends TestCase
             ->assertSee(__('ui.match_destinations'))
             ->assertSee('→ #14', false)
             ->assertSee('bracket-round-lane', false)
-            ->assertSee('const anchorIndex', false);
+            ->assertSee('const anchorIndex', false)
+            ->assertSee('const ROUND_COLORS', false)
+            ->assertSee('const trackRatio', false)
+            ->assertSee('portOffset', false);
+    }
+
+    public function test_shared_layout_uses_the_supplied_png_favicon(): void
+    {
+        $this->assertFileExists(public_path('assets/logos/favicon.png'));
+
+        $this->get(route('tournaments.index'))
+            ->assertOk()
+            ->assertSee(asset('assets/logos/favicon.png').'?v=3', false)
+            ->assertDontSee(asset('favicon.svg').'?v=2', false);
     }
 
     public function test_double_elimination_grand_final_setting_is_saved_before_start(): void
