@@ -61,7 +61,7 @@
 <h2>{{ __('ui.bracket_schedule') }}</h2><div class="muted" style="margin:-9px 0 17px">{{ __('ui.bracket_schedule_help') }}</div>
 <div class="form-grid">
 <div class="field"><label for="bracket_schedule_start_time">{{ __('ui.bracket_schedule_start_time') }}</label><input id="bracket_schedule_start_time" type="text" inputmode="numeric" name="bracket_schedule_start_time" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" maxlength="5" placeholder="13:00" value="{{ old('bracket_schedule_start_time', $tournament->bracket_schedule_start_time ? substr((string) $tournament->bracket_schedule_start_time, 0, 5) : '09:00') }}" data-24-hour-time required><small>24 ชั่วโมง เช่น 13:00</small></div>
-<div class="field"><label for="bracket_match_duration_minutes">{{ __('ui.bracket_match_duration_minutes') }}</label><input id="bracket_match_duration_minutes" type="number" min="1" max="240" name="bracket_match_duration_minutes" value="{{ old('bracket_match_duration_minutes', $tournament->bracket_match_duration_minutes) }}" placeholder="6"></div>
+<div class="field"><label for="bracket_match_duration_minutes">{{ __('ui.bracket_match_duration_minutes') }}</label><input id="bracket_match_duration_minutes" type="number" min="1" max="240" name="bracket_match_duration_minutes" value="{{ old('bracket_match_duration_minutes', $tournament->bracket_match_duration_minutes) }}" placeholder="6"><small>ระยะเวลาโดยประมาณต่อแมตช์ (นาที)</small></div>
 </div>
 </section>
 

@@ -141,8 +141,6 @@ class TournamentWorkspaceController extends Controller
 
         $time = CarbonImmutable::createFromFormat('H:i', substr((string) $tournament->bracket_schedule_start_time, 0, 5));
         $duration = (int) $tournament->bracket_match_duration_minutes;
-        $lunchStart = $time->setTime(12, 0);
-        $lunchEnd = $time->setTime(13, 0);
         $estimatedStartTimes = [];
 
         foreach ($matches->sortBy('match_number') as $match) {
@@ -150,8 +148,9 @@ class TournamentWorkspaceController extends Controller
                 continue;
             }
 
-            if ($time->greaterThanOrEqualTo($lunchStart) && $time->lessThan($lunchEnd)) {
-                $time = $lunchEnd;
+            $timeOfDay = $time->format('H:i');
+            if ($timeOfDay >= '12:00' && $timeOfDay < '13:00') {
+                $time = $time->setTime(13, 0);
             }
 
             $estimatedStartTimes[(string) $match->id] = $time->format('H:i');

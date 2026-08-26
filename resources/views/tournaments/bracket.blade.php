@@ -33,6 +33,7 @@
     .bracket-match-number { display:inline-flex; align-items:baseline; gap:4px; font-weight:700; color:#52525b; }
     .bracket-match-number strong { font-size:16px; font-weight:900; }
     .bracket-match-number span { font-size:10px; }
+    .bracket-scheduled-time { display:inline-flex; align-items:center; min-height:18px; padding:0 5px; border:1px solid var(--line); border-radius:3px; background:var(--soft); color:var(--muted); font-size:10px; font-weight:700; font-style:normal; margin-left:2px; }
     .bracket-award-badge { display:inline-flex; align-items:center; min-height:22px; padding:2px 8px; border:1px solid var(--line); border-radius:999px; font-size:10px; font-weight:900; white-space:nowrap; }
     .bracket-award-badge.champion { border-color:#f6c663; background:#fff7df; color:#8a5200; }
     .bracket-award-badge.third { border-color:#d49b72; background:#fff0e5; color:#854d2d; }
@@ -413,7 +414,7 @@
             data-match-id="{{ $match->id }}" data-match-number="{{ $displayMatchNumber }}" data-round="{{ $match->round_number }}" data-number="{{ $layoutSortNumber }}"
             data-winner-next="{{ $match->winner_next_match_id }}" data-loser-next="{{ $match->loser_next_match_id }}" data-third-place="{{ $isThirdPlace ? 'true' : 'false' }}">
             <div class="bracket-match-meta">
-                <span class="bracket-match-number"><span>{{ __('ui.display_match') }}</span><strong>#{{ $displayMatchNumber }}</strong>@if(isset($estimatedStartTimes[(string) $match->id]))<i class="bracket-scheduled-time">{{ $estimatedStartTimes[(string) $match->id] }}</i>@endif</span>
+                <span class="bracket-match-number"><span>{{ __('ui.display_match') }}</span><strong>#{{ $displayMatchNumber }}</strong>@if(isset($estimatedStartTimes[(string) $match->id]))<i class="bracket-scheduled-time">{{ $estimatedStartTimes[(string) $match->id] }} น.</i>@endif</span>
                 @if($isChampionship)
                 <span class="bracket-award-badge champion">{{ $championshipBadgeLabel }}</span>
                 @elseif($isThirdPlace)
