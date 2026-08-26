@@ -525,7 +525,9 @@
             .mobile-popover, .language-popover { max-height:calc(100dvh - 64px); }
         }
     </style>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @if(file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @endif
     @stack('styles')
 </head>
 @php
