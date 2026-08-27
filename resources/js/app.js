@@ -1,5 +1,52 @@
 import './bootstrap';
 
+const tournamentSort = document.querySelector('[data-tournament-sort]');
+if (tournamentSort) {
+    let draggedCard = null;
+    let suppressCardClick = false;
+    const cards = () => [...tournamentSort.querySelectorAll('[data-tournament-card]')];
+
+    cards().forEach((card) => {
+        card.addEventListener('click', (event) => {
+            if (!suppressCardClick) return;
+            event.preventDefault();
+            event.stopPropagation();
+            suppressCardClick = false;
+        });
+        card.addEventListener('dragstart', (event) => {
+            draggedCard = card;
+            suppressCardClick = true;
+            card.classList.add('is-dragging');
+            event.dataTransfer.effectAllowed = 'move';
+        });
+        card.addEventListener('dragend', () => {
+            draggedCard = null;
+            cards().forEach((item) => item.classList.remove('is-dragging', 'is-drag-over'));
+            window.setTimeout(() => { suppressCardClick = false; }, 300);
+        });
+        card.addEventListener('dragover', (event) => {
+            if (!draggedCard || draggedCard === card) return;
+            event.preventDefault();
+            card.classList.add('is-drag-over');
+        });
+        card.addEventListener('dragleave', () => card.classList.remove('is-drag-over'));
+        card.addEventListener('drop', async (event) => {
+            event.preventDefault();
+            if (!draggedCard || draggedCard === card) return;
+            const rect = card.getBoundingClientRect();
+            const insertBefore = event.clientY < rect.top + rect.height / 2;
+            tournamentSort.insertBefore(draggedCard, insertBefore ? card : card.nextSibling);
+            card.classList.remove('is-drag-over');
+            const response = await fetch(tournamentSort.dataset.orderUrl, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                body: JSON.stringify({ order: cards().map((item) => item.dataset.tournamentId) }),
+            });
+            if (!response.ok) window.location.reload();
+        });
+    });
+}
+
 // Base tournament UI interactions extracted from layouts/app.blade.php.
 document.addEventListener('submit', (event) => {
     const form = event.target;

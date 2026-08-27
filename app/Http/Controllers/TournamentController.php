@@ -17,6 +17,7 @@ use App\Models\Tournament;
 use App\Services\AdvancedTournamentBuilderService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,8 @@ class TournamentController extends Controller
         try {
             $tournaments = Tournament::query()->withCount(['participants', 'matches'])
                 ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+                ->orderByRaw('display_order IS NULL')
+                ->orderBy('display_order')
                 ->orderByDesc('source_created_at')->paginate(12)->withQueryString();
         } catch (QueryException $exception) {
             throw_unless(app()->isLocal(), $exception);
@@ -51,6 +54,26 @@ class TournamentController extends Controller
         }
 
         return view('tournaments.index', compact('tournaments', 'canBrowseTournaments'));
+    }
+
+    public function updateDisplayOrder(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'order' => ['required', 'array', 'min:1'],
+            'order.*' => ['required', 'uuid'],
+        ]);
+        $ids = array_values(array_unique($data['order']));
+        $existingCount = Tournament::query()->whereIn('id', $ids)->count();
+
+        abort_unless($existingCount === count($ids), 422, 'Invalid tournament order.');
+
+        DB::transaction(function () use ($ids): void {
+            foreach ($ids as $index => $id) {
+                Tournament::query()->whereKey($id)->update(['display_order' => $index + 1]);
+            }
+        });
+
+        return response()->json(['success' => true]);
     }
 
     public function create(): View

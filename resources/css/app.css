@@ -186,6 +186,10 @@ th { font-size: 12px; text-transform: uppercase; letter-spacing: .045em; color: 
 .viewer-only-nav a { display:inline-flex; min-height:44px; align-items:center; font-weight:700; }
 .podium-more { display:flex; justify-content:center; margin-top:12px; }
 .podium-more .btn { width:min(100%, 360px); justify-content:center; }
+.dashboard-order-hint { margin:-8px 0 12px; color:var(--muted); font-size:13px; }
+.tournament-card[draggable="true"] { cursor:grab; }
+.tournament-card.is-dragging { opacity:.45; cursor:grabbing; }
+.tournament-card.is-drag-over { border-color:#d4af37; box-shadow:0 0 0 2px rgb(212 175 55 / .2); }
 .viewer-shell .container { max-width:none; padding-top:18px; }
 .viewer-shell .top .inner { max-width:none; }
 .viewer-shell .live-refresh { margin-top:0; }

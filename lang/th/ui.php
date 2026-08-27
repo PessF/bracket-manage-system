@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'app_name' => 'ระบบจัดการแข่งขัน EasyKids Robotics', 'all_tournaments' => 'การแข่งขันทั้งหมด', 'create' => 'สร้างการแข่งขัน',
+    'app_name' => 'ระบบจัดการแข่งขัน EasyKids Robotics', 'dashboard_order_hint' => 'ลากการ์ดเพื่อจัดลำดับการแสดงผล', 'all_tournaments' => 'การแข่งขันทั้งหมด', 'create' => 'สร้างการแข่งขัน',
     'tournaments' => 'รายการแข่งขัน', 'tournaments_help' => 'แดชบอร์ดแสดงรายการแข่งขัน สถานะ และผลการแข่งขัน',
     'new_tournament' => 'สร้างการแข่งขันใหม่', 'all_statuses' => 'ทุกสถานะ', 'filter' => 'กรอง', 'teams' => 'ทีม',
     'no_tournaments' => 'ไม่พบรายการแข่งขัน สร้างรายการใหม่เพื่อเริ่มใช้งาน', 'create_tournament' => 'สร้างการแข่งขัน',

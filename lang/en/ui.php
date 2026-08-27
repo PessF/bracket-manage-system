@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'app_name' => 'EasyKids Robotics Competition System', 'all_tournaments' => 'All competitions', 'create' => 'Create',
+    'app_name' => 'EasyKids Robotics Competition System', 'dashboard_order_hint' => 'Drag cards to set the display order.', 'all_tournaments' => 'All competitions', 'create' => 'Create',
     'tournaments' => 'Competitions', 'tournaments_help' => 'Dashboard for competitions, status, and results.',
     'new_tournament' => 'New competition', 'all_statuses' => 'All statuses', 'filter' => 'Filter', 'teams' => 'Teams',
     'no_tournaments' => 'No competitions found. Create a competition to begin.', 'create_tournament' => 'Create competition',

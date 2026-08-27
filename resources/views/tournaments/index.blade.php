@@ -38,7 +38,10 @@
     </form>
 @endif
 
-<div class="grid tournament-grid">
+@if($isAdmin && $tournaments->count() > 1)
+    <div class="dashboard-order-hint">{{ __('ui.dashboard_order_hint') }}</div>
+@endif
+<div class="grid tournament-grid" @if($isAdmin && $tournaments->count() > 1) data-tournament-sort data-order-url="{{ route('tournaments.display-order.update') }}" @endif>
     @forelse($tournaments as $tournament)
         @php
             $isAdvancedTournament = $tournament->structure === App\Enums\TournamentStructure::ADVANCED;
@@ -46,7 +49,7 @@
             $groupFormat = $advancedConfig['group_format'] ?? null;
             $playoffFormat = $advancedConfig['playoff_format'] ?? null;
         @endphp
-        <a class="card tournament-card" href="{{ route('tournaments.show', $tournament) }}">
+        <a class="card tournament-card" href="{{ route('tournaments.show', $tournament) }}" @if($isAdmin && $tournaments->count() > 1) draggable="true" data-tournament-card data-tournament-id="{{ $tournament->id }}" @endif>
             <div class="actions tournament-card-badges">
                 <span class="badge {{ $tournament->status->value }}">{{ __('ui.tournament_status_labels.'.$tournament->status->value) }}</span>
                 <span class="badge structure-badge {{ $tournament->structure->value }}">{{ __('ui.structure_labels.'.$tournament->structure->value) }}</span>

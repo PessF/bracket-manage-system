@@ -34,6 +34,7 @@ Route::get('/tournaments', [TournamentController::class, 'index'])->name('tourna
 Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::get('/tournaments/create', [TournamentController::class, 'create'])->name('tournaments.create');
     Route::post('/tournaments', [TournamentController::class, 'store'])->name('tournaments.store');
+    Route::patch('/tournaments/display-order', [TournamentController::class, 'updateDisplayOrder'])->name('tournaments.display-order.update');
     Route::get('/tournaments/{tournament}/edit', [TournamentController::class, 'edit'])->name('tournaments.edit');
     Route::get('/tournaments/{tournament}/settings', [TournamentController::class, 'edit'])->name('tournaments.settings');
     Route::match(['put', 'patch'], '/tournaments/{tournament}', [TournamentController::class, 'update'])->name('tournaments.update');
