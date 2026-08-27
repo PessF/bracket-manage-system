@@ -1,6 +1,6 @@
 @php
     $isPublicView = request()->routeIs('public.tournaments.*');
-    $isAdmin = auth()->user()?->isAdmin() ?? false;
+    $isAdmin = ! $isPublicView && (auth()->user()?->isAdmin() ?? false);
     $usePublicRoutes = $isPublicView && !$isAdmin;
     $routePrefix = $usePublicRoutes ? 'public.tournaments.' : 'tournaments.';
     $routeParameter = $usePublicRoutes ? ['tournament' => $tournament->public_token] : $tournament;
@@ -8,7 +8,9 @@
 
 @if($isPublicView && !$isAdmin)
 <nav class="viewer-only-nav" aria-label="{{ __('ui.tournament_navigation') }}">
-    <a href="{{ route('public.tournaments.bracket', $routeParameter) }}">{{ __('ui.back_to_live_bracket') }}</a>
+    @if(request()->routeIs('public.tournaments.results'))
+        <a class="btn record-result-button" href="{{ route('public.tournaments.show', $routeParameter) }}">{{ __('ui.bracket_competition') }}</a>
+    @endif
 </nav>
 @else
 <nav class="tabs admin-control-tabs" aria-label="{{ __('ui.tournament_navigation') }}">

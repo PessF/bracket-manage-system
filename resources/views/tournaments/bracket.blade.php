@@ -61,6 +61,11 @@
     .score-modal-team-name { display:flex; align-items:center; gap:7px; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
     .score-modal-team .score-stepper { min-width:0; }
     .score-modal-actions { display:flex; justify-content:flex-end; gap:7px; margin-top:14px; }
+    .match-details-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .match-detail-side { padding:12px; border:1px solid var(--line); border-left:4px solid var(--muted); border-radius:6px; background:var(--soft); }
+    .red-detail { border-left-color:#ef4444; } .blue-detail { border-left-color:#3b82f6; }
+    .match-detail-side dl { margin:10px 0 0; } .match-detail-side dt { color:var(--muted); font-size:12px; } .match-detail-side dd { margin:2px 0 8px; overflow-wrap:anywhere; }
+    @media(max-width:680px){.match-details-grid{grid-template-columns:1fr}}
     .bracket-destinations { display:flex; align-items:center; gap:5px; min-height:18px; margin-top:5px; color:#71717a; font-size:10px; }
     .bracket-destination { display:inline-flex; align-items:center; gap:4px; min-width:0; height:20px; padding:0 6px; border:1px solid var(--line); border-radius:999px; background:var(--soft); white-space:nowrap; }
     .bracket-destination strong { font-weight:800; }
@@ -219,7 +224,7 @@
 @section('content')
 @php
     $isPublicView = request()->routeIs('public.tournaments.*');
-    $isAdmin = auth()->user()?->isAdmin() ?? false;
+    $isAdmin = ! $isPublicView && (auth()->user()?->isAdmin() ?? false);
 @endphp
 @if($isPublicView)
 <div class="viewer-event-head">
@@ -236,7 +241,7 @@
         @if($tournament->status === App\Enums\TournamentStatus::READY)
         <form method="post" action="{{ route('tournaments.start', $tournament) }}">
             @csrf
-            <button class="btn" type="submit">{{ __('ui.start_tournament') }}</button>
+            <button class="btn record-result-button" type="submit">{{ __('ui.start_tournament') }}</button>
         </form>
         @endif
         @if($tournament->status === App\Enums\TournamentStatus::LIVE)
@@ -248,6 +253,9 @@
     </div>
 </div>
 @endif
+@endif
+@if(! $isAdmin)
+@include('tournaments._tabs')
 @endif
 <div class="viewer-bracket-help">{{ __('ui.viewer_bracket_help') }}</div>
 @else
@@ -266,7 +274,7 @@
         @if($isAdmin && $tournament->status === App\Enums\TournamentStatus::READY)
         <form method="post" action="{{ route('tournaments.start', $tournament) }}">
             @csrf
-            <button class="btn" type="submit">{{ __('ui.start_tournament') }}</button>
+            <button class="btn record-result-button" type="submit">{{ __('ui.start_tournament') }}</button>
         </form>
         @endif
         @if($isAdmin && $tournament->status === App\Enums\TournamentStatus::LIVE)
@@ -332,6 +340,9 @@
         </div>
         @endforeach
     </div>
+    @if($isPublicView)
+    <div class="podium-more"><a class="btn record-result-button" href="{{ route('public.tournaments.results', ['tournament' => $tournament->public_token]) }}">See more</a></div>
+    @endif
 </section>
 @endif
 
@@ -414,13 +425,13 @@
             data-match-id="{{ $match->id }}" data-match-number="{{ $displayMatchNumber }}" data-round="{{ $match->round_number }}" data-number="{{ $layoutSortNumber }}"
             data-winner-next="{{ $match->winner_next_match_id }}" data-loser-next="{{ $match->loser_next_match_id }}" data-third-place="{{ $isThirdPlace ? 'true' : 'false' }}">
             <div class="bracket-match-meta">
-                <span class="bracket-match-number"><span>{{ __('ui.display_match') }}</span><strong>#{{ $displayMatchNumber }}</strong>@if(isset($estimatedStartTimes[(string) $match->id]))<i class="bracket-scheduled-time">{{ $estimatedStartTimes[(string) $match->id] }} น.</i>@endif</span>
+                <span class="bracket-match-number"><span>{{ __('ui.display_match') }}</span><strong>#{{ $displayMatchNumber }}</strong>@if(isset($estimatedStartTimes[(string) $match->id]))<i class="bracket-scheduled-time">{{ $estimatedStartTimes[(string) $match->id] }} {{ __('ui.time_suffix') }}</i>@endif</span>
                 @if($isChampionship)
                 <span class="bracket-award-badge champion">{{ $championshipBadgeLabel }}</span>
                 @elseif($isThirdPlace)
                 <span class="bracket-award-badge third">{{ __('ui.third_place_match_badge') }}</span>
                 @else
-                <span class="badge {{ $match->is_bye ? 'BYE' : $match->status->value }}">{{ $match->is_bye ? __('ui.bye') : __('ui.match_status_labels.'.$match->status->value) }}</span>
+                <span class="badge {{ $match->is_bye ? 'BYE' : $match->status->value }}">{{ $match->is_bye ? __('ui.bye') : ($match->status === App\Enums\MatchStatus::READY && $tournament->status !== App\Enums\TournamentStatus::LIVE ? __('ui.match_waiting_to_start') : __('ui.match_status_labels.'.$match->status->value)) }}</span>
                 @endif
             </div>
             <div class="bracket-team {{ $match->winner_id && $match->winner_id === $match->participant_a_id ? 'winner' : '' }} {{ $match->winner_id && $match->winner_id === $match->participant_a_id && $match->winner_next_match_id ? 'advancing' : '' }} {{ !$match->participant_a_id ? 'waiting' : '' }}" data-bracket-slot-state="{{ $match->participant_a_id ? 'confirmed' : 'waiting' }}">
@@ -475,6 +486,16 @@
     </form>
 </dialog>
 @endif
+
+<dialog class="score-modal match-details-modal" data-match-details-modal aria-labelledby="match-details-title">
+    <div class="score-modal-head"><h2 id="match-details-title" data-match-details-title>{{ __('ui.team_details') }}</h2><button class="score-modal-close" type="button" data-match-details-close aria-label="{{ __('ui.close') }}">×</button></div>
+    <div class="score-modal-form">
+        <div class="match-details-grid">
+            <div class="match-detail-side red-detail"><strong>{{ __('ui.red_side') }}</strong><dl><dt>{{ __('ui.team_id') }}</dt><dd data-details-red-code>—</dd><dt>{{ __('ui.team_name') }}</dt><dd data-details-red-name>—</dd><dt>{{ __('ui.school') }}</dt><dd data-details-red-school>—</dd></dl></div>
+            <div class="match-detail-side blue-detail"><strong>{{ __('ui.blue_side') }}</strong><dl><dt>{{ __('ui.team_id') }}</dt><dd data-details-blue-code>—</dd><dt>{{ __('ui.team_name') }}</dt><dd data-details-blue-name>—</dd><dt>{{ __('ui.school') }}</dt><dd data-details-blue-school>—</dd></dl></div>
+        </div>
+    </div>
+</dialog>
 @endsection
 
 @push('scripts')
@@ -484,6 +505,23 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
         if (select.value) window.location.href = select.value;
     });
 });
+
+(() => {
+    const dialog = document.querySelector('[data-match-details-modal]');
+    if (!dialog) return;
+    const fields = {
+        redCode: dialog.querySelector('[data-details-red-code]'), redName: dialog.querySelector('[data-details-red-name]'), redSchool: dialog.querySelector('[data-details-red-school]'),
+        blueCode: dialog.querySelector('[data-details-blue-code]'), blueName: dialog.querySelector('[data-details-blue-name]'), blueSchool: dialog.querySelector('[data-details-blue-school]'),
+    };
+    document.querySelectorAll('[data-match-details-trigger]').forEach((trigger) => trigger.addEventListener('click', () => {
+        dialog.querySelector('[data-match-details-title]').textContent = @json(__('ui.match_details', ['number' => '__NUMBER__'])).replace('__NUMBER__', trigger.dataset.matchNumber);
+        fields.redCode.textContent = trigger.dataset.redCode || '—'; fields.redName.textContent = trigger.dataset.redName || '—'; fields.redSchool.textContent = trigger.dataset.redSchool || '—';
+        fields.blueCode.textContent = trigger.dataset.blueCode || '—'; fields.blueName.textContent = trigger.dataset.blueName || '—'; fields.blueSchool.textContent = trigger.dataset.blueSchool || '—';
+        dialog.showModal();
+    }));
+    dialog.querySelectorAll('[data-match-details-close]').forEach((button) => button.addEventListener('click', () => dialog.close()));
+    dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+})();
 
 (() => {
     const dialog = document.querySelector('[data-score-modal]');

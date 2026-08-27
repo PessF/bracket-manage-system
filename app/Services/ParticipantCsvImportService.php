@@ -160,7 +160,7 @@ class ParticipantCsvImportService
             'ชื่อทีม' => 'team_name', 'ทีม' => 'team_name',
             'team id' => 'team_code', 'teamid' => 'team_code', 'team code' => 'team_code', 'team_code' => 'team_code', 'teamcode' => 'team_code',
             'รหัสทีม' => 'team_code', 'school' => 'school', 'school / organization' => 'school',
-            'organization' => 'school', 'โรงเรียน' => 'school', 'สถาบัน' => 'school',
+            'organization' => 'school', 'โรงเรียน' => 'school', 'สถาบัน' => 'school', 'โรงเรียน / สถาบัน' => 'school',
             'coach' => 'coach_name', 'coach name' => 'coach_name', 'coach_name' => 'coach_name', 'โค้ช' => 'coach_name', 'ชื่อโค้ช' => 'coach_name',
             'seed' => 'seed_number', 'seed number' => 'seed_number', 'seed_number' => 'seed_number', 'อันดับ seed' => 'seed_number',
             'member 1' => 'member_1', 'member1' => 'member_1', 'สมาชิก 1' => 'member_1',

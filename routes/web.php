@@ -44,6 +44,7 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::post('/tournaments/{tournament}/participants/bulk', [ParticipantController::class, 'bulkStore'])->name('participants.bulk-store');
     Route::put('/tournaments/{tournament}/participants/{participant}', [ParticipantController::class, 'update'])->name('participants.update');
     Route::delete('/tournaments/{tournament}/participants/{participant}', [ParticipantController::class, 'destroy'])->name('participants.destroy');
+    Route::delete('/tournaments/{tournament}/participants', [ParticipantController::class, 'destroyAll'])->name('participants.destroy-all');
     Route::post('/tournaments/{tournament}/participants/import', [ParticipantImportController::class, 'store'])->name('participants.import');
     Route::get('/tournaments/{tournament}/groups', [TournamentGroupAssignmentController::class, 'edit'])->name('tournaments.groups.edit');
     Route::put('/tournaments/{tournament}/groups', [TournamentGroupAssignmentController::class, 'update'])->name('tournaments.groups.update');

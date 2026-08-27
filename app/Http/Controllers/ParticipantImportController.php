@@ -37,8 +37,8 @@ class ParticipantImportController extends Controller
 
     public function template(): Response
     {
-        $content = "\xEF\xBB\xBFTeam Name,Team ID,School,Coach,Member 1,Member 2,Member 3,Member 4,Seed\n";
-        $content .= 'Robo Tigers,RBT,EasyKids Academy,Coach A,Student One,Student Two,,,1'."\n";
+        $content = "\xEF\xBB\xBFรหัสทีม,ชื่อทีม,โรงเรียน / สถาบัน\n";
+        $content .= "RBT,Robo Tigers,EasyKids Academy\n";
 
         return response($content, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',

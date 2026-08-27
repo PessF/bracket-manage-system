@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\MatchStatus;
 use App\Enums\TournamentStatus;
+use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +58,33 @@ class MatchProgressService
             ])->save();
 
             return $current->refresh();
+        }, 3);
+    }
+
+    public function startNextReadyMatch(Tournament $tournament): ?TournamentMatch
+    {
+        return DB::transaction(function () use ($tournament): ?TournamentMatch {
+            if ($tournament->matches()->where('status', MatchStatus::LIVE)->exists()) {
+                return null;
+            }
+
+            /** @var TournamentMatch|null $match */
+            $match = $tournament->matches()
+                ->whereIn('status', [MatchStatus::READY, MatchStatus::PENDING])
+                ->where('is_bye', false)
+                ->whereNotNull('participant_a_id')
+                ->whereNotNull('participant_b_id')
+                ->orderBy('match_number')
+                ->lockForUpdate()
+                ->first();
+
+            if ($match === null) {
+                return null;
+            }
+
+            $match->forceFill(['status' => MatchStatus::LIVE, 'started_at' => now(), 'synced_at' => now()])->save();
+
+            return $match;
         }, 3);
     }
 }

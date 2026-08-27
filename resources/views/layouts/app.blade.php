@@ -177,8 +177,10 @@
         .score-stepper button:hover { background: #e4e4e7; color: var(--ink); }
         .score-stepper input { width: 100%; min-width: 0; height:44px; min-height:44px; padding: 2px; border: 0; border-left: 1px solid var(--line); border-right: 1px solid var(--line); border-radius: 0; box-shadow: none; text-align: center; font-weight: 700; -moz-appearance: textfield; }
         .score-stepper input::-webkit-inner-spin-button, .score-stepper input::-webkit-outer-spin-button { margin: 0; -webkit-appearance: none; }
-        .viewer-only-nav { margin:-5px 0 16px; }
-        .viewer-only-nav a { display:inline-flex; min-height:44px; align-items:center; color:var(--blue); font-weight:700; }
+        .viewer-only-nav { display:flex; flex-wrap:wrap; gap:8px; margin:-5px 0 16px; }
+        .viewer-only-nav a { display:inline-flex; min-height:44px; align-items:center; font-weight:700; }
+        .podium-more { display:flex; justify-content:center; margin-top:12px; }
+        .podium-more .btn { width:min(100%, 360px); justify-content:center; }
         .viewer-shell .container { max-width:none; padding-top:18px; }
         .viewer-shell .top .inner { max-width:none; }
         .viewer-shell .live-refresh { margin-top:0; }
@@ -484,6 +486,8 @@
         .danger-card h2 { color:#f09aab; }
         a:hover { opacity:1; }
         .btn, .top nav a, .nav-button, summary, .tournament-card { transition:border-color .14s, background-color .14s, color .14s, transform .1s; }
+        input[type="file"] { padding:6px; cursor:pointer; }
+        input[type="file"]::file-selector-button, input[type="file"]::-webkit-file-upload-button { min-height:34px; margin-right:10px; padding:6px 14px; border:1px solid #d4af37; border-radius:6px; background:#d4af37; color:#171a20; font:inherit; font-weight:800; cursor:pointer; }
         .btn:active:not(:disabled), .nav-button:active, .top nav a:active { transform:translateY(1px); }
         @media(hover:hover) and (pointer:fine) {
             .btn:hover:not(:disabled):not([aria-disabled="true"]) { filter:none; background:#4a91c2; }
@@ -625,7 +629,7 @@
                         <button class="language-option {{ app()->isLocale('en') ? 'active' : '' }}" type="submit"><span class="language-code">EN</span><span class="language-name">{{ __('ui.language_english') }}<small>English</small></span><svg class="language-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 12 4 4L19 6"/></svg></button>
                     </form>
                     <form method="post" action="{{ route('locale.update', 'th') }}">@csrf
-                        <button class="language-option {{ app()->isLocale('th') ? 'active' : '' }}" type="submit"><span class="language-code">TH</span><span class="language-name">{{ __('ui.language_thai') }}<small>ภาษาไทย</small></span><svg class="language-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 12 4 4L19 6"/></svg></button>
+                        <button class="language-option {{ app()->isLocale('th') ? 'active' : '' }}" type="submit"><span class="language-code">TH</span><span class="language-name">{{ __('ui.language_thai') }}<small>{{ __('ui.language_thai_native') }}</small></span><svg class="language-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 12 4 4L19 6"/></svg></button>
                     </form>
                 </div>
             </details>

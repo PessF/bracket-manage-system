@@ -12,6 +12,7 @@ use App\Enums\TournamentStructure;
 use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
 use App\Models\Participant;
+use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use DomainException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -176,6 +177,8 @@ class MatchResultService
                 $this->createPlayoffWhenReady($currentMatch);
             }
 
+            $this->startNextReadyMatch($currentMatch->tournament);
+
             return $currentMatch->refresh()->load([
                 'winner',
                 'loser',
@@ -183,6 +186,26 @@ class MatchResultService
                 'loserNextMatch',
             ]);
         }, 3);
+    }
+
+    private function startNextReadyMatch(Tournament $tournament): void
+    {
+        if ($tournament->matches()->where('status', MatchStatus::LIVE)->exists()) {
+            return;
+        }
+
+        $match = $tournament->matches()
+            ->where('status', MatchStatus::READY)
+            ->where('is_bye', false)
+            ->whereNotNull('participant_a_id')
+            ->whereNotNull('participant_b_id')
+            ->orderBy('match_number')
+            ->lockForUpdate()
+            ->first();
+
+        if ($match !== null) {
+            $match->forceFill(['status' => MatchStatus::LIVE, 'started_at' => now(), 'synced_at' => now()])->save();
+        }
     }
 
     private function createPlayoffWhenReady(TournamentMatch $match): void

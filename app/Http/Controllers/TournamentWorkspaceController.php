@@ -9,6 +9,7 @@ use App\Enums\MatchStatus;
 use App\Models\Participant;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
+use App\Services\MatchProgressService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,8 +18,15 @@ use Illuminate\View\View;
 
 class TournamentWorkspaceController extends Controller
 {
+    public function __construct(private readonly MatchProgressService $progress) {}
+
     public function bracket(Request $request, Tournament $tournament): View
     {
+        if ($tournament->status === \App\Enums\TournamentStatus::LIVE
+            && ! $tournament->matches()->where('status', MatchStatus::LIVE)->exists()) {
+            $this->progress->startNextReadyMatch($tournament);
+        }
+
         $matches = $tournament->matches()->with([
             'participantA',
             'participantB',

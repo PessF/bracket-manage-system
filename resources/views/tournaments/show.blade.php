@@ -10,7 +10,7 @@
 @push('styles')
 <style>
     #add-participant:target{border-color:#4d8db8;scroll-margin-top:calc(var(--top-height) + 12px)}
-    .participant-list{display:flex;flex-direction:column;gap:8px}.participant-item{min-width:0;border:1px solid var(--line);border-radius:7px;background:var(--card);overflow:hidden}.participant-summary,.participant-list-head{display:grid;grid-template-columns:56px minmax(170px,1.5fr) minmax(130px,1fr) minmax(130px,1fr) 110px 24px;gap:12px;align-items:center;padding:10px 12px;list-style:none}.participant-list-head{margin-bottom:8px;border:1px solid var(--line);border-radius:7px;background:var(--soft);color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.participant-item details>.participant-summary{cursor:pointer}.participant-summary::-webkit-details-marker{display:none}.participant-item details>.participant-summary:hover{background:var(--soft)}.participant-team{min-width:0}.participant-team strong{display:block}.participant-team small{display:block}.participant-edit{padding:15px;border-top:1px solid var(--line);background:var(--soft)}.participant-chevron{color:var(--muted);transition:transform .15s}.participant-item details[open] .participant-chevron{transform:rotate(180deg)}@media(max-width:900px){.participant-summary,.participant-list-head{grid-template-columns:42px minmax(0,1fr) auto 24px;gap:8px;padding:10px}.participant-hide-mobile,.participant-list-head .participant-hide-mobile{display:none}.participant-team strong,.participant-team small{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}}@media(max-width:680px){.participant-edit{padding:13px}.participant-edit .form-grid{grid-template-columns:1fr}}
+    .participant-list{display:flex;flex-direction:column;gap:8px}.participant-item{min-width:0;border:1px solid var(--line);border-radius:7px;background:var(--card);overflow:hidden}.participant-summary,.participant-list-head{display:grid;grid-template-columns:minmax(120px,1fr) minmax(170px,1.5fr) minmax(160px,1.5fr);gap:12px;align-items:center;padding:10px 12px;list-style:none}.participant-list-head{margin-bottom:8px;border:1px solid var(--line);border-radius:7px;background:var(--soft);color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.participant-item details>.participant-summary{cursor:pointer}.participant-summary::-webkit-details-marker{display:none}.participant-item details>.participant-summary:hover{background:var(--soft)}.participant-team{min-width:0}.participant-team strong{display:block}.participant-team small{display:block}.participant-edit{padding:15px;border-top:1px solid var(--line);background:var(--soft)}.participant-chevron{color:var(--muted);transition:transform .15s}.participant-item details[open] .participant-chevron{transform:rotate(180deg)}@media(max-width:680px){.participant-summary,.participant-list-head{grid-template-columns:1fr auto;gap:8px;padding:10px}.participant-summary>*:nth-child(3),.participant-list-head>*:nth-child(3){grid-column:1 / -1}.participant-team strong,.participant-team small{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.participant-edit{padding:13px}.participant-edit .form-grid{grid-template-columns:1fr}}
     @media(hover:none){.participant-item details>.participant-summary:hover{background:transparent}}
 </style>
 @endpush
@@ -26,9 +26,9 @@
 <section class="card competition-detail-card">
     <h2>{{ __('ui.competition_details') }}</h2>
     <div class="detail-grid">
-        <div class="detail-item"><small>{{ __('ui.competition_date') }}</small><strong>{{ $tournament->competition_date?->translatedFormat('j M Y · H:i') ? $tournament->competition_date->translatedFormat('j M Y · H:i').' น.' : __('ui.not_specified') }}</strong></div>
+        <div class="detail-item"><small>{{ __('ui.competition_date') }}</small><strong>{{ $tournament->competition_date?->translatedFormat('j M Y · H:i') ? $tournament->competition_date->translatedFormat('j M Y · H:i').' '.__('ui.time_suffix') : __('ui.not_specified') }}</strong></div>
         @if($tournament->bracket_schedule_start_time)
-        <div class="detail-item"><small>{{ __('ui.bracket_schedule_start_time') }}</small><strong>{{ substr((string) $tournament->bracket_schedule_start_time, 0, 5) }} น.</strong></div>
+        <div class="detail-item"><small>{{ __('ui.bracket_schedule_start_time') }}</small><strong>{{ substr((string) $tournament->bracket_schedule_start_time, 0, 5) }} {{ __('ui.time_suffix') }}</strong></div>
         @endif
         <div class="detail-item"><small>{{ __('ui.venue') }}</small><strong>{{ $tournament->venue ?: __('ui.not_specified') }}</strong></div>
         <div class="detail-item"><small>{{ __('ui.division') }}</small><strong>{{ $tournament->division }}</strong></div>
@@ -53,7 +53,7 @@
 
 @if($isAdmin && $rosterEditable)
 <div class="grid">
-    <section class="card" id="add-participant" tabindex="-1"><h2>{{ __('ui.add_participant') }}</h2><form class="form-grid" method="post" action="{{ route('participants.store', $tournament) }}">@csrf<div class="field"><label for="new-team-name">{{ __('ui.team_name') }}</label><input id="new-team-name" name="team_name" value="{{ old('team_name') }}" required></div><div class="field"><label for="new-team-code">{{ __('ui.team_code') }}</label><input id="new-team-code" name="team_code" value="{{ old('team_code') }}"></div><div class="field"><label for="new-school">{{ __('ui.school') }}</label><input id="new-school" name="school" value="{{ old('school') }}"></div><div class="field"><label for="new-coach">{{ __('ui.coach') }}</label><input id="new-coach" name="coach_name" value="{{ old('coach_name') }}"></div><div class="full"><button class="btn">{{ __('ui.add_team') }}</button></div></form></section>
+    <section class="card" id="add-participant" tabindex="-1"><h2>{{ __('ui.add_participant') }}</h2><form class="form-grid" method="post" action="{{ route('participants.store', $tournament) }}">@csrf<div class="field"><label for="new-team-name">{{ __('ui.team_name') }}</label><input id="new-team-name" name="team_name" value="{{ old('team_name') }}" required></div><div class="field"><label for="new-team-code">{{ __('ui.team_code') }}</label><input id="new-team-code" name="team_code" value="{{ old('team_code') }}"></div><div class="field"><label for="new-school">{{ __('ui.school') }}</label><input id="new-school" name="school" value="{{ old('school') }}"></div><div class="full"><button class="btn">{{ __('ui.add_team') }}</button></div></form></section>
     <section class="card bulk-participant-card"><h2>{{ __('ui.bulk_add_participants') }}</h2><p class="muted">{{ __('ui.bulk_add_participants_help') }}</p><form method="post" action="{{ route('participants.bulk-store', $tournament) }}">@csrf<div class="field"><label for="bulk_participants">{{ __('ui.participants') }}</label><textarea id="bulk_participants" name="bulk_participants" rows="9" placeholder="{{ __('ui.bulk_participants_placeholder') }}">{{ old('bulk_participants') }}</textarea></div><button class="btn" type="submit">{{ __('ui.add_bulk_participants') }}</button></form></section>
     <section class="card"><h2>{{ __('ui.import_csv') }}</h2><p class="muted">{{ __('ui.csv_help') }}</p><form method="post" enctype="multipart/form-data" action="{{ route('participants.import', $tournament) }}">@csrf<div class="field"><label for="csv_file">{{ __('ui.csv_file') }}</label><input id="csv_file" type="file" name="csv_file" accept=".csv,text/csv,text/plain,application/vnd.ms-excel" required></div><div class="actions"><button class="btn" type="submit">{{ __('ui.import_participants') }}</button><a class="btn secondary" href="{{ route('participants.import.template') }}">{{ __('ui.download_template') }}</a></div></form></section>
 </div>
@@ -62,13 +62,37 @@
 @endif
 
 <section class="card">
-    <div class="actions split-actions" style="justify-content:space-between;margin-bottom:14px"><div><h2 style="margin:0">{{ __('ui.participants') }}</h2><div class="muted">{{ $isAdmin ? __('ui.participant_help') : __('ui.read_only_notice') }}</div></div>@if($isAdmin && $rosterEditable && $tournament->participants_count > 1)<form method="post" action="{{ route('tournaments.randomize-participants', $tournament) }}" data-confirm="{{ __('ui.randomize_participants_confirm') }}">@csrf<button class="btn secondary small" type="submit">{{ __('ui.auto_assign_bracket') }}</button></form>@elseif(!$rosterEditable)<span class="badge">{{ __('ui.seeds_locked') }}</span>@endif</div>
+    <div class="actions split-actions" style="justify-content:space-between;margin-bottom:14px">
+        <div>
+            <h2 style="margin:0">{{ __('ui.participants') }}</h2>
+            <div class="muted">{{ $isAdmin ? __('ui.participant_help') : __('ui.read_only_notice') }}</div>
+        </div>
+        @if($isAdmin && $rosterEditable)
+            <div class="actions">
+                @if($tournament->participants_count > 1)
+                    <form method="post" action="{{ route('tournaments.randomize-participants', $tournament) }}" data-confirm="{{ __('ui.randomize_participants_confirm') }}">
+                        @csrf
+                        <button class="btn secondary small" type="submit">{{ __('ui.auto_assign_bracket') }}</button>
+                    </form>
+                @endif
+                @if($tournament->participants_count > 0)
+                    <form method="post" action="{{ route('participants.destroy-all', $tournament) }}" data-confirm="{{ __('ui.delete_all_participants_confirm') }}">
+                        @csrf
+                        @method('DELETE')
+                        <button class="btn danger small" type="submit">{{ __('ui.delete_all_participants') }}</button>
+                    </form>
+                @endif
+            </div>
+        @elseif(!$rosterEditable)
+            <span class="badge">{{ __('ui.seeds_locked') }}</span>
+        @endif
+    </div>
     <div class="participant-list">
-    <div class="participant-list-head" aria-hidden="true"><span>{{ __('ui.seed') }}</span><span>{{ __('ui.team_name') }}</span><span class="participant-hide-mobile">{{ __('ui.school') }}</span><span class="participant-hide-mobile">{{ __('ui.coach_name') }}</span><span>{{ __('ui.status') }}</span><span></span></div>
+    <div class="participant-list-head" aria-hidden="true"><span>{{ __('ui.team_code') }}</span><span>{{ __('ui.team_name') }}</span><span>{{ __('ui.school') }}</span></div>
     @forelse($tournament->participants as $participant)
         <article class="participant-item">
         @if($isAdmin)
-            <details><summary class="participant-summary"><strong>#{{ $participant->seed_number ?? '—' }}</strong><span class="participant-team"><strong>{{ $participant->team_name }}</strong><small class="muted">{{ $participant->team_code ?: __('ui.no_team_code') }}</small></span><span class="participant-hide-mobile">{{ $participant->school ?? '—' }}</span><span class="participant-hide-mobile">{{ $participant->coach_name ?? '—' }}</span><span class="badge">{{ __('ui.participant_status_labels.'.$participant->status->value) }}</span><span class="participant-chevron">⌄</span></summary>
+            <details><summary class="participant-summary"><strong>{{ $participant->team_code ?: '—' }}</strong><span class="participant-team"><strong>{{ $participant->team_name }}</strong><small class="muted">#{{ $participant->seed_number ?? '—' }}</small></span><span>{{ $participant->school ?? '—' }}</span></summary>
                 <div class="participant-edit">
                     <form method="post" action="{{ route('participants.update', [$tournament, $participant]) }}">@csrf @method('PUT')
                         <div class="form-grid">
@@ -84,7 +108,7 @@
                 </div>
             </details>
         @else
-            <div class="participant-summary"><strong>#{{ $participant->seed_number ?? '—' }}</strong><span class="participant-team"><strong>{{ $participant->team_name }}</strong><small class="muted">{{ $participant->team_code ?: __('ui.no_team_code') }}</small></span><span class="participant-hide-mobile">{{ $participant->school ?? '—' }}</span><span class="participant-hide-mobile">{{ $participant->coach_name ?? '—' }}</span><span class="badge">{{ __('ui.participant_status_labels.'.$participant->status->value) }}</span><span></span></div>
+            <div class="participant-summary"><strong>{{ $participant->team_code ?: '—' }}</strong><span class="participant-team"><strong>{{ $participant->team_name }}</strong><small class="muted">#{{ $participant->seed_number ?? '—' }}</small></span><span>{{ $participant->school ?? '—' }}</span></div>
         @endif
         </article>
     @empty<div class="empty">{{ __('ui.no_participants') }}</div>@endforelse

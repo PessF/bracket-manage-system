@@ -125,6 +125,18 @@ class ParticipantController extends Controller
         return back()->with('success', __('ui.participant_removed'));
     }
 
+    public function destroyAll(Tournament $tournament): RedirectResponse
+    {
+        if (! $this->editable($tournament)) {
+            return back()->withErrors(__('ui.roster_locked'));
+        }
+
+        $tournament->participants()->delete();
+        $this->syncCount($tournament);
+
+        return back()->with('success', __('ui.all_participants_removed'));
+    }
+
     /** @return array<string, mixed> */
     private function validated(Request $request): array
     {

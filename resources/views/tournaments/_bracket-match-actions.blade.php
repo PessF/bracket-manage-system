@@ -1,9 +1,10 @@
 <div class="bracket-card-actions">
-    @if($canEnterScore && $match->status === App\Enums\MatchStatus::READY)
-    <form method="post" action="{{ route('matches.progress.store', [$tournament, $match]) }}">
-        @csrf
-        <button class="btn secondary bracket-icon-button progress-button" type="submit" aria-label="{{ __('ui.mark_in_progress_short') }}" title="{{ __('ui.mark_in_progress_short') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m10.5 8.5 5.5 3.5-5.5 3.5Z"/></svg></button>
-    </form>
+    @if($match->participantA && $match->participantB)
+    <button class="btn secondary bracket-icon-button match-details-trigger" type="button" data-match-details-trigger
+        data-match-number="{{ $displayMatchNumber ?? $match->match_number }}"
+        data-red-code="{{ $match->participantA->team_code }}" data-red-name="{{ $match->participantA->team_name }}" data-red-school="{{ $match->participantA->school }}"
+        data-blue-code="{{ $match->participantB->team_code }}" data-blue-name="{{ $match->participantB->team_name }}" data-blue-school="{{ $match->participantB->school }}"
+        aria-haspopup="dialog" aria-label="{{ __('ui.team_details') }}" title="{{ __('ui.team_details') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7.5h.01"/></svg></button>
     @endif
     @if($canEnterScore || $canEditScore)
     <button

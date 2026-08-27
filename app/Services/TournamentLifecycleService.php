@@ -89,6 +89,26 @@ class TournamentLifecycleService
         }, 3);
     }
 
+    private function startNextReadyMatch(Tournament $tournament): void
+    {
+        if ($tournament->matches()->where('status', MatchStatus::LIVE)->exists()) {
+            return;
+        }
+
+        $match = $tournament->matches()
+            ->whereIn('status', [MatchStatus::READY, MatchStatus::PENDING])
+            ->where('is_bye', false)
+            ->whereNotNull('participant_a_id')
+            ->whereNotNull('participant_b_id')
+            ->orderBy('match_number')
+            ->lockForUpdate()
+            ->first();
+
+        if ($match !== null) {
+            $match->forceFill(['status' => MatchStatus::LIVE, 'started_at' => now(), 'synced_at' => now()])->save();
+        }
+    }
+
     public function prepareBracket(Tournament|string $tournament): Tournament
     {
         $id = $tournament instanceof Tournament ? (string) $tournament->getKey() : $tournament;
@@ -169,6 +189,8 @@ class TournamentLifecycleService
                 'source_updated_at' => $now,
                 'synced_at' => $now,
             ])->save();
+
+            $this->startNextReadyMatch($locked);
 
             return $locked->refresh();
         }, 3);

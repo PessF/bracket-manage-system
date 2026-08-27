@@ -21,6 +21,7 @@
     })->all();
     $compDateVal = old('competition_date', $tournament->competition_date?->format('Y-m-d\TH:i'));
     $compDateOnly = $compDateVal ? substr((string)$compDateVal, 0, 10) : '';
+    $compDateDisplay = $compDateOnly ? implode('/', array_reverse(explode('-', $compDateOnly))) : '';
     $compTimeOnly = $compDateVal && strlen((string)$compDateVal) >= 16 ? substr((string)$compDateVal, 11, 5) : '';
 @endphp
 @section('title', ($editing ? __('ui.title_settings') : __('ui.title_new_tournament')).' · EasyKids')
@@ -42,16 +43,16 @@
     <label for="comp_date_part">{{ __('ui.competition_date') }}</label>
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <div>
-            <label for="comp_date_part" style="font-size:12px; color:var(--muted); font-weight:normal; margin-bottom:4px;">วันที่แข่งขัน</label>
-            <input id="comp_date_part" type="date" value="{{ $compDateOnly }}">
+            <label for="comp_date_part" style="font-size:12px; color:var(--muted); font-weight:normal; margin-bottom:4px;">{{ __('ui.competition_date_only') }}</label>
+            <input id="comp_date_part" type="text" inputmode="numeric" pattern="\\d{2}/\\d{2}/\\d{4}" maxlength="10" placeholder="{{ __('ui.date_format_placeholder') }}" value="{{ $compDateDisplay }}">
         </div>
         <div>
-            <label for="comp_time_part" style="font-size:12px; color:var(--muted); font-weight:normal; margin-bottom:4px;">เวลาแข่งขัน (24 ชั่วโมง)</label>
+            <label for="comp_time_part" style="font-size:12px; color:var(--muted); font-weight:normal; margin-bottom:4px;">{{ __('ui.competition_time_24h') }}</label>
             <input id="comp_time_part" type="text" inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" maxlength="5" placeholder="13:00" value="{{ $compTimeOnly }}" data-24-hour-time>
         </div>
     </div>
     <input id="competition_date" type="hidden" name="competition_date" value="{{ $compDateVal }}">
-    <small class="muted">ระบุวันที่และเวลาแข่งขันในรูปแบบ 24 ชั่วโมง (เช่น 13:00)</small>
+    <small class="muted">{{ __('ui.competition_date_help') }}</small>
 </div>
 <div class="field full"><label for="venue">{{ __('ui.venue') }}</label><input id="venue" name="venue" maxlength="255" value="{{ old('venue', $tournament->venue) }}"></div>
 <div class="field full"><label for="notes">{{ __('ui.notes') }}</label><textarea id="notes" name="notes">{{ old('notes', $tournament->notes) }}</textarea></div>
@@ -60,8 +61,8 @@
 <section class="card" data-bracket-schedule-fields>
 <h2>{{ __('ui.bracket_schedule') }}</h2><div class="muted" style="margin:-9px 0 17px">{{ __('ui.bracket_schedule_help') }}</div>
 <div class="form-grid">
-<div class="field"><label for="bracket_schedule_start_time">{{ __('ui.bracket_schedule_start_time') }}</label><input id="bracket_schedule_start_time" type="text" inputmode="numeric" name="bracket_schedule_start_time" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" maxlength="5" placeholder="13:00" value="{{ old('bracket_schedule_start_time', $tournament->bracket_schedule_start_time ? substr((string) $tournament->bracket_schedule_start_time, 0, 5) : '09:00') }}" data-24-hour-time required><small>24 ชั่วโมง เช่น 13:00</small></div>
-<div class="field"><label for="bracket_match_duration_minutes">{{ __('ui.bracket_match_duration_minutes') }}</label><input id="bracket_match_duration_minutes" type="number" min="1" max="240" name="bracket_match_duration_minutes" value="{{ old('bracket_match_duration_minutes', $tournament->bracket_match_duration_minutes) }}" placeholder="6"><small>ระยะเวลาโดยประมาณต่อแมตช์ (นาที)</small></div>
+<div class="field"><label for="bracket_schedule_start_time">{{ __('ui.bracket_schedule_start_time') }}</label><input id="bracket_schedule_start_time" type="text" inputmode="numeric" name="bracket_schedule_start_time" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" maxlength="5" placeholder="13:00" value="{{ old('bracket_schedule_start_time', $tournament->bracket_schedule_start_time ? substr((string) $tournament->bracket_schedule_start_time, 0, 5) : '09:00') }}" data-24-hour-time required><small>{{ __('ui.time_24h_example') }}</small></div>
+<div class="field"><label for="bracket_match_duration_minutes">{{ __('ui.bracket_match_duration_minutes') }}</label><input id="bracket_match_duration_minutes" type="number" min="1" max="240" name="bracket_match_duration_minutes" value="{{ old('bracket_match_duration_minutes', $tournament->bracket_match_duration_minutes) }}" placeholder="6"><small>{{ __('ui.match_duration_help') }}</small></div>
 </div>
 </section>
 
@@ -197,14 +198,21 @@
 
     const updateCompDateHidden = () => {
         if (!compDatePart || !compDateHidden) return;
-        if (compDatePart.value) {
+        const dateParts = compDatePart.value.split('/');
+        if (dateParts.length === 3 && dateParts.every((part) => /^\\d+$/.test(part))) {
+            const [day, month, year] = dateParts;
             const timeVal = compTimePart?.value || '09:00';
-            compDateHidden.value = `${compDatePart.value}T${timeVal}`;
+            compDateHidden.value = `${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${timeVal}`;
         } else {
             compDateHidden.value = '';
         }
     };
 
+    compDatePart?.addEventListener('input', () => {
+        const digits = compDatePart.value.replace(/\\D/g, '').slice(0, 8);
+        compDatePart.value = digits.length > 4 ? `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}` : digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
+        updateCompDateHidden();
+    });
     compDatePart?.addEventListener('change', updateCompDateHidden);
     compTimePart?.addEventListener('input', updateCompDateHidden);
     compTimePart?.addEventListener('change', updateCompDateHidden);

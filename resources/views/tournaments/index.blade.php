@@ -68,11 +68,11 @@
                 <svg style="width:13px; height:13px; flex:0 0 auto; stroke:currentColor; fill:none; stroke-width:2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 <span>
                     @if($tournament->competition_date)
-                        {{ $tournament->competition_date->translatedFormat('j M Y · H:i') }} น.
+                        {{ $tournament->competition_date->translatedFormat('j M Y · H:i') }} {{ __('ui.time_suffix') }}
                     @endif
                     @if($tournament->bracket_schedule_start_time)
                         @if($tournament->competition_date) · @endif
-                        {{ __('ui.start_time') }}: {{ substr((string) $tournament->bracket_schedule_start_time, 0, 5) }} น.
+                        {{ __('ui.start_time') }}: {{ substr((string) $tournament->bracket_schedule_start_time, 0, 5) }} {{ __('ui.time_suffix') }}
                     @endif
                 </span>
             </div>
