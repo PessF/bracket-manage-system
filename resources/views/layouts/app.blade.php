@@ -1,10 +1,26 @@
 <!doctype html>
 <html lang="{{ app()->getLocale() }}">
+@php
+    $isAdmin = auth()->user()?->isAdmin() ?? false;
+    $isPublicViewer = request()->routeIs('public.tournaments.*');
+@endphp
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', __('ui.app_name'))</title>
+    @php($shareImage = asset('assets/logos/easykids-logo-white.png'))
+    @php($shareDescription = isset($tournament) ? $tournament->name : __('ui.app_name'))
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="@yield('title', __('ui.app_name'))">
+    <meta property="og:description" content="{{ $shareDescription }}">
+    <meta property="og:image" content="{{ $shareImage }}">
+    <meta property="og:image:alt" content="EasyKids Robotics">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="@yield('title', __('ui.app_name'))">
+    <meta name="twitter:description" content="{{ $shareDescription }}">
+    <meta name="twitter:image" content="{{ $shareImage }}">
     <link rel="icon" href="{{ asset('assets/logos/favicon.png') }}?v=3" type="image/png" sizes="40x40">
     <link rel="shortcut icon" href="{{ asset('assets/logos/favicon.png') }}?v=3" type="image/png">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=2">
@@ -578,10 +594,6 @@
     @endif
     @stack('styles')
 </head>
-@php
-    $isAdmin = auth()->user()?->isAdmin() ?? false;
-    $isPublicViewer = request()->routeIs('public.tournaments.*');
-@endphp
 <body class="{{ $isPublicViewer ? 'viewer-shell' : '' }}" data-theme="easykids" data-processing-label="{{ __('ui.processing') }}">
 <header class="top">
     <div class="inner">
