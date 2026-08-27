@@ -186,6 +186,13 @@ th { font-size: 12px; text-transform: uppercase; letter-spacing: .045em; color: 
 .viewer-only-nav a { display:inline-flex; min-height:44px; align-items:center; font-weight:700; }
 .podium-more { display:flex; justify-content:center; margin-top:12px; }
 .podium-more .btn { width:min(100%, 360px); justify-content:center; }
+.viewer-shell .viewer-only-nav { gap:8px; }
+.viewer-shell .viewer-only-nav .btn { flex:1 1 0; justify-content:center; min-width:0; }
+.viewer-shell .viewer-only-nav .btn:focus-visible { outline:3px solid rgb(212 175 55 / .45); outline-offset:2px; }
+.viewer-shell .match-grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); }
+.viewer-shell .standings-wrap, .viewer-shell .ranking-attempts-wrap { overflow-x:auto; }
+.viewer-shell .standings-table { min-width:620px; }
+.viewer-shell .ranking-attempts-table { min-width:560px; }
 .dashboard-order-hint { margin:-8px 0 12px; color:var(--muted); font-size:13px; }
 .tournament-card[draggable="true"] { cursor:grab; }
 .tournament-card.is-dragging { opacity:.45; cursor:grabbing; }
@@ -485,6 +492,34 @@ a:hover { opacity:1; }
     .form-grid { gap:0 12px; }
     .mobile-popover, .language-popover { top:56px; right:12px; }
     .admin-welcome { gap:14px; }
+}
+
+@media(max-width:680px) {
+    .viewer-shell .container { padding:12px 10px 30px; }
+    .viewer-shell .top .inner { min-height:54px; }
+    .viewer-shell .viewer-event-head { margin-bottom:8px; }
+    .viewer-shell .viewer-event-head h1 { max-width:100%; overflow-wrap:anywhere; font-size:20px; }
+    .viewer-shell .viewer-event-head p { overflow-wrap:anywhere; }
+    .viewer-shell .viewer-only-nav { display:grid; grid-template-columns:1fr; margin:0 0 12px; }
+    .viewer-shell .viewer-only-nav .btn { width:100%; min-height:46px; }
+    .viewer-shell .viewer-bracket-help { margin-bottom:8px; font-size:11px; }
+    .viewer-shell .bracket-section-head { min-height:32px; }
+    .viewer-shell .bracket-section-head h2 { font-size:15px; }
+    .viewer-shell .bracket-viewport { margin-inline:-10px; border-inline:0; border-radius:0; }
+    .viewer-shell .bracket-grid { grid-template-columns:1fr; padding:10px; }
+    .viewer-shell .bracket-grid .bracket-match-node { min-width:0; }
+    .viewer-shell .bracket-results-summary { padding:12px; }
+    .viewer-shell .podium-card { min-height:76px; padding:10px; }
+    .viewer-shell .podium-medal { width:54px; height:54px; }
+    .viewer-shell .podium-more .btn { width:100%; min-height:46px; }
+    .viewer-shell .page-head { align-items:stretch; gap:10px; }
+    .viewer-shell .page-head h1 { font-size:20px; overflow-wrap:anywhere; }
+    .viewer-shell .page-head > .btn { width:100%; justify-content:center; }
+    .viewer-shell .match-grid { grid-template-columns:1fr; gap:10px; }
+    .viewer-shell .match { padding:11px; }
+    .viewer-shell .match-card-head { align-items:flex-start; font-size:11px; }
+    .viewer-shell .match-team-row { min-height:48px; padding:10px; }
+    .viewer-shell .match-team-row .actions { align-items:flex-start; flex-wrap:wrap; row-gap:4px; }
 }
 
 /* EasyKids event theme: aligned with events.easykidsrobotics.com. */
