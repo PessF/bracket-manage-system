@@ -16,13 +16,6 @@
     @endif
 </div>
 
-@if(!$isAdmin)
-    <div class="alert view-only-banner">
-        <strong>{{ auth()->check() ? __('ui.viewer_account_active') : __('ui.viewer_mode') }}</strong>
-        <div>{{ __('ui.share_only_notice') }}</div>
-    </div>
-@endif
-
 @if($canBrowseTournaments)
     <form class="filter-bar inline-form" method="get">
         <div class="field">
