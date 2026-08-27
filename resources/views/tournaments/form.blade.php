@@ -21,7 +21,6 @@
     })->all();
     $compDateVal = old('competition_date', $tournament->competition_date?->format('Y-m-d\TH:i'));
     $compDateOnly = $compDateVal ? substr((string)$compDateVal, 0, 10) : '';
-    $compDateDisplay = $compDateOnly ? implode('/', array_reverse(explode('-', $compDateOnly))) : '';
     $compTimeOnly = $compDateVal && strlen((string)$compDateVal) >= 16 ? substr((string)$compDateVal, 11, 5) : '';
 @endphp
 @section('title', ($editing ? __('ui.title_settings') : __('ui.title_new_tournament')).' · EasyKids')
@@ -44,7 +43,11 @@
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <div>
             <label for="comp_date_part" style="font-size:12px; color:var(--muted); font-weight:normal; margin-bottom:4px;">{{ __('ui.competition_date_only') }}</label>
-            <input id="comp_date_part" type="text" inputmode="numeric" pattern="\\d{2}/\\d{2}/\\d{4}" maxlength="10" placeholder="{{ __('ui.date_format_placeholder') }}" value="{{ $compDateDisplay }}">
+            <div class="date-picker-field">
+                <input id="comp_date_display" type="text" value="{{ $compDateOnly ? implode('/', array_reverse(explode('-', $compDateOnly))) : '' }}" readonly aria-describedby="competition-date-format">
+                <button class="date-picker-button" type="button" id="comp_date_picker_button" aria-label="{{ __('ui.choose_date') }}" title="{{ __('ui.choose_date') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></button>
+                <input id="comp_date_part" class="date-picker-native" type="date" lang="{{ app()->isLocale('th') ? 'th-TH' : 'en-GB' }}" value="{{ $compDateOnly }}" aria-label="{{ __('ui.competition_date_only') }}">
+            </div>
         </div>
         <div>
             <label for="comp_time_part" style="font-size:12px; color:var(--muted); font-weight:normal; margin-bottom:4px;">{{ __('ui.competition_time_24h') }}</label>
@@ -52,7 +55,7 @@
         </div>
     </div>
     <input id="competition_date" type="hidden" name="competition_date" value="{{ $compDateVal }}">
-    <small class="muted">{{ __('ui.competition_date_help') }}</small>
+    <small id="competition-date-format" class="muted">{{ __('ui.competition_date_help') }}</small>
 </div>
 <div class="field full"><label for="venue">{{ __('ui.venue') }}</label><input id="venue" name="venue" maxlength="255" value="{{ old('venue', $tournament->venue) }}"></div>
 <div class="field full"><label for="notes">{{ __('ui.notes') }}</label><textarea id="notes" name="notes">{{ old('notes', $tournament->notes) }}</textarea></div>
@@ -172,6 +175,11 @@
     .danger-row { gap:14px; padding:12px 0; border-top:1px solid var(--line); }
     .danger-row:first-of-type { border-top:0; padding-top:0; }
     .danger-row:last-child { padding-bottom:0; }
+    .date-picker-field { position:relative; }
+    .date-picker-field #comp_date_display { padding-right:48px; cursor:pointer; }
+    .date-picker-native { position:absolute; width:1px !important; height:1px !important; padding:0 !important; border:0 !important; opacity:0; pointer-events:none; }
+    .date-picker-button { position:absolute; top:50%; right:6px; display:grid; width:36px; height:36px; min-height:36px; padding:8px; place-items:center; border:1px solid #d4af37; border-radius:6px; background:#d4af37; color:#171a20; cursor:pointer; transform:translateY(-50%); }
+    .date-picker-button svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
     @media (max-width: 820px) { .format-settings-grid.three, .group-limit-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
     @media (max-width: 680px) { .format-settings-grid, .choice-grid, .group-limit-grid { grid-template-columns: 1fr; } .choice-card { min-height:86px; padding:16px; } .danger-row, .group-limit-head { align-items:flex-start; flex-direction:column; } }
 </style>
@@ -190,6 +198,7 @@
     const standardFields = Array.from(document.querySelectorAll('[data-standard-builder-field]'));
     const bracketScheduleFields = document.querySelector('[data-bracket-schedule-fields]');
     const compDatePart = document.getElementById('comp_date_part');
+    const compDateDisplay = document.getElementById('comp_date_display');
     const compTimePart = document.getElementById('comp_time_part');
     const compDateHidden = document.getElementById('competition_date');
     const panels = Array.from(document.querySelectorAll('[data-format-panel]'));
@@ -198,22 +207,24 @@
 
     const updateCompDateHidden = () => {
         if (!compDatePart || !compDateHidden) return;
-        const dateParts = compDatePart.value.split('/');
-        if (dateParts.length === 3 && dateParts.every((part) => /^\\d+$/.test(part))) {
-            const [day, month, year] = dateParts;
+        if (compDatePart.value) {
+            const [year, month, day] = compDatePart.value.split('-');
+            if (compDateDisplay) compDateDisplay.value = `${day}/${month}/${year}`;
             const timeVal = compTimePart?.value || '09:00';
-            compDateHidden.value = `${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${timeVal}`;
+            compDateHidden.value = `${compDatePart.value}T${timeVal}`;
         } else {
+            if (compDateDisplay) compDateDisplay.value = '';
             compDateHidden.value = '';
         }
     };
 
-    compDatePart?.addEventListener('input', () => {
-        const digits = compDatePart.value.replace(/\\D/g, '').slice(0, 8);
-        compDatePart.value = digits.length > 4 ? `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}` : digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
-        updateCompDateHidden();
-    });
     compDatePart?.addEventListener('change', updateCompDateHidden);
+    const openDatePicker = () => {
+        if (typeof compDatePart?.showPicker === 'function') compDatePart.showPicker();
+        else compDatePart?.click();
+    };
+    compDateDisplay?.addEventListener('click', openDatePicker);
+    document.getElementById('comp_date_picker_button')?.addEventListener('click', openDatePicker);
     compTimePart?.addEventListener('input', updateCompDateHidden);
     compTimePart?.addEventListener('change', updateCompDateHidden);
 
