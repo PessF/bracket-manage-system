@@ -6,7 +6,7 @@ return [
     'new_tournament' => 'สร้างการแข่งขันใหม่', 'all_statuses' => 'ทุกสถานะ', 'filter' => 'กรอง', 'teams' => 'ทีม',
     'no_tournaments' => 'ไม่พบรายการแข่งขัน สร้างรายการใหม่เพื่อเริ่มใช้งาน', 'create_tournament' => 'สร้างการแข่งขัน',
     'create_help' => 'กำหนดข้อมูลและรูปแบบการแข่งขัน', 'please_fix' => 'ตรวจสอบข้อมูลต่อไปนี้:',
-    'overview' => 'ภาพรวม', 'overview_participants' => 'ภาพรวมและผู้เข้าแข่งขัน', 'bracket_competition' => 'สายการแข่งขัน',
+    'overview_participants' => 'ภาพรวมและผู้เข้าแข่งขัน', 'bracket_competition' => 'สายการแข่งขัน',
     'matches' => 'คู่แข่งขัน', 'results' => 'ผลการแข่งขัน', 'settings' => 'ตั้งค่า',
     'participants' => 'ผู้เข้าแข่งขัน', 'participant_help' => 'เลือกผู้เข้าแข่งขันเพื่อแก้ไขข้อมูล',
     'add_participant' => 'เพิ่มผู้เข้าแข่งขัน', 'team_name' => 'ชื่อทีม', 'team_code' => 'รหัสทีม',
