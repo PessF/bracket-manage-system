@@ -669,6 +669,17 @@
                 background:#315f80;
                 color:#fff;
             }
+            body[data-theme="easykids"] nav.viewer-control-tabs > .all-tournaments-tab {
+                border-color:rgb(255 180 92 / .32);
+                background:linear-gradient(135deg, rgb(255 180 92 / .18), rgb(255 95 135 / .1));
+                color:#ffe8c7;
+            }
+            body[data-theme="easykids"] nav.viewer-control-tabs > .all-tournaments-tab:hover,
+            body[data-theme="easykids"] nav.viewer-control-tabs > .all-tournaments-tab:focus-visible {
+                border-color:rgb(255 180 92 / .5);
+                background:linear-gradient(135deg, rgb(255 180 92 / .26), rgb(255 95 135 / .15));
+                color:#fff6e5;
+            }
             body[data-theme="easykids"] nav.viewer-control-tabs > a.active::after { display:none; }
         }
     </style>
