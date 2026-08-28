@@ -36,7 +36,9 @@ class ViewerTournamentNavigationTest extends TestCase
             ->assertSee('tab-bracket active', false)
             ->assertSee('aria-current="page"', false)
             ->assertSee('href="'.route('tournaments.bracket', $tournament).'"', false)
-            ->assertSee('href="'.route('tournaments.overview', $tournament).'"', false);
+            ->assertSee('href="'.route('tournaments.overview', $tournament).'"', false)
+            ->assertSee(__('ui.overview'))
+            ->assertDontSee('all-tournaments-tab', false);
 
         $this->get(route('tournaments.overview', $tournament))
             ->assertOk()

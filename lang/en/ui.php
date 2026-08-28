@@ -6,7 +6,7 @@ return [
     'new_tournament' => 'New competition', 'all_statuses' => 'All statuses', 'filter' => 'Filter', 'teams' => 'Teams',
     'no_tournaments' => 'No competitions found. Create a competition to begin.', 'create_tournament' => 'Create competition',
     'create_help' => 'Configure competition details and format.', 'please_fix' => 'Review the following information:',
-    'overview_participants' => 'Overview and Participants', 'bracket_competition' => 'Bracket',
+    'overview' => 'Overview', 'overview_participants' => 'Overview and Participants', 'bracket_competition' => 'Bracket',
     'matches' => 'Matches', 'results' => 'Results', 'settings' => 'Settings',
     'participants' => 'Participants', 'participant_help' => 'Select a participant to edit its name and information.',
     'add_participant' => 'Add participant', 'team_name' => 'Team name', 'team_code' => 'Team code',

@@ -15,10 +15,12 @@
 </nav>
 @else
 <nav class="tabs {{ $isAdmin ? 'admin-control-tabs' : 'viewer-control-tabs' }}" aria-label="{{ __('ui.tournament_navigation') }}">
+    @if($isAdmin)
     <a class="tab-all all-tournaments-tab {{ request()->routeIs('tournaments.index') ? 'active' : '' }}" href="{{ route('tournaments.index') }}" @if(request()->routeIs('tournaments.index')) aria-current="page" @endif>{{ __('ui.all_tournaments') }}</a>
+    @endif
     <a class="tab-bracket {{ request()->routeIs($routePrefix.'bracket', 'public.tournaments.bracket', 'public.tournaments.show') ? 'active' : '' }}" href="{{ route($routePrefix.'bracket', $routeParameter) }}" @if(request()->routeIs($routePrefix.'bracket', 'public.tournaments.bracket', 'public.tournaments.show')) aria-current="page" @endif>{{ __('ui.bracket_competition') }}</a>
     <a class="tab-results {{ request()->routeIs($routePrefix.'results') ? 'active' : '' }}" href="{{ route($routePrefix.'results', $routeParameter) }}" @if(request()->routeIs($routePrefix.'results')) aria-current="page" @endif>{{ __('ui.results') }}</a>
-    <a class="tab-overview {{ request()->routeIs('tournaments.show', 'tournaments.overview') ? 'active' : '' }}" href="{{ route($overviewRoute, $tournament) }}" @if(request()->routeIs('tournaments.show', 'tournaments.overview')) aria-current="page" @endif>{{ __('ui.overview_participants') }}</a>
+    <a class="tab-overview {{ request()->routeIs('tournaments.show', 'tournaments.overview') ? 'active' : '' }}" href="{{ route($overviewRoute, $tournament) }}" @if(request()->routeIs('tournaments.show', 'tournaments.overview')) aria-current="page" @endif>{{ $isAdmin ? __('ui.overview_participants') : __('ui.overview') }}</a>
     @if($isAdmin)
     @if($tournament->structure === App\Enums\TournamentStructure::ADVANCED)
     <a class="{{ request()->routeIs('tournaments.groups.*') ? 'active' : '' }}" href="{{ route('tournaments.groups.edit', $tournament) }}">{{ __('ui.group_assignments') }}</a>

@@ -630,9 +630,12 @@
         /* Viewer navigation uses fixed tap targets instead of horizontal scrolling. */
         body[data-theme="easykids"] nav.viewer-control-tabs {
             display:grid;
-            grid-template-columns:repeat(4,minmax(0,1fr));
+            grid-template-columns:repeat(3,minmax(0,1fr));
+            grid-auto-rows:1fr;
+            width:min(100%,720px);
             gap:8px;
             overflow:visible;
+            margin:0 auto 18px;
             padding:8px;
             border:1px solid #263442;
             border-radius:10px;
@@ -642,6 +645,7 @@
             display:flex;
             min-width:0;
             min-height:46px;
+            height:100%;
             align-items:center;
             justify-content:center;
             padding:9px 10px;
@@ -658,6 +662,10 @@
             background:#315f80;
             color:#fff;
         }
+        body[data-theme="easykids"] nav.viewer-control-tabs > a {
+            grid-column:auto;
+            grid-row:auto;
+        }
         body[data-theme="easykids"] nav.viewer-control-tabs a.active::after { display:none; }
 
         @media(max-width:680px) {
@@ -665,17 +673,15 @@
                 position:sticky;
                 top:var(--top-height);
                 z-index:70;
-                grid-template-columns:repeat(2,minmax(0,1fr));
+                grid-template-columns:repeat(3,minmax(0,1fr));
                 gap:8px;
                 overflow:visible;
-                margin-right:-12px;
-                margin-left:-12px;
-                padding:8px 12px;
-                border-right:0;
-                border-left:0;
-                border-radius:0;
+                width:100%;
+                margin:0 auto 14px;
+                padding:7px;
+                border-radius:10px;
             }
-            body[data-theme="easykids"] nav.viewer-control-tabs a { min-height:50px; }
+            body[data-theme="easykids"] nav.viewer-control-tabs a { min-height:50px; padding-inline:6px; font-size:12px; }
         }
     </style>
     @if(file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
