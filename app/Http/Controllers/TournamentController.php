@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\SeedingMethod;
 use App\Enums\AdvancementRuleType;
-use App\Enums\StageStatus;
+use App\Enums\SeedingMethod;
 use App\Enums\StageSourceType;
+use App\Enums\StageStatus;
 use App\Enums\StageType;
 use App\Enums\TournamentFormat;
-use App\Enums\TournamentStructure;
 use App\Enums\TournamentStatus;
+use App\Enums\TournamentStructure;
 use App\Models\Stage;
 use App\Models\Tournament;
 use App\Services\AdvancedTournamentBuilderService;
 use Illuminate\Database\QueryException;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -110,6 +110,15 @@ class TournamentController extends Controller
             ->load(['participants' => fn ($query) => $query->orderBy('seed_number')->orderBy('team_name')]);
 
         return view('tournaments.show', compact('tournament'));
+    }
+
+    public function entry(Request $request, Tournament $tournament): View|RedirectResponse
+    {
+        if (! ($request->user()?->isAdmin() ?? false)) {
+            return redirect()->route('tournaments.bracket', $tournament);
+        }
+
+        return $this->show($tournament);
     }
 
     public function edit(Tournament $tournament): View

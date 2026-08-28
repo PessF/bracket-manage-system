@@ -626,6 +626,57 @@
         @media(max-height:480px) and (orientation:landscape) {
             .mobile-popover, .language-popover { max-height:calc(100dvh - 64px); }
         }
+
+        /* Viewer navigation uses fixed tap targets instead of horizontal scrolling. */
+        body[data-theme="easykids"] nav.viewer-control-tabs {
+            display:grid;
+            grid-template-columns:repeat(4,minmax(0,1fr));
+            gap:8px;
+            overflow:visible;
+            padding:8px;
+            border:1px solid #263442;
+            border-radius:10px;
+            background:#0d141c;
+        }
+        body[data-theme="easykids"] nav.viewer-control-tabs a {
+            display:flex;
+            min-width:0;
+            min-height:46px;
+            align-items:center;
+            justify-content:center;
+            padding:9px 10px;
+            border:1px solid #34495a;
+            border-radius:8px;
+            background:#18222c;
+            color:#d7e1eb;
+            text-align:center;
+            white-space:normal;
+            touch-action:manipulation;
+        }
+        body[data-theme="easykids"] nav.viewer-control-tabs a.active {
+            border-color:#5f91b2;
+            background:#315f80;
+            color:#fff;
+        }
+        body[data-theme="easykids"] nav.viewer-control-tabs a.active::after { display:none; }
+
+        @media(max-width:680px) {
+            body[data-theme="easykids"] nav.viewer-control-tabs {
+                position:sticky;
+                top:var(--top-height);
+                z-index:70;
+                grid-template-columns:repeat(2,minmax(0,1fr));
+                gap:8px;
+                overflow:visible;
+                margin-right:-12px;
+                margin-left:-12px;
+                padding:8px 12px;
+                border-right:0;
+                border-left:0;
+                border-radius:0;
+            }
+            body[data-theme="easykids"] nav.viewer-control-tabs a { min-height:50px; }
+        }
     </style>
     @if(file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -644,7 +695,7 @@
         </a>
         <nav>
             @unless($isPublicViewer)
-            <a class="desktop-only nav-all-tournaments {{ request()->routeIs('tournaments.index', 'tournaments.show', 'tournaments.bracket', 'tournaments.matches', 'tournaments.results', 'tournaments.settings', 'tournaments.edit') ? 'active' : '' }}" href="{{ route('tournaments.index') }}">{{ __('ui.all_tournaments') }}</a>
+            <a class="desktop-only nav-all-tournaments {{ request()->routeIs('tournaments.index', 'tournaments.show', 'tournaments.overview', 'tournaments.bracket', 'tournaments.matches', 'tournaments.results', 'tournaments.settings', 'tournaments.edit') ? 'active' : '' }}" href="{{ route('tournaments.index') }}">{{ __('ui.all_tournaments') }}</a>
             @if($isAdmin)
             <a class="desktop-only {{ request()->routeIs('tournaments.create') ? 'active' : '' }}" href="{{ route('tournaments.create') }}">{{ __('ui.create') }}</a>
             <a class="desktop-only {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">{{ __('ui.users') }}</a>

@@ -41,8 +41,11 @@
             $advancedConfig = $tournament->advanced_config ?? [];
             $groupFormat = $advancedConfig['group_format'] ?? null;
             $playoffFormat = $advancedConfig['playoff_format'] ?? null;
+            $tournamentUrl = $isAdmin
+                ? route('tournaments.show', $tournament)
+                : route('tournaments.bracket', $tournament);
         @endphp
-        <a class="card tournament-card" href="{{ route('tournaments.show', $tournament) }}" @if($isAdmin && $tournaments->count() > 1) draggable="true" data-tournament-card data-tournament-id="{{ $tournament->id }}" @endif>
+        <a class="card tournament-card" href="{{ $tournamentUrl }}" @if($isAdmin && $tournaments->count() > 1) draggable="true" data-tournament-card data-tournament-id="{{ $tournament->id }}" @endif>
             <div class="actions tournament-card-badges">
                 <span class="badge {{ $tournament->status->value }}">{{ __('ui.tournament_status_labels.'.$tournament->status->value) }}</span>
                 <span class="badge structure-badge {{ $tournament->structure->value }}">{{ __('ui.structure_labels.'.$tournament->structure->value) }}</span>

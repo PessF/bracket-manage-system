@@ -71,7 +71,8 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
 });
 
 Route::middleware('tournament.visible')->group(function (): void {
-    Route::get('/tournaments/{tournament}', [TournamentController::class, 'show'])->name('tournaments.show');
+    Route::get('/tournaments/{tournament}', [TournamentController::class, 'entry'])->name('tournaments.show');
+    Route::get('/tournaments/{tournament}/overview', [TournamentController::class, 'show'])->name('tournaments.overview');
     Route::get('/tournaments/{tournament}/bracket', [TournamentWorkspaceController::class, 'bracket'])->name('tournaments.bracket');
     Route::get('/tournaments/{tournament}/matches', [TournamentWorkspaceController::class, 'adminMatches'])->name('tournaments.matches');
     Route::get('/tournaments/{tournament}/results', [TournamentWorkspaceController::class, 'results'])->name('tournaments.results');

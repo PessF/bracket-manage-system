@@ -6,10 +6,10 @@ namespace App\Http\Controllers;
 
 use App\Enums\BracketType;
 use App\Enums\MatchStatus;
+use App\Enums\TournamentFormat;
 use App\Models\Participant;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
-use App\Services\MatchProgressService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,15 +18,8 @@ use Illuminate\View\View;
 
 class TournamentWorkspaceController extends Controller
 {
-    public function __construct(private readonly MatchProgressService $progress) {}
-
     public function bracket(Request $request, Tournament $tournament): View
     {
-        if ($tournament->status === \App\Enums\TournamentStatus::LIVE
-            && ! $tournament->matches()->where('status', MatchStatus::LIVE)->exists()) {
-            $this->progress->startNextReadyMatch($tournament);
-        }
-
         $matches = $tournament->matches()->with([
             'participantA',
             'participantB',
@@ -141,7 +134,7 @@ class TournamentWorkspaceController extends Controller
     /** @return array<string, string> */
     private function estimatedStartTimes(Tournament $tournament, Collection $matches): array
     {
-        if ($tournament->format === \App\Enums\TournamentFormat::RANKING
+        if ($tournament->format === TournamentFormat::RANKING
             || ! $tournament->bracket_schedule_start_time
             || ! $tournament->bracket_match_duration_minutes) {
             return [];
@@ -180,6 +173,7 @@ class TournamentWorkspaceController extends Controller
 
             if (! str_ends_with((string) $key, ':'.BracketType::WINNERS->value)) {
                 $merged->put($key, $group);
+
                 continue;
             }
 
@@ -188,6 +182,7 @@ class TournamentWorkspaceController extends Controller
 
             if ($grandFinals->isEmpty()) {
                 $merged->put($key, $group);
+
                 continue;
             }
 
