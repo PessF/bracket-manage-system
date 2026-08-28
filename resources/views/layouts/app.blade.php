@@ -218,6 +218,42 @@
         }
         @media (max-width: 1152px) {
             .top .inner { padding-right:24px; padding-left:24px; }
+        }
+
+        @media (max-width: 680px) {
+            .tabs {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-rows: repeat(2, auto);
+                gap: 10px;
+                overflow: visible;
+                padding: 0 2px 4px;
+                border-bottom: none;
+            }
+            .tabs a {
+                min-height: 54px;
+                padding: 10px 8px;
+                border: 1px solid rgba(154, 190, 214, 0.5);
+                border-radius: 14px;
+                background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+                color: #eaf4ff;
+                text-align: center;
+                font-weight: 700;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 18px rgba(3, 12, 20, 0.18);
+            }
+            .tabs .tab-all { grid-column: 1; grid-row: 1; background: linear-gradient(135deg, #3c2d1d, #191a21 60%, #111821); border-color: #b8864a; color: #f7e8c5; }
+            .tabs .tab-bracket { grid-column: 2; grid-row: 1; background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04)); }
+            .tabs .tab-results { grid-column: 1; grid-row: 2; }
+            .tabs .tab-overview { grid-column: 2; grid-row: 2; }
+            .tabs a.active {
+                background: linear-gradient(135deg, #0c6d99, #0b495f 55%, #163a4c);
+                border-color: rgba(105, 203, 255, 0.85);
+                color: #ebfaff;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 22px rgba(14, 119, 174, 0.22);
+            }
+            .tabs a.active::after {
+                display: none;
+            }
             .desktop-only { display: none !important; }
             .mobile-menu { display: block; }
             .admin-welcome { align-items:stretch; flex-direction:column; }
@@ -266,9 +302,13 @@
             .short-link-input span { max-width:none; overflow-x:auto; padding:7px 11px; border-bottom:1px solid var(--line); background:var(--soft); font-size:12px; scrollbar-width:none; }
             .short-link-input span::-webkit-scrollbar { display:none; }
             .short-link-input input { width:100%; min-width:0; }
-            .tabs { position:sticky; top:var(--top-height); z-index:70; margin-right:-14px; margin-left:-14px; padding:0 7px; background:rgb(250 250 250 / .96); backdrop-filter:blur(9px); scrollbar-width:none; }
+            .tabs { position:sticky; top:var(--top-height); z-index:70; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(2,auto); gap:10px; margin-right:-14px; margin-left:-14px; padding:0 7px; background:rgb(250 250 250 / .96); backdrop-filter:blur(9px); scrollbar-width:none; }
             .tabs::-webkit-scrollbar { display:none; }
-            .tabs a { min-height:44px; padding:12px 11px; }
+            .tabs a { min-height:54px; padding:10px 8px; border:1px solid rgba(154,190,214,.5); border-radius:14px; }
+            .tabs .tab-all { grid-column:1; grid-row:1; }
+            .tabs .tab-bracket { grid-column:2; grid-row:1; }
+            .tabs .tab-results { grid-column:1; grid-row:2; }
+            .tabs .tab-overview { grid-column:2; grid-row:2; }
             .live-refresh { position:relative; flex-wrap:wrap; margin-top:-8px; }
             .live-refresh .btn { width:100%; margin-left:0; }
             .detail-grid { grid-template-columns:1fr; }
@@ -626,7 +666,6 @@
                     <a href="{{ route('admin.users.index') }}">{{ __('ui.users') }}</a>
                     <a href="{{ route('admin.api-token.show') }}">{{ __('ui.api_access') }}</a>
                     @endif
-                    <a href="{{ url('/api/docs') }}">{{ __('ui.api_docs') }}</a>
                     @auth<form class="nav-form" method="post" action="{{ route('logout') }}">@csrf<button class="nav-button">{{ __('ui.logout') }}</button></form>@else<a href="{{ route('login') }}">{{ __('ui.login') }}</a>@endauth
                 </div>
             </details>
