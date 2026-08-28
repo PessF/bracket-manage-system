@@ -57,7 +57,13 @@ class ViewerTournamentNavigationTest extends TestCase
             ->assertSee('class="tabs admin-control-tabs"', false)
             ->assertSee('tab-overview active', false)
             ->assertSee('aria-current="page"', false)
-            ->assertSee('href="'.route('tournaments.show', $tournament).'"', false);
+            ->assertSee('href="'.route('tournaments.show', $tournament).'"', false)
+            ->assertSeeInOrder([
+                'href="'.route('tournaments.index').'"',
+                'href="'.route('tournaments.show', $tournament).'"',
+                'href="'.route('tournaments.bracket', $tournament).'"',
+                'href="'.route('tournaments.results', $tournament).'"',
+            ], false);
     }
 
     public function test_opening_a_viewer_bracket_does_not_start_a_match(): void

@@ -641,6 +641,10 @@
 
         /* Viewer navigation becomes fixed tap buttons only on narrow screens. */
         @media(max-width:680px) {
+            body[data-theme="easykids"] nav.admin-control-tabs > .tab-all { grid-column:1; grid-row:1; }
+            body[data-theme="easykids"] nav.admin-control-tabs > .tab-overview { grid-column:2; grid-row:1; }
+            body[data-theme="easykids"] nav.admin-control-tabs > .tab-bracket { grid-column:1; grid-row:2; }
+            body[data-theme="easykids"] nav.admin-control-tabs > .tab-results { grid-column:2; grid-row:2; }
             body[data-theme="easykids"] nav.viewer-control-tabs {
                 position:sticky;
                 top:var(--top-height);
