@@ -76,6 +76,7 @@ Route::middleware('tournament.visible')->group(function (): void {
     Route::get('/tournaments/{tournament}/bracket', [TournamentWorkspaceController::class, 'bracket'])->name('tournaments.bracket');
     Route::get('/tournaments/{tournament}/matches', [TournamentWorkspaceController::class, 'adminMatches'])->name('tournaments.matches');
     Route::get('/tournaments/{tournament}/results', [TournamentWorkspaceController::class, 'results'])->name('tournaments.results');
+    Route::get('/tournaments/{tournament}/live-state', [TournamentWorkspaceController::class, 'liveState'])->name('tournaments.live-state');
 });
 
 Route::view('/view', 'tournaments.public-index')->name('public.tournaments.index');
@@ -85,4 +86,5 @@ Route::middleware('tournament.live')->prefix('view')->name('public.tournaments.'
     Route::get('/{tournament:public_token}/bracket', [TournamentWorkspaceController::class, 'bracket'])->name('bracket');
     Route::get('/{tournament:public_token}/matches', [TournamentWorkspaceController::class, 'matches'])->name('matches');
     Route::get('/{tournament:public_token}/results', [TournamentWorkspaceController::class, 'results'])->name('results');
+    Route::get('/{tournament:public_token}/live-state', [TournamentWorkspaceController::class, 'liveState'])->name('live-state');
 });

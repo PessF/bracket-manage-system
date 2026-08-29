@@ -137,7 +137,7 @@ class MatchResultServiceTest extends TestCase
         $this->assertSame(1, $standings[$participantA->id]->points);
         $this->assertSame(1, $standings[$participantA->id]->wins);
         $this->assertSame(0, $standings[$participantA->id]->draws);
-        $this->assertSame(0, $standings[$participantB->id]->points);
+        $this->assertSame(-1, $standings[$participantB->id]->points);
     }
 
     public function test_losers_bracket_finalist_winning_first_grand_final_creates_reset(): void

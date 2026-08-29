@@ -10,8 +10,11 @@
 @endphp
 <div class="page-head"><div><div class="actions" style="margin-bottom:4px"><h1 style="margin:0">{{ $tournament->name }}</h1><span class="badge {{ $tournament->status->value }}">{{ __('ui.tournament_status_labels.'.$tournament->status->value) }}</span></div><div class="muted">{{ $isPublicView ? __('ui.live_match_results') : __('ui.match_scoring') }}</div></div><a class="btn secondary" href="{{ $bracketUrl }}">{{ __('ui.open_bracket') }}</a></div>
 @include('tournaments._tabs')
-@includeWhen($isPublicView, 'tournaments._live_refresh')
-<div class="match-grid">
+@includeWhen($tournament->status === App\Enums\TournamentStatus::LIVE, 'tournaments._live_refresh', [
+    'interval' => 1,
+    'refreshTarget' => '[data-live-matches]',
+])
+<div data-live-matches><div class="match-grid">
 @forelse($matches as $match)
 @php
 @endphp
@@ -22,5 +25,5 @@
     @if($match->winner)<div class="match-winner muted">{{ __('ui.winner') }}: <strong>{{ $match->winner->team_name }}</strong></div>@endif
 </article>
 @empty<div class="card empty">{{ __('ui.matches_empty') }}</div>@endforelse
-</div>
+</div></div>
 @endsection

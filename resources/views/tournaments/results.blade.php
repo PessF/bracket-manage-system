@@ -27,7 +27,7 @@
 
 @include('tournaments._tabs')
 @includeWhen($tournament->status === App\Enums\TournamentStatus::LIVE, 'tournaments._live_refresh', [
-    'interval' => 5,
+    'interval' => 1,
     'refreshTarget' => '[data-live-results]',
 ])
 

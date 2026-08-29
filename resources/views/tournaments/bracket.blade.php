@@ -245,7 +245,6 @@
     <div><h1>{{ $tournament->name }}</h1><p>{{ $tournament->competition }} · {{ $tournament->division }}</p></div>
     <span class="badge {{ $tournament->status->value }}">{{ __('ui.tournament_status_labels.'.$tournament->status->value) }}</span>
 </div>
-@includeWhen($tournament->status === App\Enums\TournamentStatus::LIVE, 'tournaments._live_refresh')
 @if($isAdmin)
 @include('tournaments._tabs')
 @if(in_array($tournament->status, [App\Enums\TournamentStatus::READY, App\Enums\TournamentStatus::LIVE], true))
@@ -301,6 +300,11 @@
 </div>
 @endif
 
+@includeWhen($tournament->status === App\Enums\TournamentStatus::LIVE, 'tournaments._live_refresh', [
+    'interval' => 1,
+    'refreshTarget' => '[data-live-bracket]',
+])
+
 @if(($bracketViewGroups ?? collect())->isNotEmpty())
 @php
     $currentBracketView = $activeBracketView ?? 'all';
@@ -324,6 +328,7 @@
 </nav>
 @endif
 
+<div data-live-bracket>
 @if($matches->isNotEmpty())
 <div class="bracket-zoom-toolbar" data-bracket-zoom-toolbar hidden>
     <span class="bracket-zoom-label">{{ __('ui.bracket_zoom') }}</span>
@@ -495,6 +500,7 @@
 @empty
 <div class="card empty">{{ __('ui.bracket_empty') }}</div>
 @endforelse
+</div>
 
 @if($isAdmin && $tournament->status === App\Enums\TournamentStatus::LIVE)
 <dialog class="score-modal" data-score-modal aria-labelledby="score-modal-title" data-reopen-match="{{ old('score_modal_match') }}" data-old-score-a="{{ old('score_a') }}" data-old-score-b="{{ old('score_b') }}">
@@ -525,10 +531,9 @@
 
 @push('scripts')
 <script>
-document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
-    select.addEventListener('change', () => {
-        if (select.value) window.location.href = select.value;
-    });
+document.addEventListener('change', (event) => {
+    const select = event.target instanceof Element ? event.target.closest('[data-bracket-view-select]') : null;
+    if (select?.value) window.location.href = select.value;
 });
 
 (() => {
@@ -538,12 +543,14 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
         redCode: dialog.querySelector('[data-details-red-code]'), redName: dialog.querySelector('[data-details-red-name]'), redSchool: dialog.querySelector('[data-details-red-school]'),
         blueCode: dialog.querySelector('[data-details-blue-code]'), blueName: dialog.querySelector('[data-details-blue-name]'), blueSchool: dialog.querySelector('[data-details-blue-school]'),
     };
-    document.querySelectorAll('[data-match-details-trigger]').forEach((trigger) => trigger.addEventListener('click', () => {
+    document.addEventListener('click', (event) => {
+        const trigger = event.target instanceof Element ? event.target.closest('[data-match-details-trigger]') : null;
+        if (!trigger) return;
         dialog.querySelector('[data-match-details-title]').textContent = @json(__('ui.match_details', ['number' => '__NUMBER__'])).replace('__NUMBER__', trigger.dataset.matchNumber);
         fields.redCode.textContent = trigger.dataset.redCode || '—'; fields.redName.textContent = trigger.dataset.redName || '—'; fields.redSchool.textContent = trigger.dataset.redSchool || '—';
         fields.blueCode.textContent = trigger.dataset.blueCode || '—'; fields.blueName.textContent = trigger.dataset.blueName || '—'; fields.blueSchool.textContent = trigger.dataset.blueSchool || '—';
         dialog.showModal();
-    }));
+    });
     dialog.querySelectorAll('[data-match-details-close]').forEach((button) => button.addEventListener('click', () => dialog.close()));
     dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
 })();
@@ -605,8 +612,9 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
     scoreA.addEventListener('input', syncLeader);
     scoreB.addEventListener('input', syncLeader);
 
-    document.querySelectorAll('[data-score-modal-trigger]').forEach((trigger) => {
-        trigger.addEventListener('click', () => openModal(trigger));
+    document.addEventListener('click', (event) => {
+        const trigger = event.target instanceof Element ? event.target.closest('[data-score-modal-trigger]') : null;
+        if (trigger) openModal(trigger);
     });
     dialog.querySelectorAll('[data-score-modal-close]').forEach((button) => {
         button.addEventListener('click', () => dialog.close());
@@ -639,44 +647,50 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
     const MAX_ZOOM = 1.4;
     const ZOOM_STEP = 0.2;
     const ZOOM_STORAGE_KEY = 'easykids-bracket-mobile-zoom';
-    const zoomToolbar = document.querySelector('[data-bracket-zoom-toolbar]');
-    const zoomOutButton = zoomToolbar?.querySelector('[data-bracket-zoom-out]');
-    const zoomInButton = zoomToolbar?.querySelector('[data-bracket-zoom-in]');
-    const zoomResetButton = zoomToolbar?.querySelector('[data-bracket-zoom-reset]');
-    const zoomLevelLabel = zoomToolbar?.querySelector('[data-bracket-zoom-level]');
-    const zoomStages = [];
     let storedZoom = Number.NaN;
     try { storedZoom = Number(sessionStorage.getItem(ZOOM_STORAGE_KEY)); } catch (_) {}
     let mobileZoom = Number.isFinite(storedZoom) && storedZoom >= MIN_ZOOM && storedZoom <= MAX_ZOOM ? storedZoom : 0.8;
+    let resizeObservers = [];
+    let syncActiveZoom = () => {};
 
     const clampZoom = (value) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(value * 10) / 10));
-    const syncZoom = () => {
-        const appliedZoom = MOBILE_ZOOM_QUERY.matches ? mobileZoom : 1;
-        zoomStages.forEach(({ stage, canvas }) => {
-            const width = Number(canvas.dataset.layoutWidth || 0);
-            const height = Number(canvas.dataset.layoutHeight || 0);
-            canvas.style.transform = `scale(${appliedZoom})`;
-            if (width) stage.style.width = `${width * appliedZoom}px`;
-            if (height) stage.style.height = `${height * appliedZoom}px`;
-        });
-        if (zoomLevelLabel) zoomLevelLabel.textContent = `${Math.round(appliedZoom * 100)}%`;
-        if (zoomOutButton) zoomOutButton.disabled = !MOBILE_ZOOM_QUERY.matches || mobileZoom <= MIN_ZOOM;
-        if (zoomInButton) zoomInButton.disabled = !MOBILE_ZOOM_QUERY.matches || mobileZoom >= MAX_ZOOM;
-        if (zoomResetButton) zoomResetButton.disabled = !MOBILE_ZOOM_QUERY.matches || mobileZoom === 1;
-    };
-    const setMobileZoom = (value) => {
-        mobileZoom = clampZoom(value);
-        try { sessionStorage.setItem(ZOOM_STORAGE_KEY, String(mobileZoom)); } catch (_) {}
-        syncZoom();
-    };
+    const initializeBracket = () => {
+        resizeObservers.forEach((observer) => observer.disconnect());
+        resizeObservers = [];
 
-    zoomOutButton?.addEventListener('click', () => setMobileZoom(mobileZoom - ZOOM_STEP));
-    zoomInButton?.addEventListener('click', () => setMobileZoom(mobileZoom + ZOOM_STEP));
-    zoomResetButton?.addEventListener('click', () => setMobileZoom(1));
-    MOBILE_ZOOM_QUERY.addEventListener?.('change', syncZoom);
+        const zoomToolbar = document.querySelector('[data-bracket-zoom-toolbar]');
+        const zoomOutButton = zoomToolbar?.querySelector('[data-bracket-zoom-out]');
+        const zoomInButton = zoomToolbar?.querySelector('[data-bracket-zoom-in]');
+        const zoomResetButton = zoomToolbar?.querySelector('[data-bracket-zoom-reset]');
+        const zoomLevelLabel = zoomToolbar?.querySelector('[data-bracket-zoom-level]');
+        const zoomStages = [];
+        const syncZoom = () => {
+            const appliedZoom = MOBILE_ZOOM_QUERY.matches ? mobileZoom : 1;
+            zoomStages.forEach(({ stage, canvas }) => {
+                const width = Number(canvas.dataset.layoutWidth || 0);
+                const height = Number(canvas.dataset.layoutHeight || 0);
+                canvas.style.transform = `scale(${appliedZoom})`;
+                if (width) stage.style.width = `${width * appliedZoom}px`;
+                if (height) stage.style.height = `${height * appliedZoom}px`;
+            });
+            if (zoomLevelLabel) zoomLevelLabel.textContent = `${Math.round(appliedZoom * 100)}%`;
+            if (zoomOutButton) zoomOutButton.disabled = !MOBILE_ZOOM_QUERY.matches || mobileZoom <= MIN_ZOOM;
+            if (zoomInButton) zoomInButton.disabled = !MOBILE_ZOOM_QUERY.matches || mobileZoom >= MAX_ZOOM;
+            if (zoomResetButton) zoomResetButton.disabled = !MOBILE_ZOOM_QUERY.matches || mobileZoom === 1;
+        };
+        const setMobileZoom = (value) => {
+            mobileZoom = clampZoom(value);
+            try { sessionStorage.setItem(ZOOM_STORAGE_KEY, String(mobileZoom)); } catch (_) {}
+            syncZoom();
+        };
 
-    let nextRoundColorIndex = 0;
-    document.querySelectorAll('[data-bracket-section]:not(.bracket-grid)').forEach((viewport) => {
+        syncActiveZoom = syncZoom;
+        zoomOutButton?.addEventListener('click', () => setMobileZoom(mobileZoom - ZOOM_STEP));
+        zoomInButton?.addEventListener('click', () => setMobileZoom(mobileZoom + ZOOM_STEP));
+        zoomResetButton?.addEventListener('click', () => setMobileZoom(1));
+
+        let nextRoundColorIndex = 0;
+        document.querySelectorAll('[data-bracket-section]:not(.bracket-grid)').forEach((viewport) => {
         const canvas = viewport.querySelector('[data-bracket-canvas]');
         const stage = viewport.querySelector('[data-bracket-zoom-stage]');
         const nodes = [...viewport.querySelectorAll('.bracket-match-node')];
@@ -863,16 +877,25 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
         layout();
         let observedWidth = Math.round(viewport.getBoundingClientRect().width);
         let resizeFrame = null;
-        new ResizeObserver(([entry]) => {
+        const observer = new ResizeObserver(([entry]) => {
             const nextWidth = Math.round(entry.contentRect.width);
             if (nextWidth === observedWidth) return;
             observedWidth = nextWidth;
             cancelAnimationFrame(resizeFrame);
             resizeFrame = requestAnimationFrame(layout);
-        }).observe(viewport);
+        });
+        observer.observe(viewport);
+        resizeObservers.push(observer);
+        });
+        if (zoomStages.length && zoomToolbar) zoomToolbar.hidden = false;
+        syncZoom();
+    };
+
+    MOBILE_ZOOM_QUERY.addEventListener?.('change', () => syncActiveZoom());
+    document.addEventListener('easykids:live-content-updated', (event) => {
+        if (event.detail?.target?.matches?.('[data-live-bracket]')) initializeBracket();
     });
-    if (zoomStages.length && zoomToolbar) zoomToolbar.hidden = false;
-    syncZoom();
+    initializeBracket();
 })();
 </script>
 @endpush

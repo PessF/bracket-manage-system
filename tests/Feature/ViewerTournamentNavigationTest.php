@@ -86,4 +86,55 @@ class ViewerTournamentNavigationTest extends TestCase
         $this->assertSame(MatchStatus::READY, $match->refresh()->status);
         $this->assertNull($match->started_at);
     }
+
+    public function test_live_pages_detect_database_changes_without_manual_refresh(): void
+    {
+        $tournament = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
+        $stage = Stage::factory()->create(['tournament_id' => $tournament->id]);
+        $participantA = Participant::factory()->create(['tournament_id' => $tournament->id]);
+        $participantB = Participant::factory()->create(['tournament_id' => $tournament->id]);
+        $publicRouteParameter = ['tournament' => $tournament->public_token];
+
+        $this->get(route('public.tournaments.bracket', $publicRouteParameter))
+            ->assertOk()
+            ->assertSee('data-live-bracket', false)
+            ->assertSee('data-refresh-target="[data-live-bracket]"', false)
+            ->assertSee('data-live-state-url="'.route('public.tournaments.live-state', $publicRouteParameter).'"', false);
+        $this->get(route('public.tournaments.results', $publicRouteParameter))
+            ->assertOk()
+            ->assertSee('data-refresh-target="[data-live-results]"', false);
+        $this->get(route('public.tournaments.matches', $publicRouteParameter))
+            ->assertOk()
+            ->assertSee('data-refresh-target="[data-live-matches]"', false);
+        $this->get(route('tournaments.overview', $tournament))
+            ->assertOk()
+            ->assertSee('data-live-state-url="'.route('tournaments.live-state', $tournament).'"', false);
+
+        $firstVersion = $this->getJson(route('public.tournaments.live-state', $publicRouteParameter))
+            ->assertOk()
+            ->assertHeader('Cache-Control')
+            ->json('version');
+
+        $match = TournamentMatch::factory()->create([
+            'tournament_id' => $tournament->id,
+            'stage_id' => $stage->id,
+            'participant_a_id' => $participantA->id,
+            'participant_b_id' => $participantB->id,
+            'status' => MatchStatus::READY,
+            'is_bye' => false,
+        ]);
+
+        $secondVersion = $this->getJson(route('public.tournaments.live-state', $publicRouteParameter))
+            ->assertOk()
+            ->json('version');
+
+        $this->assertNotSame($firstVersion, $secondVersion);
+
+        $match->forceFill(['score_a' => '2', 'score_b' => '1', 'synced_at' => now()->addSecond()])->save();
+        $thirdVersion = $this->getJson(route('public.tournaments.live-state', $publicRouteParameter))
+            ->assertOk()
+            ->json('version');
+
+        $this->assertNotSame($secondVersion, $thirdVersion);
+    }
 }

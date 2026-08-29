@@ -11,7 +11,9 @@ use App\Models\Participant;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Services\MatchStandingsService;
+use App\Services\TournamentLiveStateService;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -19,7 +21,17 @@ use Illuminate\View\View;
 
 class TournamentWorkspaceController extends Controller
 {
-    public function __construct(private readonly MatchStandingsService $matchStandings) {}
+    public function __construct(
+        private readonly MatchStandingsService $matchStandings,
+        private readonly TournamentLiveStateService $liveState,
+    ) {}
+
+    public function liveState(Tournament $tournament): JsonResponse
+    {
+        return response()->json([
+            'version' => $this->liveState->version($tournament),
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
 
     public function bracket(Request $request, Tournament $tournament): View
     {
@@ -33,6 +45,10 @@ class TournamentWorkspaceController extends Controller
             'stageGroup',
         ])->orderBy('match_number')->get();
         $standings = $tournament->standings()->with('participant')->orderByRaw('CASE WHEN rank_number = 0 THEN 1 ELSE 0 END')->orderBy('rank_number')->get();
+        if ($this->matchStandingsNeedRepair($tournament, $standings)) {
+            $this->matchStandings->recompute($tournament);
+            $standings = $tournament->standings()->with('participant')->orderByRaw('CASE WHEN rank_number = 0 THEN 1 ELSE 0 END')->orderBy('rank_number')->get();
+        }
         $podium = $this->podium($matches, $standings);
         $groups = $matches
             ->filter(fn (TournamentMatch $match): bool => $match->stage_group_id !== null)
@@ -75,11 +91,7 @@ class TournamentWorkspaceController extends Controller
     {
         $standings = $tournament->standings()->with('participant')->orderByRaw('CASE WHEN rank_number = 0 THEN 1 ELSE 0 END')->orderBy('rank_number')->get();
 
-        $matchStandingsNeedRepair = $tournament->format !== TournamentFormat::RANKING
-            && ($standings->contains(fn ($standing): bool => (int) ($standing->format_data['calculation_version'] ?? 0) < MatchStandingsService::CALCULATION_VERSION)
-                || ($standings->isEmpty() && $tournament->matches()->where('status', MatchStatus::FINISHED)->exists()));
-
-        if ($matchStandingsNeedRepair) {
+        if ($this->matchStandingsNeedRepair($tournament, $standings)) {
             $this->matchStandings->recompute($tournament);
             $standings = $tournament->standings()->with('participant')->orderByRaw('CASE WHEN rank_number = 0 THEN 1 ELSE 0 END')->orderBy('rank_number')->get();
         }
@@ -96,6 +108,13 @@ class TournamentWorkspaceController extends Controller
         }
 
         return view('tournaments.results', compact('tournament', 'standings', 'participants'));
+    }
+
+    private function matchStandingsNeedRepair(Tournament $tournament, Collection $standings): bool
+    {
+        return $tournament->format !== TournamentFormat::RANKING
+            && ($standings->contains(fn ($standing): bool => (int) ($standing->format_data['calculation_version'] ?? 0) < MatchStandingsService::CALCULATION_VERSION)
+                || ($standings->isEmpty() && $tournament->matches()->where('status', MatchStatus::FINISHED)->exists()));
     }
 
     private function bracketGroupsForDisplay(Collection $matches, string $activeView = 'all'): Collection

@@ -10,9 +10,9 @@ use App\Models\Tournament;
 
 class MatchStandingsService
 {
-    public const CALCULATION_VERSION = 3;
+    public const CALCULATION_VERSION = 4;
 
-    public const RANKING_RULE = 'WINS_THEN_SCORE_FOR';
+    public const RANKING_RULE = 'WIN_LOSS_DIFFERENCE_THEN_SCORE_FOR';
 
     public function recompute(Tournament $tournament): void
     {
@@ -65,7 +65,7 @@ class MatchStandingsService
             }
         }
 
-        usort($rows, fn (array $a, array $b): int => $b['wins'] <=> $a['wins']
+        usort($rows, fn (array $a, array $b): int => ($b['wins'] - $b['losses']) <=> ($a['wins'] - $a['losses'])
             ?: bccomp($b['score_for'], $a['score_for'], 6)
             ?: strcmp($a['participant_id'], $b['participant_id']));
 
@@ -80,7 +80,7 @@ class MatchStandingsService
                     'draws' => $row['draws'],
                     'losses' => $row['losses'],
                     'score_for' => $row['score_for'],
-                    'points' => $row['wins'],
+                    'points' => $row['wins'] - $row['losses'],
                     'format_data' => [
                         'ranking' => self::RANKING_RULE,
                         'calculation_version' => self::CALCULATION_VERSION,
