@@ -17,7 +17,18 @@
     .bracket-viewport { --section-accent:#d4af37; position:relative; overflow:auto; overscroll-behavior-inline:contain; min-height:190px; border:1px solid var(--line); border-top:2px solid var(--section-accent); border-radius:7px; background:#0c1219; scrollbar-color:#3a4653 transparent; -webkit-overflow-scrolling:touch; }
     .bracket-viewport[data-bracket-type$="LOSERS"],
     .bracket-viewport[data-bracket-type$="GRAND_FINAL"] { --section-accent:#d4af37; }
-    .bracket-canvas { position:relative; min-width:100%; }
+    .bracket-zoom-stage { position:relative; min-width:100%; }
+    .bracket-canvas { position:relative; }
+    .bracket-zoom-stage .bracket-canvas { transform-origin:top left; }
+    .bracket-zoom-toolbar { display:none; align-items:center; justify-content:flex-end; gap:8px; margin:0 0 12px; }
+    .bracket-zoom-toolbar[hidden] { display:none; }
+    .bracket-zoom-label { margin-right:2px; color:var(--muted); font-size:12px; font-weight:800; }
+    .bracket-zoom-controls { display:flex; align-items:center; overflow:hidden; border:1px solid var(--line); border-radius:8px; background:var(--card); box-shadow:0 4px 12px rgb(0 0 0 / .12); }
+    .bracket-zoom-button { display:grid; width:44px; min-width:44px; height:44px; padding:0; place-items:center; border:0; background:transparent; color:var(--ink); font:900 22px/1 ui-sans-serif,system-ui,sans-serif; cursor:pointer; touch-action:manipulation; }
+    .bracket-zoom-button + .bracket-zoom-button { border-left:1px solid var(--line); }
+    .bracket-zoom-button:hover:not(:disabled) { background:var(--soft); }
+    .bracket-zoom-button:disabled { color:var(--muted); cursor:not-allowed; opacity:.45; }
+    .bracket-zoom-level { width:60px; min-width:60px; font-size:12px; font-weight:900; }
     .bracket-round-lane { position:absolute; z-index:0; top:48px; bottom:12px; border-inline:1px solid rgb(148 163 184 / .08); border-radius:6px; background:rgb(148 163 184 / .025); pointer-events:none; }
     .bracket-round-lane.is-alternate { background:rgb(148 163 184 / .04); }
     .bracket-connectors { position:absolute; inset:0; z-index:1; overflow:visible; pointer-events:none; }
@@ -201,6 +212,7 @@
     @media(max-width:820px){body[data-theme="easykids"] .podium-grid{grid-template-columns:1fr}}
     @media(max-width:680px){.bracket-viewport{min-height:150px;margin-left:-10px;margin-right:-10px;border-radius:0;border-left:0;border-right:0}.bracket-toolbar{align-items:flex-start;flex-direction:column;padding:8px 10px}.bracket-legend{gap:8px 12px}.bracket-legend span:nth-child(-n+2){display:none}.bracket-match-node,body[data-theme="easykids"] .bracket-match-node{width:220px;min-height:84px;padding:6px}.bracket-round-title{height:36px;font-size:10px}.bracket-section{margin-bottom:18px}.bracket-section-head{padding:0 2px}.viewer-event-head{align-items:flex-start}.viewer-event-head h1{font-size:19px}.viewer-event-head .badge{flex:0 0 auto}.match-side,body[data-theme="easykids"] .match-side{min-width:33px;height:19px;padding-inline:5px;font-size:9px}.bracket-team-name,body[data-theme="easykids"] .bracket-team-name{gap:4px;font-size:12px}.bracket-team,body[data-theme="easykids"] .bracket-team{min-height:26px;padding:3px 4px}.bracket-card-actions,body[data-theme="easykids"] .bracket-card-actions{right:-35px}.bracket-card-actions .bracket-icon-button,body[data-theme="easykids"] .bracket-card-actions .bracket-icon-button{width:28px;min-width:28px;height:28px;min-height:28px}.bracket-destinations{font-size:9px}.score-modal-team,body[data-theme="easykids"] .score-modal-team{grid-template-columns:1fr;gap:8px}.score-modal-team .score-stepper,body[data-theme="easykids"] .score-modal-team .score-stepper{min-width:0}.score-modal-actions{display:grid;grid-template-columns:1fr 1fr}.score-modal-actions .btn{width:100%}}
     @media(max-width:680px){
+        .bracket-zoom-toolbar { display:flex; position:sticky; top:calc(var(--top-height) + 8px); z-index:20; }
         .bracket-view-switcher { display:none; }
         .bracket-view-select { display:grid; gap:6px; }
         .bracket-toolbar { margin-bottom:10px; }
@@ -310,6 +322,17 @@
 </nav>
 @endif
 
+@if($matches->isNotEmpty())
+<div class="bracket-zoom-toolbar" data-bracket-zoom-toolbar hidden>
+    <span class="bracket-zoom-label">{{ __('ui.bracket_zoom') }}</span>
+    <div class="bracket-zoom-controls" role="group" aria-label="{{ __('ui.bracket_zoom') }}">
+        <button class="bracket-zoom-button" type="button" data-bracket-zoom-out aria-label="{{ __('ui.bracket_zoom_out') }}" title="{{ __('ui.bracket_zoom_out') }}">−</button>
+        <button class="bracket-zoom-button bracket-zoom-level" type="button" data-bracket-zoom-reset aria-label="{{ __('ui.bracket_zoom_reset') }}" title="{{ __('ui.bracket_zoom_reset') }}"><span data-bracket-zoom-level>80%</span></button>
+        <button class="bracket-zoom-button" type="button" data-bracket-zoom-in aria-label="{{ __('ui.bracket_zoom_in') }}" title="{{ __('ui.bracket_zoom_in') }}">+</button>
+    </div>
+</div>
+@endif
+
 @if($tournament->status === App\Enums\TournamentStatus::COMPLETED && $podium->isNotEmpty())
 @php
     $podiumMedalPaths = [
@@ -395,7 +418,7 @@
     <div class="bracket-section-head"><h2>{{ $sectionLabel }}</h2><span class="bracket-count">{{ trans_choice('ui.match_count', $group->count(), ['count' => $group->count()]) }}</span></div>
     <div class="bracket-viewport {{ $isGrid ? 'bracket-grid' : '' }}" data-bracket-section data-bracket-type="{{ $type }}" data-has-grand-final="{{ $hasGrandFinal ? 'true' : 'false' }}">
         @if(!$isGrid)
-        <div class="bracket-canvas" data-bracket-canvas></div>
+        <div class="bracket-zoom-stage" data-bracket-zoom-stage><div class="bracket-canvas" data-bracket-canvas></div></div>
         @endif
         @foreach($group as $match)
         @php
@@ -609,13 +632,55 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
     const QUARTERFINAL_LABEL = @json(__('ui.quarterfinals'));
     const FINALS_LABEL = @json(__('ui.finals'));
     const LOSERS_ROUND_LABEL = @json(__('ui.losers_round'));
+    const MOBILE_ZOOM_QUERY = window.matchMedia('(max-width: 680px)');
+    const MIN_ZOOM = 0.6;
+    const MAX_ZOOM = 1.4;
+    const ZOOM_STEP = 0.2;
+    const ZOOM_STORAGE_KEY = 'easykids-bracket-mobile-zoom';
+    const zoomToolbar = document.querySelector('[data-bracket-zoom-toolbar]');
+    const zoomOutButton = zoomToolbar?.querySelector('[data-bracket-zoom-out]');
+    const zoomInButton = zoomToolbar?.querySelector('[data-bracket-zoom-in]');
+    const zoomResetButton = zoomToolbar?.querySelector('[data-bracket-zoom-reset]');
+    const zoomLevelLabel = zoomToolbar?.querySelector('[data-bracket-zoom-level]');
+    const zoomStages = [];
+    let storedZoom = Number.NaN;
+    try { storedZoom = Number(sessionStorage.getItem(ZOOM_STORAGE_KEY)); } catch (_) {}
+    let mobileZoom = Number.isFinite(storedZoom) && storedZoom >= MIN_ZOOM && storedZoom <= MAX_ZOOM ? storedZoom : 0.8;
+
+    const clampZoom = (value) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(value * 10) / 10));
+    const syncZoom = () => {
+        const appliedZoom = MOBILE_ZOOM_QUERY.matches ? mobileZoom : 1;
+        zoomStages.forEach(({ stage, canvas }) => {
+            const width = Number(canvas.dataset.layoutWidth || 0);
+            const height = Number(canvas.dataset.layoutHeight || 0);
+            canvas.style.transform = `scale(${appliedZoom})`;
+            if (width) stage.style.width = `${width * appliedZoom}px`;
+            if (height) stage.style.height = `${height * appliedZoom}px`;
+        });
+        if (zoomLevelLabel) zoomLevelLabel.textContent = `${Math.round(appliedZoom * 100)}%`;
+        if (zoomOutButton) zoomOutButton.disabled = !MOBILE_ZOOM_QUERY.matches || mobileZoom <= MIN_ZOOM;
+        if (zoomInButton) zoomInButton.disabled = !MOBILE_ZOOM_QUERY.matches || mobileZoom >= MAX_ZOOM;
+        if (zoomResetButton) zoomResetButton.disabled = !MOBILE_ZOOM_QUERY.matches || mobileZoom === 1;
+    };
+    const setMobileZoom = (value) => {
+        mobileZoom = clampZoom(value);
+        try { sessionStorage.setItem(ZOOM_STORAGE_KEY, String(mobileZoom)); } catch (_) {}
+        syncZoom();
+    };
+
+    zoomOutButton?.addEventListener('click', () => setMobileZoom(mobileZoom - ZOOM_STEP));
+    zoomInButton?.addEventListener('click', () => setMobileZoom(mobileZoom + ZOOM_STEP));
+    zoomResetButton?.addEventListener('click', () => setMobileZoom(1));
+    MOBILE_ZOOM_QUERY.addEventListener?.('change', syncZoom);
 
     let nextRoundColorIndex = 0;
     document.querySelectorAll('[data-bracket-section]:not(.bracket-grid)').forEach((viewport) => {
         const canvas = viewport.querySelector('[data-bracket-canvas]');
+        const stage = viewport.querySelector('[data-bracket-zoom-stage]');
         const nodes = [...viewport.querySelectorAll('.bracket-match-node')];
-        if (!canvas || !nodes.length) return;
+        if (!canvas || !stage || !nodes.length) return;
 
+        zoomStages.push({ stage, canvas });
         nodes.forEach((node) => canvas.appendChild(node));
         const matches = nodes.map((node) => ({
             node, id: node.dataset.matchId, round: Number(node.dataset.round), number: Number(node.dataset.number),
@@ -695,6 +760,8 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
             const height = maxY + cardHeight + HEADER + 24;
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
+            canvas.dataset.layoutWidth = String(width);
+            canvas.dataset.layoutHeight = String(height);
 
             const roundTitle = (round, index) => {
                 const type = viewport.dataset.bracketType;
@@ -788,6 +855,7 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
                 svg.appendChild(port);
             });
             canvas.prepend(svg);
+            syncZoom();
         };
 
         layout();
@@ -801,6 +869,8 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
             resizeFrame = requestAnimationFrame(layout);
         }).observe(viewport);
     });
+    if (zoomStages.length && zoomToolbar) zoomToolbar.hidden = false;
+    syncZoom();
 })();
 </script>
 @endpush

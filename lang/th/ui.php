@@ -74,6 +74,7 @@ return [
     'confirm_score' => 'บันทึกผล', 'enter_score' => 'บันทึกผล', 'edit_score' => 'แก้ไขผล', 'save_corrected_score' => 'บันทึกผลแก้ไข', 'score_match_title' => 'ผลคู่ที่ #:number', 'winner' => 'ผู้ชนะ', 'round' => 'รอบ', 'match' => 'คู่แข่งขัน', 'display_match' => 'คู่ที่',
     'bracket_updates' => 'สายการแข่งขันจะอัปเดตอัตโนมัติเมื่อยืนยันผล', 'advances_to' => 'ผ่านเข้าสู่', 'match_destinations' => 'เส้นทางการแข่งขัน', 'winner_short' => 'ชนะ', 'loser_short' => 'แพ้',
     'scroll_rounds' => 'เลื่อนไปทางขวาเพื่อดูรอบถัดไป →', 'winners_bracket' => 'สายผู้ชนะ',
+    'bracket_zoom' => 'ซูมสายการแข่งขัน', 'bracket_zoom_out' => 'ซูมออก', 'bracket_zoom_in' => 'ซูมเข้า', 'bracket_zoom_reset' => 'รีเซ็ตการซูม',
     'losers_bracket' => 'สายผู้แพ้', 'grand_final' => 'รอบชิงชนะเลิศ', 'round_robin_matches' => 'คู่แข่งขันแบบพบกันหมด',
     'match_list' => 'รายการคู่แข่งขัน', 'final' => 'รอบชิงชนะเลิศ',
     'live_standings' => 'อันดับและผลการแข่งขันล่าสุด', 'record_attempts' => 'บันทึกผลแต่ละครั้ง', 'saved' => 'บันทึกแล้ว',

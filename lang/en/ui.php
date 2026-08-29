@@ -74,6 +74,7 @@ return [
     'confirm_score' => 'Save result', 'enter_score' => 'Record result', 'edit_score' => 'Edit result', 'save_corrected_score' => 'Save correction', 'score_match_title' => 'Match #:number result', 'winner' => 'Winner', 'round' => 'Round', 'match' => 'Match', 'display_match' => 'Match',
     'bracket_updates' => 'Bracket updates automatically when a result is confirmed.', 'advances_to' => 'Advances to', 'match_destinations' => 'Match progression', 'winner_short' => 'W', 'loser_short' => 'L',
     'scroll_rounds' => 'Scroll horizontally to see later rounds →', 'winners_bracket' => 'Winners Bracket',
+    'bracket_zoom' => 'Bracket zoom', 'bracket_zoom_out' => 'Zoom out', 'bracket_zoom_in' => 'Zoom in', 'bracket_zoom_reset' => 'Reset zoom',
     'losers_bracket' => 'Losers Bracket', 'grand_final' => 'Grand Final', 'round_robin_matches' => 'Round Robin Matches',
     'match_list' => 'Match list', 'final' => 'Final',
     'live_standings' => 'Live rankings and standings', 'record_attempts' => 'Record attempts', 'saved' => 'Saved',
