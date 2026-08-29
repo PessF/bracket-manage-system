@@ -211,8 +211,10 @@
     body[data-theme="easykids"] .podium-source { color:#b7c2d8; font-size:11px; }
     @media(max-width:820px){body[data-theme="easykids"] .podium-grid{grid-template-columns:1fr}}
     @media(max-width:680px){.bracket-viewport{min-height:150px;margin-left:-10px;margin-right:-10px;border-radius:0;border-left:0;border-right:0}.bracket-toolbar{align-items:flex-start;flex-direction:column;padding:8px 10px}.bracket-legend{gap:8px 12px}.bracket-legend span:nth-child(-n+2){display:none}.bracket-match-node,body[data-theme="easykids"] .bracket-match-node{width:220px;min-height:84px;padding:6px}.bracket-round-title{height:36px;font-size:10px}.bracket-section{margin-bottom:18px}.bracket-section-head{padding:0 2px}.viewer-event-head{align-items:flex-start}.viewer-event-head h1{font-size:19px}.viewer-event-head .badge{flex:0 0 auto}.match-side,body[data-theme="easykids"] .match-side{min-width:33px;height:19px;padding-inline:5px;font-size:9px}.bracket-team-name,body[data-theme="easykids"] .bracket-team-name{gap:4px;font-size:12px}.bracket-team,body[data-theme="easykids"] .bracket-team{min-height:26px;padding:3px 4px}.bracket-card-actions,body[data-theme="easykids"] .bracket-card-actions{right:-35px}.bracket-card-actions .bracket-icon-button,body[data-theme="easykids"] .bracket-card-actions .bracket-icon-button{width:28px;min-width:28px;height:28px;min-height:28px}.bracket-destinations{font-size:9px}.score-modal-team,body[data-theme="easykids"] .score-modal-team{grid-template-columns:1fr;gap:8px}.score-modal-team .score-stepper,body[data-theme="easykids"] .score-modal-team .score-stepper{min-width:0}.score-modal-actions{display:grid;grid-template-columns:1fr 1fr}.score-modal-actions .btn{width:100%}}
-    @media(max-width:680px){
+    @media(max-width:680px), (orientation:landscape) and (max-width:1180px) and (max-height:680px){
         .bracket-zoom-toolbar { display:flex; position:sticky; top:calc(var(--top-height) + 8px); z-index:20; }
+    }
+    @media(max-width:680px){
         .bracket-view-switcher { display:none; }
         .bracket-view-select { display:grid; gap:6px; }
         .bracket-toolbar { margin-bottom:10px; }
@@ -632,7 +634,7 @@ document.querySelectorAll('[data-bracket-view-select]').forEach((select) => {
     const QUARTERFINAL_LABEL = @json(__('ui.quarterfinals'));
     const FINALS_LABEL = @json(__('ui.finals'));
     const LOSERS_ROUND_LABEL = @json(__('ui.losers_round'));
-    const MOBILE_ZOOM_QUERY = window.matchMedia('(max-width: 680px)');
+    const MOBILE_ZOOM_QUERY = window.matchMedia('(max-width: 680px), (orientation: landscape) and (max-width: 1180px) and (max-height: 680px)');
     const MIN_ZOOM = 0.4;
     const MAX_ZOOM = 1.4;
     const ZOOM_STEP = 0.2;
