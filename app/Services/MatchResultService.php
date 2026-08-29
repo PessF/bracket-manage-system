@@ -8,9 +8,9 @@ use App\Enums\BracketType;
 use App\Enums\MatchSlot;
 use App\Enums\MatchStatus;
 use App\Enums\StageType;
-use App\Enums\TournamentStructure;
 use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
+use App\Enums\TournamentStructure;
 use App\Models\Participant;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
@@ -24,7 +24,7 @@ use LogicException;
 class MatchResultService
 {
     public function __construct(
-        private readonly RoundRobinStandingsService $roundRobinStandings,
+        private readonly MatchStandingsService $matchStandings,
         private readonly TournamentLifecycleService $lifecycle,
     ) {}
 
@@ -169,8 +169,8 @@ class MatchResultService
                 $this->synchronizeGrandFinalReset($currentMatch, $winnerId);
             }
 
-            if ($currentMatch->tournament->format === TournamentFormat::ROUND_ROBIN) {
-                $this->roundRobinStandings->recompute($currentMatch->tournament);
+            if ($currentMatch->tournament->format !== TournamentFormat::RANKING) {
+                $this->matchStandings->recompute($currentMatch->tournament);
             }
 
             if ($currentMatch->tournament->structure === TournamentStructure::ADVANCED && $currentMatch->stage_group_id !== null) {

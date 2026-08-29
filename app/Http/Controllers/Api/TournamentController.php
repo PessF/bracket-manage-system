@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Enums\SeedingMethod;
-use App\Enums\StageStatus;
 use App\Enums\StageSourceType;
+use App\Enums\StageStatus;
 use App\Enums\StageType;
 use App\Enums\TournamentFormat;
-use App\Enums\TournamentStructure;
 use App\Enums\TournamentStatus;
+use App\Enums\TournamentStructure;
 use App\Http\Controllers\Controller;
 use App\Models\Participant;
 use App\Models\Stage;
 use App\Models\Standing;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
+use App\Services\MatchStandingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -235,7 +236,7 @@ class TournamentController extends Controller
     private function roundRobinConfig(array $data): ?array
     {
         return $data['format'] === TournamentFormat::ROUND_ROBIN->value
-            ? ['ranking' => 'WINS_THEN_DRAWS_THEN_SCORE_DIFFERENCE']
+            ? ['ranking' => MatchStandingsService::RANKING_RULE]
             : null;
     }
 

@@ -5,6 +5,11 @@
     $isRanking = $tournament->format === App\Enums\TournamentFormat::RANKING;
     $attemptLimit = max(1, min(20, (int) ($tournament->ranking_config['attempts'] ?? 2)));
     $formatRankingValue = fn ($value): string => $value !== null ? number_format((float) $value, 2, '.', '') : '—';
+    $formatMatchScore = function ($value): string {
+        $formatted = rtrim(rtrim(number_format((float) $value, 6, '.', ''), '0'), '.');
+
+        return $formatted !== '' ? $formatted : '0';
+    };
     $attemptsByParticipant = $participants->mapWithKeys(fn ($participant) => [
         (string) $participant->id => $participant->rankingAttempts->keyBy('attempt_number'),
     ]);
@@ -60,7 +65,7 @@
 <div data-live-results>
 <section class="card">
     <h2>{{ __('ui.standings') }}</h2>
-    @if($tournament->format === App\Enums\TournamentFormat::ROUND_ROBIN)
+    @if(!$isRanking)
     <p class="muted standings-rule">{{ __('ui.round_robin_standings_rule') }}</p>
     @endif
     <div class="table-wrap standings-wrap">
@@ -77,8 +82,6 @@
                     <th>{{ __('ui.draws') }}</th>
                     <th>{{ __('ui.losses') }}</th>
                     <th>{{ __('ui.score_for') }}</th>
-                    <th>{{ __('ui.score_against') }}</th>
-                    <th>{{ __('ui.difference') }}</th>
                     @endif
                 </tr>
             </thead>
@@ -103,13 +106,11 @@
                     <td><strong>{{ $standing->wins }}</strong></td>
                     <td>{{ $standing->draws }}</td>
                     <td>{{ $standing->losses }}</td>
-                    <td>{{ number_format((float) $standing->score_for, 0) }}</td>
-                    <td>{{ number_format((float) $standing->score_against, 0) }}</td>
-                    <td>{{ number_format((float) $standing->score_difference, 0) }}</td>
+                    <td>{{ $formatMatchScore($standing->score_for) }}</td>
                     @endif
                 </tr>
                 @empty
-                <tr><td colspan="9" class="empty">{{ __('ui.standings_empty') }}</td></tr>
+                <tr><td colspan="{{ $isRanking ? 3 : 7 }}" class="empty">{{ __('ui.standings_empty') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

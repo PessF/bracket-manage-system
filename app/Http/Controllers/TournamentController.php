@@ -15,6 +15,7 @@ use App\Enums\TournamentStructure;
 use App\Models\Stage;
 use App\Models\Tournament;
 use App\Services\AdvancedTournamentBuilderService;
+use App\Services\MatchStandingsService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -336,7 +337,7 @@ class TournamentController extends Controller
     private function roundRobinConfig(array $data): ?array
     {
         return $data['format'] === TournamentFormat::ROUND_ROBIN->value
-            ? ['ranking' => 'WINS_THEN_DRAWS_THEN_SCORE_DIFFERENCE']
+            ? ['ranking' => MatchStandingsService::RANKING_RULE]
             : null;
     }
 

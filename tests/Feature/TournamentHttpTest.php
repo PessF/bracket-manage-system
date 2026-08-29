@@ -14,6 +14,7 @@ use App\Models\Stage;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Models\User;
+use App\Services\MatchStandingsService;
 use App\Services\TournamentLifecycleService;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -66,7 +67,7 @@ class TournamentHttpTest extends TestCase
             ->assertJsonPath('success', true)->assertJsonPath('data.name', 'HTTP Tournament');
         $this->assertDatabaseHas('external_stages', ['tournament_id' => $tournament->id]);
         $this->assertSame(
-            ['ranking' => 'WINS_THEN_DRAWS_THEN_SCORE_DIFFERENCE'],
+            ['ranking' => MatchStandingsService::RANKING_RULE],
             $tournament->round_robin_config,
         );
     }

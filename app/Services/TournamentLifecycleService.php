@@ -16,7 +16,6 @@ use App\Enums\TournamentStructure;
 use App\Models\Participant;
 use App\Models\Stage;
 use App\Models\StageGroup;
-use App\Models\Standing;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use DomainException;
@@ -26,7 +25,10 @@ use Illuminate\Support\Str;
 
 class TournamentLifecycleService
 {
-    public function __construct(private readonly BracketGenerator $brackets) {}
+    public function __construct(
+        private readonly BracketGenerator $brackets,
+        private readonly MatchStandingsService $matchStandings,
+    ) {}
 
     public function randomizeParticipants(Tournament|string $tournament): Tournament
     {
@@ -226,8 +228,8 @@ class TournamentLifecycleService
                 throw new DomainException(__('ui.matches_incomplete'));
             }
 
-            if ($locked->format->isElimination()) {
-                $this->recomputeEliminationStandings($locked);
+            if ($locked->format !== TournamentFormat::RANKING) {
+                $this->matchStandings->recompute($locked);
             }
 
             $now = now();
@@ -534,8 +536,7 @@ class TournamentLifecycleService
             'wins' => 0,
             'draws' => 0,
             'losses' => 0,
-            'score_for' => 0.0,
-            'score_against' => 0.0,
+            'score_for' => '0.000000',
         ]]);
 
         foreach ($matches as $match) {
@@ -543,19 +544,19 @@ class TournamentLifecycleService
                 continue;
             }
 
-            $scoreA = (float) $match->score_a;
-            $scoreB = (float) $match->score_b;
+            $scoreA = (string) $match->score_a;
+            $scoreB = (string) $match->score_b;
             $a = $rows[$match->participant_a_id];
             $b = $rows[$match->participant_b_id];
-            $a['score_for'] += $scoreA;
-            $a['score_against'] += $scoreB;
-            $b['score_for'] += $scoreB;
-            $b['score_against'] += $scoreA;
+            $a['score_for'] = bcadd($a['score_for'], $scoreA, 6);
+            $b['score_for'] = bcadd($b['score_for'], $scoreB, 6);
 
-            if ($scoreA > $scoreB) {
+            $comparison = bccomp($scoreA, $scoreB, 6);
+
+            if ($comparison > 0) {
                 $a['wins']++;
                 $b['losses']++;
-            } elseif ($scoreB > $scoreA) {
+            } elseif ($comparison < 0) {
                 $b['wins']++;
                 $a['losses']++;
             } else {
@@ -569,9 +570,7 @@ class TournamentLifecycleService
 
         return $rows->sort(function (array $a, array $b): int {
             return $b['wins'] <=> $a['wins']
-                ?: $b['draws'] <=> $a['draws']
-                ?: (($b['score_for'] - $b['score_against']) <=> ($a['score_for'] - $a['score_against']))
-                ?: $b['score_for'] <=> $a['score_for']
+                ?: bccomp($b['score_for'], $a['score_for'], 6)
                 ?: strcmp((string) $a['participant']->id, (string) $b['participant']->id);
         })->pluck('participant')->values();
     }
@@ -659,108 +658,5 @@ class TournamentLifecycleService
         return $source['outcome'] === 'WINNER'
             ? __('ui.source_winner_label', ['number' => $source['number']])
             : __('ui.source_loser_label', ['number' => $source['number']]);
-    }
-
-    private function recomputeEliminationStandings(Tournament $tournament): void
-    {
-        $matches = $tournament->matches()
-            ->with(['participantA', 'participantB', 'winner', 'loser'])
-            ->where('status', MatchStatus::FINISHED)
-            ->orderBy('match_number')
-            ->get();
-
-        $participants = $tournament->participants()->orderBy('seed_number')->orderBy('team_name')->get();
-        $stats = $participants->mapWithKeys(fn (Participant $participant): array => [(string) $participant->id => [
-            'participant' => $participant,
-            'played' => 0,
-            'wins' => 0,
-            'draws' => 0,
-            'losses' => 0,
-            'score_for' => 0.0,
-            'score_against' => 0.0,
-        ]])->all();
-
-        foreach ($matches as $match) {
-            if ($match->participant_a_id !== null && isset($stats[$match->participant_a_id])) {
-                $stats[$match->participant_a_id]['played']++;
-                $stats[$match->participant_a_id]['score_for'] += (float) ($match->score_a ?? 0);
-                $stats[$match->participant_a_id]['score_against'] += (float) ($match->score_b ?? 0);
-            }
-
-            if ($match->participant_b_id !== null && isset($stats[$match->participant_b_id])) {
-                $stats[$match->participant_b_id]['played']++;
-                $stats[$match->participant_b_id]['score_for'] += (float) ($match->score_b ?? 0);
-                $stats[$match->participant_b_id]['score_against'] += (float) ($match->score_a ?? 0);
-            }
-
-            if ($match->winner_id !== null && isset($stats[$match->winner_id])) {
-                $stats[$match->winner_id]['wins']++;
-            }
-
-            if ($match->loser_id !== null && isset($stats[$match->loser_id])) {
-                $stats[$match->loser_id]['losses']++;
-            }
-        }
-
-        $rankedIds = $this->eliminationRankedParticipantIds($matches, $participants);
-        $now = now();
-
-        foreach ($rankedIds as $rank => $participantId) {
-            $row = $stats[$participantId] ?? null;
-
-            if ($row === null) {
-                continue;
-            }
-
-            Standing::query()->updateOrCreate(
-                ['tournament_id' => $tournament->id, 'participant_id' => $participantId],
-                [
-                    'rank_number' => $rank + 1,
-                    'best_value' => null,
-                    'played' => $row['played'],
-                    'wins' => $row['wins'],
-                    'draws' => $row['draws'],
-                    'losses' => $row['losses'],
-                    'score_for' => $row['score_for'],
-                    'score_against' => $row['score_against'],
-                    'score_difference' => $row['score_for'] - $row['score_against'],
-                    'points' => $row['wins'] * 3,
-                    'format_data' => null,
-                    'synced_at' => $now,
-                ],
-            );
-        }
-    }
-
-    /** @return list<string> */
-    private function eliminationRankedParticipantIds(Collection $matches, Collection $participants): array
-    {
-        $ranked = [];
-        $final = $matches
-            ->filter(fn (TournamentMatch $match): bool => $match->winner_id !== null)
-            ->sortByDesc('match_number')
-            ->first(fn (TournamentMatch $match): bool => $match->winner_next_match_id === null);
-
-        if ($final instanceof TournamentMatch) {
-            foreach ([$final->winner_id, $final->loser_id] as $participantId) {
-                if ($participantId !== null && ! in_array($participantId, $ranked, true)) {
-                    $ranked[] = $participantId;
-                }
-            }
-        }
-
-        $matches->sortByDesc('match_number')->each(function (TournamentMatch $match) use (&$ranked): void {
-            if ($match->loser_id !== null && ! in_array($match->loser_id, $ranked, true)) {
-                $ranked[] = $match->loser_id;
-            }
-        });
-
-        $participants->each(function (Participant $participant) use (&$ranked): void {
-            if (! in_array((string) $participant->id, $ranked, true)) {
-                $ranked[] = (string) $participant->id;
-            }
-        });
-
-        return $ranked;
     }
 }
