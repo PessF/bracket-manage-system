@@ -21,7 +21,10 @@
 </div>
 
 @include('tournaments._tabs')
-@includeWhen(request()->routeIs('public.tournaments.*'), 'tournaments._live_refresh')
+@includeWhen($tournament->status === App\Enums\TournamentStatus::LIVE, 'tournaments._live_refresh', [
+    'interval' => 5,
+    'refreshTarget' => '[data-live-results]',
+])
 
 @if(!request()->routeIs('public.tournaments.*') && (auth()->user()?->isAdmin() ?? false) && $isRanking && $tournament->status === App\Enums\TournamentStatus::LIVE)
 <section class="card ranking-entry-card">
@@ -54,6 +57,7 @@
 </section>
 @endif
 
+<div data-live-results>
 <section class="card">
     <h2>{{ __('ui.standings') }}</h2>
     @if($tournament->format === App\Enums\TournamentFormat::ROUND_ROBIN)
@@ -167,6 +171,7 @@
     </div>
 </section>
 @endif
+</div>
 @endsection
 
 @push('styles')

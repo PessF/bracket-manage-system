@@ -10,6 +10,7 @@ use App\Enums\TournamentFormat;
 use App\Models\Participant;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
+use App\Services\RoundRobinStandingsService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,8 @@ use Illuminate\View\View;
 
 class TournamentWorkspaceController extends Controller
 {
+    public function __construct(private readonly RoundRobinStandingsService $roundRobinStandings) {}
+
     public function bracket(Request $request, Tournament $tournament): View
     {
         $matches = $tournament->matches()->with([
@@ -71,10 +74,29 @@ class TournamentWorkspaceController extends Controller
     public function results(Tournament $tournament): View
     {
         $standings = $tournament->standings()->with('participant')->orderByRaw('CASE WHEN rank_number = 0 THEN 1 ELSE 0 END')->orderBy('rank_number')->get();
+
+        $roundRobinNeedsRepair = $tournament->format === TournamentFormat::ROUND_ROBIN
+            && ($standings->contains(fn ($standing): bool => (int) ($standing->format_data['calculation_version'] ?? 0) < RoundRobinStandingsService::CALCULATION_VERSION)
+                || ($standings->isEmpty() && $tournament->matches()->where('status', MatchStatus::FINISHED)->exists()));
+
+        if ($roundRobinNeedsRepair) {
+            $this->roundRobinStandings->recompute($tournament);
+            $standings = $tournament->standings()->with('participant')->orderByRaw('CASE WHEN rank_number = 0 THEN 1 ELSE 0 END')->orderBy('rank_number')->get();
+        }
+
         $participants = $tournament->participants()->with(['rankingAttempts' => fn ($query) => $query->orderBy('attempt_number')])->orderBy('seed_number')->get();
 
         if ($standings->isEmpty() && $tournament->format->isElimination()) {
             $standings = $this->derivedEliminationStandings($tournament, $participants);
+        }
+
+        if ($tournament->format === TournamentFormat::RANKING) {
+            $ranks = $standings->keyBy(fn ($standing): string => (string) $standing->participant_id);
+            $participants = $participants->sortBy(function (Participant $participant) use ($ranks): array {
+                $rank = (int) ($ranks->get((string) $participant->id)?->rank_number ?? 0);
+
+                return [$rank > 0 ? $rank : PHP_INT_MAX, $participant->seed_number ?? PHP_INT_MAX, $participant->team_name];
+            })->values();
         }
 
         return view('tournaments.results', compact('tournament', 'standings', 'participants'));
