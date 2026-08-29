@@ -3,6 +3,7 @@
 
 @php
     $isRanking = $tournament->format === App\Enums\TournamentFormat::RANKING;
+    $isDoubleElimination = $tournament->format === App\Enums\TournamentFormat::DOUBLE_ELIMINATION;
     $attemptLimit = max(1, min(20, (int) ($tournament->ranking_config['attempts'] ?? 2)));
     $formatRankingValue = fn ($value): string => $value !== null ? number_format((float) $value, 2, '.', '') : '—';
     $formatMatchScore = function ($value): string {
@@ -66,7 +67,7 @@
 <section class="card">
     <h2>{{ __('ui.standings') }}</h2>
     @if(!$isRanking)
-    <p class="muted standings-rule">{{ __('ui.round_robin_standings_rule') }}</p>
+    <p class="muted standings-rule">{{ __($isDoubleElimination ? 'ui.double_elimination_standings_rule' : 'ui.round_robin_standings_rule') }}</p>
     @endif
     <div class="table-wrap standings-wrap">
         <table class="standings-table">

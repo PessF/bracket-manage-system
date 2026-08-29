@@ -16,6 +16,7 @@ use App\Models\TournamentMatch;
 use App\Models\User;
 use App\Services\MatchResultService;
 use App\Services\MatchStandingsService;
+use App\Services\TournamentLifecycleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -23,12 +24,11 @@ class MatchStandingsServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_win_loss_difference_ranks_before_cumulative_points_in_all_match_formats(): void
+    public function test_win_loss_difference_ranks_before_cumulative_points_in_non_double_elimination_match_formats(): void
     {
         foreach ([
             TournamentFormat::ROUND_ROBIN,
             TournamentFormat::SINGLE_ELIMINATION,
-            TournamentFormat::DOUBLE_ELIMINATION,
         ] as $format) {
             [$tournament, $participants] = $this->tournamentWithCompletedMatches($format);
 
@@ -56,7 +56,6 @@ class MatchStandingsServiceTest extends TestCase
         foreach ([
             TournamentFormat::ROUND_ROBIN,
             TournamentFormat::SINGLE_ELIMINATION,
-            TournamentFormat::DOUBLE_ELIMINATION,
         ] as $format) {
             $tournament = Tournament::factory()->create(['format' => $format, 'status' => TournamentStatus::LIVE]);
             $stage = Stage::factory()->create(['tournament_id' => $tournament->id, 'format' => $format]);
@@ -94,7 +93,7 @@ class MatchStandingsServiceTest extends TestCase
 
     public function test_elimination_results_repair_legacy_ranks_and_show_only_relevant_score_columns(): void
     {
-        [$tournament, $participants] = $this->tournamentWithCompletedMatches(TournamentFormat::DOUBLE_ELIMINATION);
+        [$tournament, $participants] = $this->tournamentWithCompletedMatches(TournamentFormat::SINGLE_ELIMINATION);
         $service = app(MatchStandingsService::class);
         $service->recompute($tournament);
 
@@ -127,6 +126,133 @@ class MatchStandingsServiceTest extends TestCase
             MatchStandingsService::CALCULATION_VERSION,
             $tournament->standings()->where('participant_id', $participants['alpha']->id)->firstOrFail()->format_data['calculation_version'],
         );
+    }
+
+    public function test_double_elimination_ranks_by_bracket_progression_despite_byes_and_win_totals(): void
+    {
+        $tournament = Tournament::factory()->create([
+            'format' => TournamentFormat::DOUBLE_ELIMINATION,
+            'status' => TournamentStatus::DRAFT,
+            'double_elimination_config' => ['grand_final_matches' => 1],
+        ]);
+        Stage::factory()->create([
+            'tournament_id' => $tournament->id,
+            'format' => TournamentFormat::DOUBLE_ELIMINATION,
+        ]);
+
+        for ($seed = 1; $seed <= 6; $seed++) {
+            Participant::factory()->create([
+                'tournament_id' => $tournament->id,
+                'team_name' => "Team {$seed}",
+                'seed_number' => $seed,
+            ]);
+        }
+
+        app(TournamentLifecycleService::class)->start($tournament);
+        $preferredChampion = $tournament->participants()->where('seed_number', 1)->firstOrFail();
+        $this->assertSame(
+            2,
+            $tournament->matches()
+                ->where(fn ($query) => $query
+                    ->where('participant_a_id', $preferredChampion->id)
+                    ->orWhere('participant_b_id', $preferredChampion->id))
+                ->min('round_number'),
+            'The preferred champion must start in round two after receiving a bye.',
+        );
+        $this->playDoubleElimination($tournament, $preferredChampion);
+
+        $standings = $tournament->standings()->with('participant')->orderBy('rank_number')->get();
+        $champion = $standings->firstWhere('participant_id', $preferredChampion->id);
+        $this->assertNotNull($champion);
+        $this->assertSame([1, 2, 3, 4, 5, 6], $standings->pluck('rank_number')->all());
+        $participantWithMoreWins = $standings->first(
+            fn ($standing): bool => $standing->rank_number > 1 && $standing->wins > $champion->wins,
+        );
+
+        $this->assertSame(1, $champion->rank_number);
+        $this->assertSame('CHAMPION', $champion->format_data['placement_status']);
+        $this->assertSame(MatchStandingsService::DOUBLE_ELIMINATION_RANKING_RULE, $champion->format_data['ranking']);
+        $this->assertNotNull($participantWithMoreWins, 'The fixture must include a lower-ranked team with more match wins than the champion who received a bye.');
+        $this->assertGreaterThan($champion->rank_number, $participantWithMoreWins->rank_number);
+        $this->assertSame([0], $standings->pluck('points')->unique()->values()->all());
+
+        $runnerUp = $standings->firstWhere('rank_number', 2);
+        $this->assertNotNull($runnerUp);
+        $this->assertSame('RUNNER_UP', $runnerUp->format_data['placement_status']);
+
+        $admin = User::factory()->create(['role' => UserRole::ADMIN]);
+        $this->actingAs($admin)
+            ->get(route('tournaments.results', $tournament))
+            ->assertOk()
+            ->assertSee(__('ui.double_elimination_standings_rule'));
+    }
+
+    public function test_double_elimination_uses_standard_shared_placements_for_each_elimination_level(): void
+    {
+        $tournament = Tournament::factory()->create([
+            'format' => TournamentFormat::DOUBLE_ELIMINATION,
+            'status' => TournamentStatus::DRAFT,
+            'double_elimination_config' => ['grand_final_matches' => 1],
+        ]);
+        Stage::factory()->create([
+            'tournament_id' => $tournament->id,
+            'format' => TournamentFormat::DOUBLE_ELIMINATION,
+        ]);
+
+        for ($seed = 1; $seed <= 8; $seed++) {
+            Participant::factory()->create([
+                'tournament_id' => $tournament->id,
+                'team_name' => "Team {$seed}",
+                'seed_number' => $seed,
+            ]);
+        }
+
+        app(TournamentLifecycleService::class)->start($tournament);
+        $this->playDoubleElimination($tournament);
+
+        $this->assertSame(
+            [1, 2, 3, 4, 5, 5, 7, 7],
+            $tournament->standings()->orderBy('rank_number')->orderBy('participant_id')->pluck('rank_number')->all(),
+        );
+    }
+
+    public function test_grand_final_reset_keeps_both_finalists_active_until_the_deciding_match(): void
+    {
+        $tournament = Tournament::factory()->create([
+            'format' => TournamentFormat::DOUBLE_ELIMINATION,
+            'status' => TournamentStatus::DRAFT,
+            'double_elimination_config' => ['grand_final_matches' => 2],
+        ]);
+        Stage::factory()->create([
+            'tournament_id' => $tournament->id,
+            'format' => TournamentFormat::DOUBLE_ELIMINATION,
+        ]);
+        Participant::factory()->count(2)->sequence(
+            ['seed_number' => 1, 'team_name' => 'Alpha'],
+            ['seed_number' => 2, 'team_name' => 'Bravo'],
+        )->create(['tournament_id' => $tournament->id]);
+
+        app(TournamentLifecycleService::class)->start($tournament);
+        $results = app(MatchResultService::class);
+        $winnersFinal = $tournament->matches()->where('bracket_type', BracketType::WINNERS)->firstOrFail();
+        $results->confirm($winnersFinal, 2, 1);
+        $firstGrandFinal = $tournament->matches()->where('bracket_type', BracketType::GRAND_FINAL)->firstOrFail();
+        $results->confirm($firstGrandFinal, 1, 2);
+
+        $afterFirstFinal = $tournament->standings()->orderBy('participant_id')->get();
+        $this->assertCount(2, $tournament->matches()->where('bracket_type', BracketType::GRAND_FINAL)->get());
+        $this->assertSame([1], $afterFirstFinal->pluck('rank_number')->unique()->values()->all());
+        $this->assertSame(['ACTIVE'], $afterFirstFinal->pluck('format_data')->pluck('placement_status')->unique()->values()->all());
+
+        $reset = $tournament->matches()
+            ->where('bracket_type', BracketType::GRAND_FINAL)
+            ->orderByDesc('match_number')
+            ->firstOrFail();
+        $results->confirm($reset, 2, 1);
+
+        $finalStandings = $tournament->standings()->orderBy('rank_number')->get();
+        $this->assertSame([1, 2], $finalStandings->pluck('rank_number')->all());
+        $this->assertSame(['CHAMPION', 'RUNNER_UP'], $finalStandings->pluck('format_data')->pluck('placement_status')->all());
     }
 
     public function test_confirming_single_and_double_elimination_scores_updates_standings_immediately(): void
@@ -210,5 +336,33 @@ class MatchStandingsServiceTest extends TestCase
             'loser_id' => $participantB->id,
             'finished_at' => now(),
         ]);
+    }
+
+    private function playDoubleElimination(Tournament $tournament, ?Participant $preferredWinner = null): void
+    {
+        $results = app(MatchResultService::class);
+        $maximumMatches = ($tournament->participants()->count() * 2) + 2;
+
+        for ($played = 0; $played < $maximumMatches; $played++) {
+            $match = $tournament->matches()
+                ->whereIn('status', [MatchStatus::LIVE, MatchStatus::READY])
+                ->whereNotNull('participant_a_id')
+                ->whereNotNull('participant_b_id')
+                ->orderBy('match_number')
+                ->first();
+
+            if (! $match instanceof TournamentMatch) {
+                break;
+            }
+
+            $preferredWinnerIsB = $preferredWinner !== null
+                && $match->participant_b_id === $preferredWinner->id;
+            $results->confirm($match, $preferredWinnerIsB ? 0 : 1, $preferredWinnerIsB ? 1 : 0);
+        }
+
+        $this->assertFalse(
+            $tournament->matches()->whereNotIn('status', [MatchStatus::FINISHED, MatchStatus::DQ])->exists(),
+            'The generated double-elimination bracket did not finish.',
+        );
     }
 }
