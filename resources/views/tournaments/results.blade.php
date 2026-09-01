@@ -109,8 +109,8 @@
                         <input type="hidden" name="attempt_number" value="{{ $roundNumber }}">
                         <input type="hidden" name="ranking_entry_participant" value="{{ $participant->id }}">
                         @if($isDroneMission)
-                        <div class="field"><label>{{ __('ui.manual_score') }}</label><input type="number" name="manual_score" value="{{ $isOldEntry ? old('manual_score') : '' }}" min="0" step="0.01" inputmode="decimal" required></div>
-                        <div class="field"><label>{{ __('ui.auto_score') }}</label><input type="number" name="auto_score" value="{{ $isOldEntry ? old('auto_score') : '' }}" min="0" step="0.01" inputmode="decimal" required></div>
+                        <div class="field"><label>{{ __('ui.manual_score') }}</label><input type="number" name="manual_score" value="{{ $isOldEntry ? old('manual_score') : '' }}" min="0" max="50" step="0.01" inputmode="decimal" required></div>
+                        <div class="field"><label>{{ __('ui.auto_score') }}</label><input type="number" name="auto_score" value="{{ $isOldEntry ? old('auto_score') : '' }}" min="0" max="50" step="0.01" inputmode="decimal" required></div>
                         <div class="field"><label>{{ __('ui.time_seconds') }}</label><input type="number" name="attempt_time" value="{{ $isOldEntry ? old('attempt_time') : '' }}" min="0" step="0.01" inputmode="decimal" required></div>
                         @else
                         <div class="field"><label>{{ $isRacingRobot ? __('ui.time_seconds') : __('ui.value') }}</label><input type="number" name="attempt_value" value="{{ $isOldEntry ? old('attempt_value') : '' }}" min="0" step="0.01" inputmode="decimal" required></div>
@@ -142,13 +142,13 @@
         <div><span>{{ __('ui.edit_ranking_result') }}</span><h2 id="rankingEditModalTitle" data-ranking-edit-title></h2></div>
         <button type="button" data-ranking-edit-close aria-label="{{ __('ui.close') }}">×</button>
     </div>
-    <form class="ranking-edit-modal-form" method="post" data-ranking-edit-form data-ranking-async-form>
+    <form class="ranking-edit-modal-form {{ $isDroneMission ? 'drone' : '' }}" method="post" data-ranking-edit-form data-ranking-async-form>
         @csrf
         <input type="hidden" name="attempt_number" data-ranking-edit-round>
         <input type="hidden" name="ranking_edit_participant" data-ranking-edit-participant>
         @if($isDroneMission)
-        <div class="field"><label>{{ __('ui.manual_score') }}</label><input type="number" name="manual_score" min="0" step="0.01" inputmode="decimal" required></div>
-        <div class="field"><label>{{ __('ui.auto_score') }}</label><input type="number" name="auto_score" min="0" step="0.01" inputmode="decimal" required></div>
+        <div class="field"><label>{{ __('ui.manual_score') }}</label><input type="number" name="manual_score" min="0" max="50" step="0.01" inputmode="decimal" required></div>
+        <div class="field"><label>{{ __('ui.auto_score') }}</label><input type="number" name="auto_score" min="0" max="50" step="0.01" inputmode="decimal" required></div>
         <div class="field"><label>{{ __('ui.time_seconds') }}</label><input type="number" name="attempt_time" min="0" step="0.01" inputmode="decimal" required></div>
         @else
         <div class="field"><label>{{ $isRacingRobot ? __('ui.time_seconds') : __('ui.value') }}</label><input type="number" name="attempt_value" min="0" step="0.01" inputmode="decimal" required></div>
@@ -204,7 +204,7 @@
     @elseif(!$isRanking)
     <p class="muted standings-rule">{{ __($isDoubleElimination ? 'ui.double_elimination_standings_rule' : 'ui.round_robin_standings_rule') }}</p>
     @endif
-    <div class="table-wrap standings-wrap">
+    <div class="table-wrap standings-wrap {{ $isRanking ? 'ranking-standings-wrap' : '' }}" @if($isRanking) role="region" aria-label="{{ __('ui.standings') }}" tabindex="0" @endif>
         <table class="standings-table">
             <thead>
                 <tr>
@@ -231,22 +231,22 @@
                     $rank = (int) $standing->rank_number;
                 @endphp
                 <tr class="{{ $rank >= 1 && $rank <= 3 ? 'rank-row rank-'.$rank : ($rank === 0 ? 'unranked-row' : '') }}">
-                    <td>
+                    <td data-label="{{ __('ui.rank') }}">
                         @if($rank >= 1 && $rank <= 3)
                         <span class="rank-medal rank-{{ $rank }}">#{{ $rank }}</span>
                         @else
                         <strong>{{ $standing->rank_number ?: '—' }}</strong>
                         @endif
                     </td>
-                    <td>{{ $standing->participant->team_name }}</td>
+                    <td data-label="{{ __('ui.participant') }}">{{ $standing->participant->team_name }}</td>
                     @if($isRanking)
                         @if($isDroneMission)
-                        <td><strong class="best-value">{{ $formatRankingValue($standing->best_value) }}</strong></td>
-                        <td>{{ $formatRankingValue($standing->format_data['manual_score'] ?? null) }}</td>
-                        <td>{{ $formatRankingValue($standing->format_data['auto_score'] ?? null) }}</td>
-                        <td>{{ $formatRankingValue($standing->format_data['attempt_time'] ?? null) }}</td>
+                        <td data-label="{{ __('ui.total_score') }}"><strong class="best-value">{{ $formatRankingValue($standing->best_value) }}</strong></td>
+                        <td data-label="{{ __('ui.manual_score') }}">{{ $formatRankingValue($standing->format_data['manual_score'] ?? null) }}</td>
+                        <td data-label="{{ __('ui.auto_score') }}">{{ $formatRankingValue($standing->format_data['auto_score'] ?? null) }}</td>
+                        <td data-label="{{ __('ui.time_seconds') }}">{{ $formatRankingValue($standing->format_data['attempt_time'] ?? null) }}</td>
                         @else
-                        <td><strong class="best-value">{{ $formatRankingValue($standing->best_value) }}{{ $isRacingRobot && $standing->best_value !== null ? ' s' : '' }}</strong></td>
+                        <td data-label="{{ $isRacingRobot ? __('ui.best_time') : __('ui.best_value') }}"><strong class="best-value">{{ $formatRankingValue($standing->best_value) }}{{ $isRacingRobot && $standing->best_value !== null ? ' s' : '' }}</strong></td>
                         @endif
                     @else
                     <td>{{ $standing->played }}</td>
@@ -267,7 +267,8 @@
 @if($isRanking)
 <section class="card ranking-attempts-card">
     <h2>{{ __('ui.attempt_results') }}</h2>
-    <div class="table-wrap ranking-attempts-wrap">
+    <p class="ranking-scroll-note">{{ __('ui.swipe_ranking_rounds') }}</p>
+    <div class="table-wrap ranking-attempts-wrap" role="region" aria-label="{{ __('ui.attempt_results') }}" tabindex="0">
         <table class="standings-table ranking-attempts-table">
             <thead>
                 <tr>
@@ -460,12 +461,12 @@ document.addEventListener('DOMContentLoaded', () => {
 .ranking-entry-list{display:grid;gap:10px}
 .ranking-entry-row{display:grid;grid-template-columns:minmax(180px,.75fr) minmax(0,2.25fr);gap:16px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}
 .ranking-entry-team label{display:block;font-weight:850}
-.ranking-round-panels{min-width:0}.ranking-new-result-form{display:grid;grid-template-columns:minmax(140px,1fr) 90px auto;gap:10px;align-items:end}.ranking-new-result-form.drone{grid-template-columns:repeat(3,minmax(105px,1fr)) 76px auto}
+.ranking-round-panels{min-width:0}.ranking-new-result-form{display:grid;grid-template-columns:minmax(140px,1fr) 90px auto;gap:10px;align-items:end}.ranking-new-result-form.drone{grid-template-columns:repeat(3,minmax(105px,1fr)) 76px auto}.ranking-new-result-form .field{min-width:0;margin:0}.ranking-new-result-form :is(input,select){min-width:0}
 .ranking-valid-field input[type="checkbox"]{width:22px;min-height:22px}
 .ranking-saved-result{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:18px;min-height:64px;padding:10px 12px;border:1px solid rgb(73 207 155 / .32);border-radius:9px;background:linear-gradient(135deg,rgb(73 207 155 / .12),rgb(18 42 47 / .18))}.ranking-saved-result.invalid{border-color:rgb(151 161 176 / .25);background:rgb(151 161 176 / .07)}
 .ranking-saved-heading{display:grid;gap:2px}.ranking-saved-heading span{color:var(--muted);font-size:.72rem;font-weight:850;text-transform:uppercase}.ranking-saved-heading strong{white-space:nowrap}.ranking-saved-values{display:flex;align-items:center;gap:9px;min-width:0}.ranking-saved-values>span{display:grid;min-width:86px;gap:2px;padding:6px 10px;border:1px solid rgb(103 216 245 / .18);border-radius:8px;background:rgb(7 18 29 / .34)}.ranking-saved-values small{color:var(--muted);font-size:.68rem}.ranking-saved-values strong{color:#dff8ff}.ranking-saved-values em{color:#ffadb6;font-size:.76rem;font-style:normal;font-weight:850}.ranking-edit-trigger{white-space:nowrap}
 .ranking-edit-modal{width:min(520px,calc(100vw - 24px));max-height:calc(100dvh - 24px);margin:auto;padding:0;overflow:auto;border:1px solid rgb(103 216 245 / .32);border-radius:14px;background:linear-gradient(180deg,rgb(24 34 51 / .99),rgb(11 17 27 / .99));color:var(--ink);box-shadow:0 28px 80px rgb(0 0 0 / .6)}.ranking-edit-modal::backdrop{background:rgb(2 7 12 / .78);backdrop-filter:blur(3px)}
-.ranking-edit-modal-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 18px;border-bottom:1px solid var(--line)}.ranking-edit-modal-head>div{display:grid;gap:3px}.ranking-edit-modal-head span{color:#8feaff;font-size:.7rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.ranking-edit-modal-head h2{margin:0;font-size:1.1rem}.ranking-edit-modal-head>button{width:34px;min-width:34px;min-height:34px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:24px;cursor:pointer}.ranking-edit-modal-head>button:hover{background:var(--soft);color:var(--ink)}
+.ranking-edit-modal-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 18px;border-bottom:1px solid var(--line);background:rgb(20 29 43 / .98)}.ranking-edit-modal-head>div{display:grid;min-width:0;gap:3px}.ranking-edit-modal-head span{color:#8feaff;font-size:.7rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.ranking-edit-modal-head h2{margin:0;overflow-wrap:anywhere;font-size:1.1rem}.ranking-edit-modal-head>button{width:34px;min-width:34px;min-height:34px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:24px;cursor:pointer}.ranking-edit-modal-head>button:hover{background:var(--soft);color:var(--ink)}
 .ranking-edit-modal-form{display:grid;gap:13px;padding:18px}.ranking-edit-valid{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--soft);font-weight:800}.ranking-edit-valid input[type="checkbox"]{width:22px;min-height:22px}.ranking-edit-modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:3px}
 .ranking-view-hero{display:flex;align-items:center;justify-content:space-between;gap:28px;margin:0 0 14px;padding:26px 28px;overflow:hidden;border:1px solid rgb(103 216 245 / .34);border-radius:16px;background:radial-gradient(circle at 85% 0,rgb(111 125 255 / .22),transparent 42%),linear-gradient(135deg,rgb(18 36 55 / .98),rgb(9 16 27 / .98));box-shadow:0 18px 48px rgb(0 0 0 / .22)}
 .ranking-view-copy{display:grid;gap:7px}.ranking-kicker{color:#8feaff;font-size:.76rem;font-weight:950;letter-spacing:.13em;text-transform:uppercase}.ranking-view-copy h2{margin:0;font-size:clamp(1.45rem,3vw,2.2rem)}.ranking-view-copy p{max-width:720px;margin:0;color:var(--muted)}
@@ -487,6 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
 .unranked-row:hover{opacity:1;background:rgb(103 216 245 / .035)}
 .best-value{display:inline-flex;align-items:center;justify-content:center;min-width:64px;min-height:30px;padding:2px 10px;border:1px solid rgb(103 216 245 / .36);border-radius:999px;background:linear-gradient(135deg,rgb(103 216 245 / .14),rgb(111 125 255 / .08));color:#8feaff;font-size:1.05em;box-shadow:0 0 16px rgb(103 216 245 / .08)}
 .ranking-attempts-card{background:linear-gradient(180deg,rgb(18 28 45 / .96),rgb(10 15 25 / .98))}
+.ranking-scroll-note{display:none;margin:-6px 0 12px;color:var(--muted);font-size:.78rem}.ranking-scroll-note::after{content:" →";color:#8feaff}.ranking-standings-wrap:focus-visible,.ranking-attempts-wrap:focus-visible{outline:2px solid #67d8f5;outline-offset:3px}
 .ranking-attempts-table{border-collapse:separate;border-spacing:0 6px}
 .ranking-attempts-table thead th{border-bottom:0;background:linear-gradient(180deg,rgb(20 35 55 / .92),rgb(12 20 32 / .92));color:#8feaff}
 .ranking-attempts-table tbody tr{transition:background-color .14s,opacity .14s}
@@ -499,8 +501,34 @@ document.addEventListener('DOMContentLoaded', () => {
 .attempt-value{display:inline-flex;align-items:center;justify-content:center;min-width:58px;min-height:26px;padding:2px 8px;border:1px solid rgb(103 216 245 / .34);border-radius:999px;background:linear-gradient(135deg,rgb(103 216 245 / .14),rgb(25 82 105 / .28));color:#dff8ff;font-weight:850;box-shadow:inset 0 1px 0 rgb(255 255 255 / .06)}
 .attempt-value:has(small){flex-direction:column;align-items:flex-start;border-radius:8px;line-height:1.25}.attempt-value small{color:var(--muted);font-size:10px;font-weight:650}
 .attempt-value.invalid{border-color:rgb(151 161 176 / .22);background:rgb(151 161 176 / .08);color:#8290aa;text-decoration:line-through}
-@media(max-width:1100px){.ranking-entry-row{grid-template-columns:1fr}.ranking-new-result-form.drone{grid-template-columns:repeat(3,minmax(100px,1fr)) 76px}.ranking-new-result-form.drone .btn{grid-column:1/-1;width:100%}.ranking-saved-values{flex-wrap:wrap}}
-@media(max-width:920px){.ranking-new-result-form{grid-template-columns:1fr 90px}.ranking-new-result-form .btn{grid-column:1/-1;width:100%}.ranking-new-result-form.drone{grid-template-columns:repeat(2,1fr)}.ranking-leaders{grid-template-columns:1fr}.ranking-saved-result{grid-template-columns:auto 1fr}.ranking-saved-result .ranking-edit-trigger{grid-column:1/-1;width:100%}}
-@media(max-width:680px){.ranking-round-selector,.ranking-view-hero{align-items:stretch;flex-direction:column}.ranking-round-selector select{width:100%}.ranking-round-count{display:flex;justify-content:center;gap:10px;min-height:74px}.ranking-round-count span{max-width:90px;text-align:left}.ranking-new-result-form,.ranking-new-result-form.drone{grid-template-columns:1fr 1fr}.ranking-new-result-form .field:first-of-type{grid-column:1/-1}.ranking-valid-field{align-self:center}.ranking-saved-result{grid-template-columns:1fr}.ranking-saved-values{display:grid;grid-template-columns:1fr 1fr}.ranking-saved-result .ranking-edit-trigger{grid-column:auto}.ranking-edit-modal-actions{display:grid;grid-template-columns:1fr 1fr}.ranking-edit-modal-actions .btn{width:100%}.standings-table th:first-child,.standings-table td:first-child{position:sticky;left:0;z-index:2;width:48px;background:var(--card)}.standings-table th:nth-child(2),.standings-table td:nth-child(2){position:sticky;left:48px;z-index:2;max-width:150px;overflow:hidden;background:var(--card);text-overflow:ellipsis}.standings-table thead th:first-child,.standings-table thead th:nth-child(2){z-index:3;background:var(--card)}.standings-table th:nth-child(2),.standings-table td:nth-child(2){box-shadow:5px 0 7px -7px rgb(0 0 0 / .75)}}
+@media(max-width:1100px){
+    .ranking-entry-row{grid-template-columns:1fr}.ranking-entry-team{display:flex;align-items:baseline;justify-content:space-between;gap:12px}.ranking-entry-team .muted{flex:0 0 auto}
+    .ranking-new-result-form.drone{grid-template-columns:repeat(3,minmax(100px,1fr)) 76px}.ranking-new-result-form.drone .btn{grid-column:1/-1;width:100%}.ranking-saved-values{flex-wrap:wrap}
+}
+@media(max-width:820px){
+    .ranking-round-selector{gap:16px;padding:15px 16px}.ranking-round-selector select{width:min(42vw,240px)}
+    .ranking-new-result-form{grid-template-columns:minmax(0,1fr) 86px auto}.ranking-new-result-form.drone{grid-template-columns:repeat(2,minmax(0,1fr))}.ranking-new-result-form.drone .field:nth-of-type(3){grid-column:1/-1}.ranking-new-result-form .btn{min-height:44px}
+    .ranking-saved-result{grid-template-columns:auto minmax(0,1fr)}.ranking-saved-result .ranking-edit-trigger{grid-column:1/-1;width:100%;min-height:44px}
+    .ranking-leaders{grid-template-columns:repeat(3,minmax(0,1fr))}.ranking-leader{align-items:flex-start;flex-direction:column}.ranking-leader-rank{flex-basis:42px}
+}
+@media(max-width:680px){
+    .ranking-entry-card{margin-right:-4px;margin-left:-4px;padding:16px 12px}.ranking-entry-card>h2{font-size:17px}.ranking-entry-row{gap:12px;padding:12px}.ranking-entry-team label{overflow-wrap:anywhere;font-size:1rem}
+    .ranking-round-selector,.ranking-view-hero{align-items:stretch;flex-direction:column}.ranking-round-selector{gap:11px;margin:14px 0;padding:13px}.ranking-round-selector>div{gap:2px}.ranking-round-selector strong{font-size:1rem}.ranking-round-selector span{font-size:.78rem;line-height:1.4}.ranking-round-selector select{width:100%;min-height:50px;font-size:16px}
+    .ranking-view-hero{gap:18px;padding:20px}.ranking-round-count{display:flex;justify-content:center;gap:10px;min-height:68px}.ranking-round-count strong{font-size:2rem}.ranking-round-count span{max-width:100px;text-align:left}
+    .ranking-new-result-form,.ranking-new-result-form.drone{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.ranking-new-result-form:not(.drone) .field:first-of-type,.ranking-new-result-form.drone .field:nth-of-type(3){grid-column:1/-1}.ranking-new-result-form :is(input,select){min-height:48px;font-size:16px}.ranking-valid-field{align-self:end}.ranking-new-result-form .btn{width:100%;min-height:48px}
+    .ranking-saved-result{grid-template-columns:1fr;gap:12px}.ranking-saved-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.ranking-saved-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ranking-saved-values>span{min-width:0;padding:8px}.ranking-saved-result .ranking-edit-trigger{grid-column:auto;min-height:46px}
+    .ranking-leaders{grid-template-columns:1fr}.ranking-leader{align-items:center;flex-direction:row;min-height:72px}.ranking-leader-rank{flex-basis:42px}
+    .ranking-edit-modal{width:calc(100% - 16px);max-height:calc(100dvh - 16px);border-radius:12px}.ranking-edit-modal-head{padding:14px}.ranking-edit-modal-form{gap:11px;padding:14px}.ranking-edit-modal-form input{min-height:48px;font-size:16px}.ranking-edit-modal-actions{display:grid;grid-template-columns:1fr 1fr}.ranking-edit-modal-actions .btn{width:100%;min-height:46px}
+    .ranking-save-status{right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));left:max(10px,env(safe-area-inset-left));max-width:none;text-align:center}
+    .ranking-standings-wrap{margin:0;padding:0;overflow:visible}.ranking-standings-wrap table,.ranking-standings-wrap tbody{display:block}.ranking-standings-wrap thead{display:none}.ranking-standings-wrap tbody{display:grid;gap:10px}.ranking-standings-wrap tbody tr{display:grid;grid-template-columns:72px minmax(0,1fr);overflow:hidden;padding:10px;border:1px solid var(--line);border-radius:11px;background:rgb(15 24 38 / .72)}.ranking-standings-wrap tbody td{position:static!important;display:grid;min-width:0;padding:8px;border:0;background:transparent!important;box-shadow:none!important;white-space:normal}.ranking-standings-wrap tbody td::before{content:attr(data-label);margin-bottom:2px;color:var(--muted);font-size:.65rem;font-weight:850;letter-spacing:.04em;text-transform:uppercase}.ranking-standings-wrap tbody td:first-child{grid-column:1;grid-row:1}.ranking-standings-wrap tbody td:nth-child(2){grid-column:2;grid-row:1;align-content:center;overflow-wrap:anywhere;font-size:1rem;font-weight:850}.ranking-standings-wrap tbody td:nth-child(n+3){grid-column:1/-1;grid-template-columns:minmax(0,1fr) auto;align-items:center;border-top:1px solid var(--line);text-align:right}.ranking-standings-wrap tbody td:nth-child(n+3)::before{margin:0;text-align:left}.ranking-standings-wrap .best-value{justify-self:end}
+    .ranking-standings-wrap .empty{grid-column:1/-1!important;text-align:center}
+    .ranking-scroll-note{display:block}.ranking-attempts-wrap{margin-right:-12px;margin-left:-12px;padding-right:12px;padding-left:12px;scroll-snap-type:x proximity}.ranking-attempts-table th,.ranking-attempts-table td{scroll-snap-align:start}.ranking-attempts-table th:first-child,.ranking-attempts-table td:first-child{position:sticky;left:0;z-index:2;width:48px;background:var(--card)}.ranking-attempts-table th:nth-child(2),.ranking-attempts-table td:nth-child(2){position:sticky;left:48px;z-index:2;max-width:140px;overflow:hidden;background:var(--card);text-overflow:ellipsis}.ranking-attempts-table thead th:first-child,.ranking-attempts-table thead th:nth-child(2){z-index:3;background:var(--card)}.ranking-attempts-table th:nth-child(2),.ranking-attempts-table td:nth-child(2){box-shadow:5px 0 7px -7px rgb(0 0 0 / .75)}
+}
+@media(max-width:460px){
+    .ranking-entry-team{align-items:flex-start;flex-direction:column;gap:1px}.ranking-new-result-form,.ranking-new-result-form.drone{grid-template-columns:1fr}.ranking-new-result-form .field,.ranking-new-result-form.drone .field:nth-of-type(3),.ranking-valid-field,.ranking-new-result-form .btn{grid-column:1}.ranking-valid-field{display:grid;grid-template-columns:1fr auto;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:rgb(7 18 29 / .25)}.ranking-valid-field label{margin:0}.ranking-saved-values{grid-template-columns:1fr}.ranking-edit-modal-actions{grid-template-columns:1fr}.ranking-standings-wrap tbody tr{grid-template-columns:62px minmax(0,1fr)}.ranking-attempts-table th:nth-child(2),.ranking-attempts-table td:nth-child(2){max-width:120px}
+}
+@media(max-height:560px) and (orientation:landscape){
+    .ranking-edit-modal{width:min(760px,calc(100vw - 16px));max-height:calc(100dvh - 12px)}.ranking-edit-modal-head{padding:10px 14px}.ranking-edit-modal-form.drone{grid-template-columns:repeat(3,minmax(0,1fr));align-items:end}.ranking-edit-modal-form.drone .ranking-edit-valid,.ranking-edit-modal-form.drone .ranking-edit-modal-actions{grid-column:1/-1}.ranking-edit-modal-form.drone .ranking-edit-modal-actions{display:flex}.ranking-edit-modal-form.drone .field{margin:0}
+}
 </style>
 @endpush

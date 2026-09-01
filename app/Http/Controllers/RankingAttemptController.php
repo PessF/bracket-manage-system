@@ -29,8 +29,8 @@ class RankingAttemptController extends Controller
         if ($type === RankingType::RACING_ROBOT) {
             $rules['attempt_value'] = ['required', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
         } elseif ($type === RankingType::DRONE_MISSION) {
-            $rules['manual_score'] = ['required', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
-            $rules['auto_score'] = ['required', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
+            $rules['manual_score'] = ['required', 'numeric', 'between:0,50', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
+            $rules['auto_score'] = ['required', 'numeric', 'between:0,50', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
             $rules['attempt_time'] = ['required', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
         } else {
             $rules['attempt_value'] = ['required', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];

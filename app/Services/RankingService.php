@@ -156,8 +156,8 @@ class RankingService
         }
 
         if ($configuredType === RankingType::DRONE_MISSION) {
-            $manual = $this->normalizeRequired($manualScore, 'ui.drone_fields_required');
-            $auto = $this->normalizeRequired($autoScore, 'ui.drone_fields_required');
+            $manual = $this->normalizeDroneScore($manualScore);
+            $auto = $this->normalizeDroneScore($autoScore);
             $time = $this->normalizeRequired($attemptTime, 'ui.drone_fields_required');
 
             return [
@@ -183,6 +183,17 @@ class RankingService
         }
 
         return $this->normalizeValue($value);
+    }
+
+    private function normalizeDroneScore(string|int|float|null $value): string
+    {
+        $score = $this->normalizeRequired($value, 'ui.drone_fields_required');
+
+        if (bccomp($score, '50', 2) > 0) {
+            throw new InvalidArgumentException(__('ui.drone_score_range'));
+        }
+
+        return $score;
     }
 
     private function bestAttempt(Collection $attempts, ?RankingType $type, string $comparator): ?RankingAttempt

@@ -125,6 +125,21 @@ class RankingServiceTest extends TestCase
         $this->assertSame('44.50', $standings[$alpha->id]->format_data['attempt_time']);
     }
 
+    public function test_drone_mission_rejects_manual_or_automatic_scores_above_fifty(): void
+    {
+        $tournament = Tournament::factory()->create([
+            'format' => TournamentFormat::RANKING,
+            'status' => TournamentStatus::LIVE,
+            'ranking_config' => ['type' => RankingType::DRONE_MISSION->value, 'attempts' => 1, 'comparator' => 'BEST_SCORE_HIGHER_THEN_TIME_LOWER'],
+        ]);
+        $participant = Participant::factory()->create(['tournament_id' => $tournament->id]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(__('ui.drone_score_range'));
+
+        app(RankingService::class)->saveAttempt($tournament, $participant, 1, null, true, '50.01', '49.00', '30.00');
+    }
+
     public function test_drone_mission_http_entry_stores_and_displays_structured_lap_data(): void
     {
         $this->withoutMiddleware(ValidateCsrfToken::class);
@@ -163,6 +178,9 @@ class RankingServiceTest extends TestCase
             ->assertSee('data-ranking-edit-modal', false)
             ->assertSee('data-ranking-async-form', false)
             ->assertSee('data-manual-score="42.50"', false)
+            ->assertSee('name="manual_score" value="" min="0" max="50"', false)
+            ->assertSee('ranking-standings-wrap', false)
+            ->assertSee(__('ui.swipe_ranking_rounds'))
             ->assertSee(__('ui.drone_ranking_rule'))
             ->assertSee('60.00');
 
@@ -189,5 +207,15 @@ class RankingServiceTest extends TestCase
             'auto_score' => '18.00',
             'attempt_time' => '32.10',
         ]);
+
+        $this->postJson(route('ranking.attempts.store', [$tournament, $participant]), [
+            'attempt_number' => 1,
+            'manual_score' => '50.01',
+            'auto_score' => '18.00',
+            'attempt_time' => '32.10',
+            'is_valid' => 1,
+        ])->assertUnprocessable()->assertJsonValidationErrors('manual_score');
+
+        $this->assertSame('50.00', $attempt->refresh()->manual_score);
     }
 }
