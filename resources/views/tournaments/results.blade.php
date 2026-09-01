@@ -9,6 +9,7 @@
     $isDroneMission = $rankingType === App\Enums\RankingType::DRONE_MISSION;
     $attemptLimit = $tournament->rankingAttemptLimit();
     $formatRankingValue = fn ($value): string => $value !== null ? number_format((float) $value, 2, '.', '') : '—';
+    $formatDroneTime = fn ($value): string => $value !== null ? $formatRankingValue($value).' '.__('ui.minutes_short') : '—';
     $formatMatchScore = function ($value): string {
         $formatted = rtrim(rtrim(number_format((float) $value, 6, '.', ''), '0'), '.');
 
@@ -82,7 +83,7 @@
                             <span><small>{{ __('ui.total_score') }}</small><strong>{{ $formatRankingValue($attempt->attempt_value) }}</strong></span>
                             <span><small>{{ __('ui.manual_score') }}</small><strong>{{ $formatRankingValue($attempt->manual_score) }}</strong></span>
                             <span><small>{{ __('ui.auto_score') }}</small><strong>{{ $formatRankingValue($attempt->auto_score) }}</strong></span>
-                            <span><small>{{ __('ui.time_seconds') }}</small><strong>{{ $formatRankingValue($attempt->attempt_time) }}s</strong></span>
+                            <span><small>{{ __('ui.time_minutes') }}</small><strong>{{ $formatDroneTime($attempt->attempt_time) }}</strong></span>
                             @else
                             <span><small>{{ $isRacingRobot ? __('ui.time_seconds') : __('ui.value') }}</small><strong>{{ $formatRankingValue($attempt->attempt_value) }}{{ $isRacingRobot ? ' s' : '' }}</strong></span>
                             @endif
@@ -111,7 +112,7 @@
                         @if($isDroneMission)
                         <div class="field"><label>{{ __('ui.manual_score') }}</label><input type="number" name="manual_score" value="{{ $isOldEntry ? old('manual_score') : '' }}" min="0" max="50" step="0.01" inputmode="decimal" required></div>
                         <div class="field"><label>{{ __('ui.auto_score') }}</label><input type="number" name="auto_score" value="{{ $isOldEntry ? old('auto_score') : '' }}" min="0" max="50" step="0.01" inputmode="decimal" required></div>
-                        <div class="field"><label>{{ __('ui.time_seconds') }}</label><input type="number" name="attempt_time" value="{{ $isOldEntry ? old('attempt_time') : '' }}" min="0" step="0.01" inputmode="decimal" required></div>
+                        <div class="field"><label>{{ __('ui.time_minutes') }}</label><input type="number" name="attempt_time" value="{{ $isOldEntry ? old('attempt_time') : '' }}" min="0" step="0.01" inputmode="decimal" required></div>
                         @else
                         <div class="field"><label>{{ $isRacingRobot ? __('ui.time_seconds') : __('ui.value') }}</label><input type="number" name="attempt_value" value="{{ $isOldEntry ? old('attempt_value') : '' }}" min="0" step="0.01" inputmode="decimal" required></div>
                         @endif
@@ -149,7 +150,7 @@
         @if($isDroneMission)
         <div class="field"><label>{{ __('ui.manual_score') }}</label><input type="number" name="manual_score" min="0" max="50" step="0.01" inputmode="decimal" required></div>
         <div class="field"><label>{{ __('ui.auto_score') }}</label><input type="number" name="auto_score" min="0" max="50" step="0.01" inputmode="decimal" required></div>
-        <div class="field"><label>{{ __('ui.time_seconds') }}</label><input type="number" name="attempt_time" min="0" step="0.01" inputmode="decimal" required></div>
+        <div class="field"><label>{{ __('ui.time_minutes') }}</label><input type="number" name="attempt_time" min="0" step="0.01" inputmode="decimal" required></div>
         @else
         <div class="field"><label>{{ $isRacingRobot ? __('ui.time_seconds') : __('ui.value') }}</label><input type="number" name="attempt_value" min="0" step="0.01" inputmode="decimal" required></div>
         @endif
@@ -185,7 +186,7 @@
             <strong>{{ $leader->participant->team_name }}</strong>
             <span>
                 @if($isDroneMission)
-                {{ __('ui.total_score') }} {{ $formatRankingValue($leader->best_value) }} · {{ $formatRankingValue($leader->format_data['attempt_time'] ?? null) }}s
+                {{ __('ui.total_score') }} {{ $formatRankingValue($leader->best_value) }} · {{ $formatDroneTime($leader->format_data['attempt_time'] ?? null) }}
                 @else
                 {{ $formatRankingValue($leader->best_value) }}{{ $isRacingRobot ? ' s' : '' }}
                 @endif
@@ -212,7 +213,7 @@
                     <th>{{ __('ui.participant') }}</th>
                     @if($isRanking)
                         @if($isDroneMission)
-                        <th>{{ __('ui.total_score') }}</th><th>{{ __('ui.manual_score') }}</th><th>{{ __('ui.auto_score') }}</th><th>{{ __('ui.time_seconds') }}</th>
+                        <th>{{ __('ui.total_score') }}</th><th>{{ __('ui.manual_score') }}</th><th>{{ __('ui.auto_score') }}</th><th>{{ __('ui.time_minutes') }}</th>
                         @else
                         <th>{{ $isRacingRobot ? __('ui.best_time') : __('ui.best_value') }}</th>
                         @endif
@@ -244,7 +245,7 @@
                         <td data-label="{{ __('ui.total_score') }}"><strong class="best-value">{{ $formatRankingValue($standing->best_value) }}</strong></td>
                         <td data-label="{{ __('ui.manual_score') }}">{{ $formatRankingValue($standing->format_data['manual_score'] ?? null) }}</td>
                         <td data-label="{{ __('ui.auto_score') }}">{{ $formatRankingValue($standing->format_data['auto_score'] ?? null) }}</td>
-                        <td data-label="{{ __('ui.time_seconds') }}">{{ $formatRankingValue($standing->format_data['attempt_time'] ?? null) }}</td>
+                        <td data-label="{{ __('ui.time_minutes') }}">{{ $formatDroneTime($standing->format_data['attempt_time'] ?? null) }}</td>
                         @else
                         <td data-label="{{ $isRacingRobot ? __('ui.best_time') : __('ui.best_value') }}"><strong class="best-value">{{ $formatRankingValue($standing->best_value) }}{{ $isRacingRobot && $standing->best_value !== null ? ' s' : '' }}</strong></td>
                         @endif
@@ -304,7 +305,7 @@
                         @if($attempt)
                         <span class="attempt-value {{ $attempt->is_valid ? '' : 'invalid' }}" title="{{ $attempt->is_valid ? __('ui.valid') : __('ui.invalid_attempt') }}">
                             @if($isDroneMission)
-                            <strong>{{ $formatRankingValue($attempt->attempt_value) }}</strong><small>M {{ $formatRankingValue($attempt->manual_score) }} · A {{ $formatRankingValue($attempt->auto_score) }} · {{ $formatRankingValue($attempt->attempt_time) }}s</small>
+                            <strong>{{ $formatRankingValue($attempt->attempt_value) }}</strong><small>M {{ $formatRankingValue($attempt->manual_score) }} · A {{ $formatRankingValue($attempt->auto_score) }} · {{ $formatDroneTime($attempt->attempt_time) }}</small>
                             @else
                             {{ $formatRankingValue($attempt->attempt_value) }}{{ $isRacingRobot ? ' s' : '' }}
                             @endif

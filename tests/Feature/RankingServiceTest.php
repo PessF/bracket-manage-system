@@ -181,6 +181,11 @@ class RankingServiceTest extends TestCase
             ->assertSee('name="manual_score" value="" min="0" max="50"', false)
             ->assertSee('ranking-standings-wrap', false)
             ->assertSee(__('ui.swipe_ranking_rounds'))
+            ->assertSee(__('ui.manual_score'))
+            ->assertSee(__('ui.auto_score'))
+            ->assertSee(__('ui.total_score'))
+            ->assertSee(__('ui.time_minutes'))
+            ->assertSee('38.25 '.__('ui.minutes_short'))
             ->assertSee(__('ui.drone_ranking_rule'))
             ->assertSee('60.00');
 
