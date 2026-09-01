@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\RankingType;
 use App\Enums\SeedingMethod;
 use App\Enums\StageSourceType;
 use App\Enums\StageStatus;
@@ -141,7 +142,7 @@ class TournamentController extends Controller
     public function update(Request $request, Tournament $tournament): JsonResponse
     {
         $data = $request->validate($this->rules(! $request->isMethod('put')));
-        $structural = ['format', 'seeding_method', 'ranking_attempts', 'ranking_comparator', 'grand_final_matches'];
+        $structural = ['format', 'seeding_method', 'ranking_attempts', 'ranking_type', 'ranking_comparator', 'grand_final_matches'];
         $hasStructuralChanges = collect($structural)->contains(fn (string $key): bool => $request->exists($key));
 
         if ($hasStructuralChanges && ! $this->editable($tournament)) {
@@ -153,6 +154,7 @@ class TournamentController extends Controller
                 'format' => $data['format'] ?? $tournament->format->value,
                 'seeding_method' => $data['seeding_method'] ?? $tournament->seeding_method->value,
                 'ranking_attempts' => $data['ranking_attempts'] ?? ($tournament->ranking_config['attempts'] ?? 2),
+                'ranking_type' => $data['ranking_type'] ?? ($tournament->ranking_config['type'] ?? null),
                 'ranking_comparator' => $data['ranking_comparator'] ?? ($tournament->ranking_config['comparator'] ?? 'BEST_SCORE_HIGHER'),
                 'grand_final_matches' => $data['grand_final_matches'] ?? ($tournament->double_elimination_config['grand_final_matches'] ?? 2),
             ];
@@ -161,7 +163,7 @@ class TournamentController extends Controller
             $data['double_elimination_config'] = $this->doubleEliminationConfig($configuration);
         }
 
-        unset($data['ranking_attempts'], $data['ranking_comparator'], $data['grand_final_matches']);
+        unset($data['ranking_attempts'], $data['ranking_type'], $data['ranking_comparator'], $data['grand_final_matches']);
         $tournament->fill($data + ['source_updated_at' => now(), 'synced_at' => now()])->save();
         if ($hasStructuralChanges) {
             $tournament->stages()->update(['format' => $tournament->format]);
@@ -219,6 +221,7 @@ class TournamentController extends Controller
             'format' => [$required, Rule::enum(TournamentFormat::class)],
             'seeding_method' => [$required, Rule::enum(SeedingMethod::class)],
             'ranking_attempts' => ['sometimes', 'nullable', 'integer', 'between:1,20'],
+            'ranking_type' => ['sometimes', 'nullable', Rule::enum(RankingType::class)],
             'ranking_comparator' => ['sometimes', 'nullable', Rule::in(['BEST_SCORE_HIGHER', 'BEST_TIME_LOWER'])],
             'grand_final_matches' => ['sometimes', 'nullable', 'integer', Rule::in([1, 2])],
         ];
@@ -227,9 +230,21 @@ class TournamentController extends Controller
     /** @param array<string, mixed> $data */
     private function rankingConfig(array $data): ?array
     {
-        return $data['format'] === TournamentFormat::RANKING->value
-            ? ['attempts' => (int) ($data['ranking_attempts'] ?? 2), 'comparator' => $data['ranking_comparator'] ?? 'BEST_SCORE_HIGHER']
-            : null;
+        if ($data['format'] !== TournamentFormat::RANKING->value) {
+            return null;
+        }
+
+        $type = RankingType::tryFrom((string) ($data['ranking_type'] ?? ''))
+            ?? match ($data['ranking_comparator'] ?? null) {
+                'BEST_SCORE_HIGHER' => RankingType::DRONE_MISSION,
+                default => RankingType::RACING_ROBOT,
+            };
+
+        return [
+            'type' => $type->value,
+            'attempts' => (int) ($data['ranking_attempts'] ?? 2),
+            'comparator' => $type === RankingType::RACING_ROBOT ? 'BEST_TIME_LOWER' : 'BEST_SCORE_HIGHER_THEN_TIME_LOWER',
+        ];
     }
 
     /** @param array<string, mixed> $data */

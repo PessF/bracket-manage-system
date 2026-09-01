@@ -9,15 +9,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', __('ui.app_name'))</title>
-    @php($shareImage = asset('assets/logos/easykids-logo-white.png'))
+    @php($shareImage = asset('assets/logos/EasyKidsLogoB.png').'?v=4')
     @php($shareDescription = isset($tournament) ? $tournament->name : __('ui.app_name'))
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ __('ui.app_name') }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:title" content="@yield('title', __('ui.app_name'))">
     <meta property="og:description" content="{{ $shareDescription }}">
     <meta property="og:image" content="{{ $shareImage }}">
+    <meta property="og:image:secure_url" content="{{ $shareImage }}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="917">
+    <meta property="og:image:height" content="294">
     <meta property="og:image:alt" content="EasyKids Robotics">
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('title', __('ui.app_name'))">
     <meta name="twitter:description" content="{{ $shareDescription }}">
     <meta name="twitter:image" content="{{ $shareImage }}">

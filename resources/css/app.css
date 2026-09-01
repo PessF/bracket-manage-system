@@ -126,6 +126,7 @@ h2 { font-size: 18px; margin: 0 0 14px; letter-spacing: -.01em; }
 .detail-item.full { grid-column:1/-1; }
 .tournament-card { display:block; transition:transform .15s,border-color .15s,box-shadow .15s; }
 .tournament-card:hover { border-color:#cbd5e1; box-shadow:0 7px 20px rgb(15 23 42 / .07); opacity:1; transform:translateY(-2px); }
+.competition-progress{margin-top:12px}.competition-progress-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;color:var(--muted);font-size:11px}.competition-progress-head strong{color:var(--ink);font-size:11px}.competition-progress-track{height:8px;overflow:hidden;border:1px solid var(--line);border-radius:999px;background:var(--soft)}.competition-progress-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#28b8e5,#6578ff,#f4527c);transition:width .25s ease}
 .card-link-label { display:flex; align-items:center; justify-content:flex-end; gap:5px; margin-top:12px; color:var(--blue); font-size:12px; font-weight:650; }
 .admin-welcome { display:flex; align-items:center; justify-content:space-between; gap:22px; border-color:#bfdbfe; background:linear-gradient(135deg,#eff6ff,#fff 70%); }
 .admin-welcome h2 { margin:9px 0 2px; }

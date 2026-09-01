@@ -15,6 +15,7 @@ use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Models\User;
 use App\Services\MatchStandingsService;
+use App\Services\RankingService;
 use App\Services\TournamentLifecycleService;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -40,6 +41,9 @@ class TournamentHttpTest extends TestCase
             ->assertSee('data-format-panel="ROUND_ROBIN"', false)
             ->assertSee('data-format-panel="SINGLE_ELIMINATION"', false)
             ->assertSee('data-format-panel="DOUBLE_ELIMINATION"', false)
+            ->assertSee('name="ranking_type"', false)
+            ->assertSee('value="RACING_ROBOT"', false)
+            ->assertSee('value="DRONE_MISSION"', false)
             ->assertSee('name="grand_final_matches"', false)
             ->assertDontSee('name="win_points"', false)
             ->assertDontSee('name="draw_points"', false)
@@ -70,6 +74,29 @@ class TournamentHttpTest extends TestCase
             ['ranking' => MatchStandingsService::RANKING_RULE],
             $tournament->round_robin_config,
         );
+    }
+
+    public function test_ranking_subtype_and_lap_count_are_saved(): void
+    {
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+
+        $this->post(route('tournaments.store'), [
+            'name' => 'Robot Ranking',
+            'competition' => 'EasyKids',
+            'division' => 'Open',
+            'structure' => 'STANDARD',
+            'format' => 'RANKING',
+            'seeding_method' => 'REGISTRATION_ORDER',
+            'ranking_type' => 'RACING_ROBOT',
+            'ranking_attempts' => 5,
+        ])->assertSessionHasNoErrors();
+
+        $tournament = Tournament::query()->where('name', 'Robot Ranking')->firstOrFail();
+        $this->assertSame([
+            'type' => 'RACING_ROBOT',
+            'attempts' => 5,
+            'comparator' => 'BEST_TIME_LOWER',
+        ], $tournament->ranking_config);
     }
 
     public function test_adding_a_participant_returns_to_the_form_without_resetting_the_page_position(): void
@@ -157,7 +184,26 @@ class TournamentHttpTest extends TestCase
         $this->get(route('tournaments.index'))
             ->assertOk()
             ->assertSee(asset('assets/logos/favicon.png').'?v=3', false)
+            ->assertSee('property="og:image" content="'.asset('assets/logos/EasyKidsLogoB.png').'?v=4"', false)
+            ->assertSee('name="twitter:card" content="summary_large_image"', false)
             ->assertDontSee(asset('favicon.svg').'?v=2', false);
+    }
+
+    public function test_competition_cards_show_percentage_progress(): void
+    {
+        $tournament = Tournament::factory()->create([
+            'format' => TournamentFormat::RANKING,
+            'status' => TournamentStatus::LIVE,
+            'ranking_config' => ['type' => 'RACING_ROBOT', 'attempts' => 2, 'comparator' => 'BEST_TIME_LOWER'],
+        ]);
+        [$alpha, $beta] = Participant::factory()->count(2)->create(['tournament_id' => $tournament->id])->all();
+        app(RankingService::class)->saveAttempt($tournament, $alpha, 1, '12.34');
+        app(RankingService::class)->saveAttempt($tournament, $beta, 1, '13.45');
+
+        $this->get(route('tournaments.index'))
+            ->assertOk()
+            ->assertSee('aria-valuenow="50"', false)
+            ->assertSee(__('ui.progress_percent', ['percent' => 50]));
     }
 
     public function test_double_elimination_grand_final_setting_is_saved_before_start(): void

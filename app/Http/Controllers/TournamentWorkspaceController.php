@@ -33,8 +33,19 @@ class TournamentWorkspaceController extends Controller
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
-    public function bracket(Request $request, Tournament $tournament): View
+    public function bracket(Request $request, Tournament $tournament): View|RedirectResponse
     {
+        if ($tournament->format === TournamentFormat::RANKING) {
+            $route = $request->routeIs('public.tournaments.*')
+                ? 'public.tournaments.results'
+                : 'tournaments.results';
+            $parameter = $request->routeIs('public.tournaments.*')
+                ? ['tournament' => $tournament->public_token]
+                : $tournament;
+
+            return redirect()->route($route, $parameter);
+        }
+
         $matches = $tournament->matches()->with([
             'participantA',
             'participantB',

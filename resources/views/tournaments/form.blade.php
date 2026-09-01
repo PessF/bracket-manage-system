@@ -7,6 +7,9 @@
     $advancedConfig = $tournament->advanced_config ?? [];
     $selectedStructure = old('structure', $tournament->structure?->value ?? App\Enums\TournamentStructure::STANDARD->value);
     $selectedFormat = old('format', $selectedStructure === 'ADVANCED' ? ($advancedConfig['playoff_format'] ?? App\Enums\TournamentFormat::SINGLE_ELIMINATION->value) : ($tournament->format?->value ?? App\Enums\TournamentFormat::RANKING->value));
+    $selectedRankingType = old('ranking_type', $tournament->exists
+        ? ($tournament->ranking_config['type'] ?? (($tournament->ranking_config['comparator'] ?? null) === 'BEST_TIME_LOWER' ? App\Enums\RankingType::RACING_ROBOT->value : App\Enums\RankingType::DRONE_MISSION->value))
+        : App\Enums\RankingType::RACING_ROBOT->value);
     $participantCount = $editing ? $tournament->participants()->count() : 0;
     $initialGroupCount = (int) old('advanced_group_count', $advancedConfig['group_count'] ?? 4);
     $savedGroupLimits = old('advanced_group_limits', $advancedConfig['group_limits'] ?? []);
@@ -102,8 +105,8 @@
 <div class="format-config-panel full" data-format-panel="RANKING" @if($selectedStructure === 'ADVANCED' || $selectedFormat !== 'RANKING') hidden @endif>
     <div class="format-config-head"><span class="format-config-icon">#</span><div><strong>{{ __('ui.ranking_settings') }}</strong><span>{{ __('ui.ranking_format_help') }}</span></div></div>
     <div class="format-settings-grid">
-        <div class="field"><label for="ranking_attempts">{{ __('ui.ranking_attempts') }}</label><input id="ranking_attempts" type="number" min="1" max="20" name="ranking_attempts" value="{{ old('ranking_attempts', $tournament->ranking_config['attempts'] ?? 2) }}" @disabled($structureLocked)></div>
-        <div class="field"><label for="ranking_comparator">{{ __('ui.ranking_comparator') }}</label><select id="ranking_comparator" name="ranking_comparator" @disabled($structureLocked)><option value="BEST_SCORE_HIGHER" @selected(old('ranking_comparator', $tournament->ranking_config['comparator'] ?? '') === 'BEST_SCORE_HIGHER')>{{ __('ui.higher_score_wins') }}</option><option value="BEST_TIME_LOWER" @selected(old('ranking_comparator', $tournament->ranking_config['comparator'] ?? '') === 'BEST_TIME_LOWER')>{{ __('ui.lower_time_wins') }}</option></select></div>
+        <div class="field"><label for="ranking_type">{{ __('ui.ranking_type') }}</label><select id="ranking_type" name="ranking_type" @disabled($structureLocked)><option value="RACING_ROBOT" @selected($selectedRankingType === 'RACING_ROBOT')>{{ __('ui.ranking_type_labels.RACING_ROBOT') }}</option><option value="DRONE_MISSION" @selected($selectedRankingType === 'DRONE_MISSION')>{{ __('ui.ranking_type_labels.DRONE_MISSION') }}</option></select></div>
+        <div class="field"><label for="ranking_attempts">{{ __('ui.ranking_laps') }}</label><select id="ranking_attempts" name="ranking_attempts" @disabled($structureLocked)>@foreach(range(1, 20) as $lapCount)<option value="{{ $lapCount }}" @selected((int) old('ranking_attempts', $tournament->ranking_config['attempts'] ?? 2) === $lapCount)>{{ $lapCount }}</option>@endforeach</select></div>
     </div>
 </div>
 

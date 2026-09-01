@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\AdvancementRuleType;
+use App\Enums\MatchStatus;
+use App\Enums\RankingType;
 use App\Enums\SeedingMethod;
 use App\Enums\StageSourceType;
 use App\Enums\StageStatus;
@@ -34,7 +36,13 @@ class TournamentController extends Controller
         $canBrowseTournaments = true;
 
         try {
-            $tournaments = Tournament::query()->withCount(['participants', 'matches'])
+            $tournaments = Tournament::query()->withCount([
+                'participants',
+                'matches',
+                'rankingAttempts',
+                'matches as progress_total_matches_count' => fn ($query) => $query->where('is_bye', false),
+                'matches as progress_completed_matches_count' => fn ($query) => $query->where('is_bye', false)->whereIn('status', [MatchStatus::FINISHED->value, MatchStatus::DQ->value]),
+            ])
                 ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
                 ->orderByRaw('display_order IS NULL')
                 ->orderBy('display_order')
@@ -116,7 +124,10 @@ class TournamentController extends Controller
     public function entry(Request $request, Tournament $tournament): View|RedirectResponse
     {
         if (! ($request->user()?->isAdmin() ?? false)) {
-            return redirect()->route('tournaments.bracket', $tournament);
+            return redirect()->route(
+                $tournament->format === TournamentFormat::RANKING ? 'tournaments.results' : 'tournaments.bracket',
+                $tournament,
+            );
         }
 
         return $this->show($tournament);
@@ -211,6 +222,7 @@ class TournamentController extends Controller
             'format' => ['required', Rule::enum(TournamentFormat::class)],
             'seeding_method' => ['required', Rule::enum(SeedingMethod::class)],
             'ranking_attempts' => ['nullable', 'integer', 'between:1,20'],
+            'ranking_type' => ['nullable', Rule::enum(RankingType::class)],
             'ranking_comparator' => ['nullable', Rule::in(['BEST_SCORE_HIGHER', 'BEST_TIME_LOWER'])],
             'grand_final_matches' => ['nullable', 'integer', Rule::in([1, 2])],
             'advanced_group_count' => ['nullable', 'integer', 'between:1,16'],
@@ -329,8 +341,21 @@ class TournamentController extends Controller
     /** @param array<string, mixed> $data */
     private function rankingConfig(array $data): ?array
     {
-        return $data['format'] === TournamentFormat::RANKING->value
-            ? ['attempts' => (int) ($data['ranking_attempts'] ?? 2), 'comparator' => $data['ranking_comparator'] ?? 'BEST_SCORE_HIGHER'] : null;
+        if ($data['format'] !== TournamentFormat::RANKING->value) {
+            return null;
+        }
+
+        $type = RankingType::tryFrom((string) ($data['ranking_type'] ?? ''))
+            ?? match ($data['ranking_comparator'] ?? null) {
+                'BEST_SCORE_HIGHER' => RankingType::DRONE_MISSION,
+                default => RankingType::RACING_ROBOT,
+            };
+
+        return [
+            'type' => $type->value,
+            'attempts' => (int) ($data['ranking_attempts'] ?? 2),
+            'comparator' => $type === RankingType::RACING_ROBOT ? 'BEST_TIME_LOWER' : 'BEST_SCORE_HIGHER_THEN_TIME_LOWER',
+        ];
     }
 
     /** @param array<string, mixed> $data */

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\RankingType;
 use App\Enums\SeedingMethod;
 use App\Enums\TournamentFormat;
-use App\Enums\TournamentStructure;
 use App\Enums\TournamentStatus;
+use App\Enums\TournamentStructure;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -73,6 +74,41 @@ class Tournament extends Model
         }
 
         return route('public.tournaments.show', ['tournament' => $this->public_token]);
+    }
+
+    public function rankingType(): RankingType
+    {
+        $configured = RankingType::tryFrom((string) ($this->ranking_config['type'] ?? ''));
+
+        if ($configured !== null) {
+            return $configured;
+        }
+
+        return ($this->ranking_config['comparator'] ?? null) === 'BEST_TIME_LOWER'
+            ? RankingType::RACING_ROBOT
+            : RankingType::DRONE_MISSION;
+    }
+
+    public function rankingAttemptLimit(): int
+    {
+        return max(1, min(20, (int) ($this->ranking_config['attempts'] ?? 2)));
+    }
+
+    public function competitionProgressPercentage(): int
+    {
+        if ($this->status === TournamentStatus::COMPLETED) {
+            return 100;
+        }
+
+        if ($this->format === TournamentFormat::RANKING) {
+            $total = ((int) ($this->participants_count ?? $this->participant_count)) * $this->rankingAttemptLimit();
+            $completed = (int) ($this->ranking_attempts_count ?? 0);
+        } else {
+            $total = (int) ($this->progress_total_matches_count ?? 0);
+            $completed = (int) ($this->progress_completed_matches_count ?? 0);
+        }
+
+        return $total > 0 ? max(0, min(100, (int) round(($completed / $total) * 100))) : 0;
     }
 
     protected $casts = [

@@ -8,18 +8,22 @@
 @endphp
 
 @if($isPublicView && !$isAdmin)
+@if($tournament->format !== App\Enums\TournamentFormat::RANKING)
 <nav class="viewer-only-nav" aria-label="{{ __('ui.tournament_navigation') }}">
     @if(request()->routeIs('public.tournaments.results'))
         <a class="btn record-result-button" href="{{ route('public.tournaments.show', $routeParameter) }}">{{ __('ui.bracket_competition') }}</a>
     @endif
 </nav>
+@endif
 @else
 <nav class="tabs {{ $isAdmin ? 'admin-control-tabs' : 'viewer-control-tabs' }}" aria-label="{{ __('ui.tournament_navigation') }}">
     <a class="tab-all all-tournaments-tab {{ request()->routeIs('tournaments.index') ? 'active' : '' }}" href="{{ route('tournaments.index') }}" @if(request()->routeIs('tournaments.index')) aria-current="page" @endif>{{ __('ui.all_tournaments') }}</a>
     @if($isAdmin)
     <a class="tab-overview {{ request()->routeIs('tournaments.show', 'tournaments.overview') ? 'active' : '' }}" href="{{ route($overviewRoute, $tournament) }}" @if(request()->routeIs('tournaments.show', 'tournaments.overview')) aria-current="page" @endif>{{ __('ui.overview_participants') }}</a>
     @endif
+    @if($tournament->format !== App\Enums\TournamentFormat::RANKING)
     <a class="tab-bracket {{ request()->routeIs($routePrefix.'bracket', 'public.tournaments.bracket', 'public.tournaments.show') ? 'active' : '' }}" href="{{ route($routePrefix.'bracket', $routeParameter) }}" @if(request()->routeIs($routePrefix.'bracket', 'public.tournaments.bracket', 'public.tournaments.show')) aria-current="page" @endif>{{ __('ui.bracket_competition') }}</a>
+    @endif
     <a class="tab-results {{ request()->routeIs($routePrefix.'results') ? 'active' : '' }}" href="{{ route($routePrefix.'results', $routeParameter) }}" @if(request()->routeIs($routePrefix.'results')) aria-current="page" @endif>{{ __('ui.results') }}</a>
     @unless($isAdmin)
     <a class="tab-overview {{ request()->routeIs('tournaments.show', 'tournaments.overview') ? 'active' : '' }}" href="{{ route($overviewRoute, $tournament) }}" @if(request()->routeIs('tournaments.show', 'tournaments.overview')) aria-current="page" @endif>{{ __('ui.overview_participants') }}</a>
@@ -31,7 +35,7 @@
     <a class="{{ request()->routeIs('tournaments.settings', 'tournaments.edit') ? 'active' : '' }}" href="{{ route('tournaments.settings', $tournament) }}">{{ __('ui.settings') }}</a>
     @endif
     @if($isAdmin && $tournament->public_token)
-    <a href="{{ route('public.tournaments.bracket', ['tournament' => $tournament->public_token]) }}" target="_blank" rel="noopener">{{ __('ui.open_view_page') }}</a>
+    <a href="{{ route('public.tournaments.show', ['tournament' => $tournament->public_token]) }}" target="_blank" rel="noopener">{{ __('ui.open_view_page') }}</a>
     @endif
 </nav>
 @endif

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\MatchStatus;
+use App\Enums\RankingType;
+use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
 use App\Enums\UserRole;
 use App\Models\Participant;
@@ -12,6 +14,7 @@ use App\Models\Stage;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Models\User;
+use App\Services\RankingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -64,6 +67,39 @@ class ViewerTournamentNavigationTest extends TestCase
                 'href="'.route('tournaments.bracket', $tournament).'"',
                 'href="'.route('tournaments.results', $tournament).'"',
             ], false);
+    }
+
+    public function test_ranking_viewers_open_the_live_rankings_instead_of_an_empty_bracket(): void
+    {
+        $tournament = Tournament::factory()->create([
+            'format' => TournamentFormat::RANKING,
+            'status' => TournamentStatus::LIVE,
+            'ranking_config' => [
+                'type' => RankingType::RACING_ROBOT->value,
+                'attempts' => 2,
+                'comparator' => 'BEST_TIME_LOWER',
+            ],
+        ]);
+        $participant = Participant::factory()->create([
+            'tournament_id' => $tournament->id,
+            'team_name' => 'Fast Bot',
+        ]);
+        app(RankingService::class)->saveAttempt($tournament, $participant, 1, '12.34');
+        $publicParameter = ['tournament' => $tournament->public_token];
+
+        $this->get(route('tournaments.show', $tournament))
+            ->assertRedirect(route('tournaments.results', $tournament));
+        $this->get(route('public.tournaments.show', $publicParameter))
+            ->assertRedirect(route('public.tournaments.results', $publicParameter));
+        $this->get(route('public.tournaments.bracket', $publicParameter))
+            ->assertRedirect(route('public.tournaments.results', $publicParameter));
+
+        $this->get(route('public.tournaments.results', $publicParameter))
+            ->assertOk()
+            ->assertSee(__('ui.live_rankings'))
+            ->assertSee('Fast Bot')
+            ->assertSee('12.34 s')
+            ->assertDontSee('<nav class="viewer-only-nav"', false);
     }
 
     public function test_opening_a_viewer_bracket_does_not_start_a_match(): void

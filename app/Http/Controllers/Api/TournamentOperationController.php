@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Enums\MatchStatus;
+use App\Enums\RankingType;
 use App\Enums\TournamentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Participant;
@@ -73,11 +74,24 @@ class TournamentOperationController extends Controller
     public function attempt(Request $request, Tournament $tournament, Participant $participant): JsonResponse
     {
         abort_unless($participant->tournament_id === $tournament->id, 404);
-        $data = $request->validate([
+        $rules = [
             'attempt_number' => ['required', 'integer', 'between:1,20'],
-            'attempt_value' => ['nullable', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'],
             'is_valid' => ['required', 'boolean'],
-        ]);
+        ];
+
+        $type = RankingType::tryFrom((string) ($tournament->ranking_config['type'] ?? ''));
+
+        if ($type === RankingType::RACING_ROBOT) {
+            $rules['attempt_value'] = ['required', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
+        } elseif ($type === RankingType::DRONE_MISSION) {
+            $rules['manual_score'] = ['required', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
+            $rules['auto_score'] = ['required', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
+            $rules['attempt_time'] = ['required', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
+        } else {
+            $rules['attempt_value'] = ['required', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
+        }
+
+        $data = $request->validate($rules);
 
         return $this->execute(fn () => $this->ranking->saveAttempt(
             $tournament,
@@ -85,6 +99,9 @@ class TournamentOperationController extends Controller
             (int) $data['attempt_number'],
             $data['attempt_value'] ?? null,
             (bool) $data['is_valid'],
+            $data['manual_score'] ?? null,
+            $data['auto_score'] ?? null,
+            $data['attempt_time'] ?? null,
         ));
     }
 

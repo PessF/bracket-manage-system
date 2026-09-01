@@ -43,7 +43,8 @@
             $playoffFormat = $advancedConfig['playoff_format'] ?? null;
             $tournamentUrl = $isAdmin
                 ? route('tournaments.show', $tournament)
-                : route('tournaments.bracket', $tournament);
+                : route($tournament->format === App\Enums\TournamentFormat::RANKING ? 'tournaments.results' : 'tournaments.bracket', $tournament);
+            $progress = $tournament->competitionProgressPercentage();
         @endphp
         <a class="card tournament-card" href="{{ $tournamentUrl }}" @if($isAdmin && $tournaments->count() > 1) draggable="true" data-tournament-card data-tournament-id="{{ $tournament->id }}" @endif>
             <div class="actions tournament-card-badges">
@@ -79,6 +80,10 @@
             <div class="stats">
                 <div class="stat"><strong>{{ $tournament->participants_count }}</strong><span class="muted">{{ __('ui.teams') }}</span></div>
                 <div class="stat"><strong>{{ $tournament->matches_count }}</strong><span class="muted">{{ __('ui.matches') }}</span></div>
+            </div>
+            <div class="competition-progress" aria-label="{{ __('ui.competition_progress') }}">
+                <div class="competition-progress-head"><span>{{ __('ui.competition_progress') }}</span><strong>{{ __('ui.progress_percent', ['percent' => $progress]) }}</strong></div>
+                <div class="competition-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $progress }}"><span style="width:{{ $progress }}%"></span></div>
             </div>
             <span class="card-link-label">{{ $isAdmin ? __('ui.manage_competition') : __('ui.open_competition') }} →</span>
         </a>

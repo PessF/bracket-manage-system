@@ -31,6 +31,9 @@ class RankingAttempt extends Model
         'participant_id',
         'attempt_number',
         'attempt_value',
+        'manual_score',
+        'auto_score',
+        'attempt_time',
         'is_valid',
         'synced_at',
     ];
@@ -38,6 +41,9 @@ class RankingAttempt extends Model
     protected $casts = [
         'attempt_number' => 'integer',
         'attempt_value' => 'decimal:6',
+        'manual_score' => 'decimal:2',
+        'auto_score' => 'decimal:2',
+        'attempt_time' => 'decimal:2',
         'is_valid' => 'boolean',
         'synced_at' => 'datetime',
     ];
