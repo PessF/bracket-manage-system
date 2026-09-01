@@ -82,6 +82,7 @@ return [
     'live_standings' => 'อันดับและผลการแข่งขันล่าสุด', 'record_attempts' => 'บันทึกผลแต่ละครั้ง', 'saved' => 'บันทึกแล้ว',
     'live_rankings' => 'อันดับการแข่งขันสด', 'configured_rounds' => 'จำนวนรอบที่กำหนด', 'leading_participants' => 'ผู้นำการแข่งขัน',
     'ranking_round_selector' => 'เลือกรอบบันทึกคะแนน', 'ranking_round_selector_help' => 'เลือกรอบเดียวที่ด้านบนก่อนกรอกผลของผู้เข้าแข่งขัน', 'round_number' => 'รอบที่ :number',
+    'saved_result' => 'ผลที่บันทึกแล้ว', 'edit_ranking_result' => 'แก้ไขคะแนน', 'ranking_edit_title' => ':team · รอบที่ :round',
     'attempt' => 'ครั้งที่', 'lap' => 'รอบที่', 'value' => 'ผลการแข่งขัน', 'valid' => 'นับผลนี้', 'save' => 'บันทึก', 'standings' => 'ตารางอันดับ',
     'time_seconds' => 'เวลา (วินาที)', 'manual_score' => 'คะแนน Manual', 'auto_score' => 'คะแนน Auto', 'total_score' => 'คะแนนรวม', 'best_time' => 'เวลาที่เร็วที่สุด',
     'drone_ranking_rule' => 'จัดอันดับจากคะแนนรวม Manual + Auto ที่สูงที่สุด หากคะแนนเท่ากันใช้เวลาที่น้อยกว่า ซึ่งเท่ากับมีเวลาเหลือมากกว่า',

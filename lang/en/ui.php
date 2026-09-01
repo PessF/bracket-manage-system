@@ -82,6 +82,7 @@ return [
     'live_standings' => 'Live rankings and standings', 'record_attempts' => 'Record attempts', 'saved' => 'Saved',
     'live_rankings' => 'Live rankings', 'configured_rounds' => 'Configured rounds', 'leading_participants' => 'Leading participants',
     'ranking_round_selector' => 'Scoring round', 'ranking_round_selector_help' => 'Choose one round before entering results for any participant.', 'round_number' => 'Round :number',
+    'saved_result' => 'Saved result', 'edit_ranking_result' => 'Edit score', 'ranking_edit_title' => ':team · Round :round',
     'attempt' => 'Attempt', 'lap' => 'Lap', 'value' => 'Result value', 'valid' => 'Count result', 'save' => 'Save', 'standings' => 'Standings',
     'time_seconds' => 'Time (seconds)', 'manual_score' => 'Manual score', 'auto_score' => 'Auto score', 'total_score' => 'Total score', 'best_time' => 'Fastest time',
     'drone_ranking_rule' => 'Ranked by the highest Manual + Auto total. Ties are decided by the lowest elapsed time, equivalent to the most time remaining.',

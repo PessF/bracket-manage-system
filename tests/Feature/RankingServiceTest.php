@@ -89,6 +89,15 @@ class RankingServiceTest extends TestCase
         $this->assertSame('11.370000', $standings[$alpha->id]->best_value);
         $this->assertSame(2, $standings[$alpha->id]->format_data['best_attempt_number']);
         $this->assertSame(2, $standings[$beta->id]->rank_number);
+
+        $admin = User::factory()->create(['role' => UserRole::ADMIN]);
+        $this->actingAs($admin)->get(route('tournaments.results', $tournament))
+            ->assertOk()
+            ->assertSee('data-ranking-saved-result', false)
+            ->assertSee('data-ranking-edit-trigger', false)
+            ->assertSee('data-attempt-value="11.37"', false)
+            ->assertSee('data-ranking-edit-modal', false)
+            ->assertSee('name="attempt_value"', false);
     }
 
     public function test_drone_mission_ranks_by_combined_score_then_lowest_time(): void
@@ -147,11 +156,38 @@ class RankingServiceTest extends TestCase
             ->assertSee('name="auto_score"', false)
             ->assertSee('name="attempt_time"', false)
             ->assertSee('data-ranking-round-selector', false)
-            ->assertSee('name="attempt_number" value="1" data-ranking-round-input', false)
+            ->assertSee('name="attempt_number" value="2"', false)
             ->assertDontSee('<select name="attempt_number"', false)
+            ->assertSee('data-ranking-saved-result', false)
+            ->assertSee('data-ranking-edit-trigger', false)
+            ->assertSee('data-ranking-edit-modal', false)
+            ->assertSee('data-ranking-async-form', false)
+            ->assertSee('data-manual-score="42.50"', false)
             ->assertSee(__('ui.drone_ranking_rule'))
             ->assertSee('60.00');
 
         $this->assertSame(1, substr_count($response->getContent(), '<select id="rankingRoundSelector"'));
+
+        $this->postJson(route('ranking.attempts.store', [$tournament, $participant]), [
+            'attempt_number' => 1,
+            'manual_score' => '50.00',
+            'auto_score' => '18.00',
+            'attempt_time' => '32.10',
+            'is_valid' => 1,
+        ])->assertOk()
+            ->assertJsonPath('attempt.attempt_number', 1)
+            ->assertJsonPath('attempt.manual_score', '50.00')
+            ->assertJsonPath('attempt.auto_score', '18.00')
+            ->assertJsonPath('attempt.attempt_time', '32.10');
+
+        $this->assertDatabaseHas('external_ranking_attempts', [
+            'tournament_id' => $tournament->id,
+            'participant_id' => $participant->id,
+            'attempt_number' => 1,
+            'attempt_value' => '68.000000',
+            'manual_score' => '50.00',
+            'auto_score' => '18.00',
+            'attempt_time' => '32.10',
+        ]);
     }
 }

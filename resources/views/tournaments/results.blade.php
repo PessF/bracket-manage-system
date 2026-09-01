@@ -51,39 +51,112 @@
         <label class="sr-only" for="rankingRoundSelector">{{ __('ui.ranking_round_selector') }}</label>
         <select id="rankingRoundSelector" data-ranking-round-selector>
             @foreach(range(1, $attemptLimit) as $roundNumber)
-            <option value="{{ $roundNumber }}">{{ __('ui.round_number', ['number' => $roundNumber]) }}</option>
+            <option value="{{ $roundNumber }}" @selected((int) old('attempt_number', 1) === $roundNumber)>{{ __('ui.round_number', ['number' => $roundNumber]) }}</option>
             @endforeach
         </select>
     </div>
+    <div class="ranking-save-status" data-ranking-save-status role="status" aria-live="polite" hidden></div>
     <div class="ranking-entry-list">
         @foreach($participants as $participant)
-        <form class="ranking-entry-row {{ $isDroneMission ? 'drone' : '' }}" method="post" action="{{ route('ranking.attempts.store', [$tournament, $participant]) }}">
-            @csrf
-            <input type="hidden" name="attempt_number" value="1" data-ranking-round-input>
+        <div class="ranking-entry-row">
             <div class="ranking-entry-team">
                 <label>{{ $participant->team_name }}</label>
                 <div class="muted">{{ $participant->rankingAttempts->count() }} {{ __('ui.saved') }}</div>
             </div>
-            @if($isDroneMission)
-            <div class="field">
-                <label>{{ __('ui.manual_score') }}</label>
-                <input type="number" name="manual_score" min="0" step="0.01" inputmode="decimal" required>
+            <div class="ranking-round-panels">
+                @foreach(range(1, $attemptLimit) as $roundNumber)
+                @php
+                    $attempt = $attemptsByParticipant->get((string) $participant->id, collect())->get($roundNumber);
+                    $isOldEntry = (string) old('ranking_entry_participant') === (string) $participant->id
+                        && (int) old('attempt_number') === $roundNumber;
+                @endphp
+                <div data-ranking-round-panel data-round="{{ $roundNumber }}" @if((int) old('attempt_number', 1) !== $roundNumber) hidden @endif>
+                    @if($attempt)
+                    <div class="ranking-saved-result {{ $attempt->is_valid ? '' : 'invalid' }}" data-ranking-saved-result>
+                        <div class="ranking-saved-heading">
+                            <span>{{ __('ui.saved_result') }}</span>
+                            <strong>{{ __('ui.round_number', ['number' => $roundNumber]) }}</strong>
+                        </div>
+                        <div class="ranking-saved-values">
+                            @if($isDroneMission)
+                            <span><small>{{ __('ui.total_score') }}</small><strong>{{ $formatRankingValue($attempt->attempt_value) }}</strong></span>
+                            <span><small>{{ __('ui.manual_score') }}</small><strong>{{ $formatRankingValue($attempt->manual_score) }}</strong></span>
+                            <span><small>{{ __('ui.auto_score') }}</small><strong>{{ $formatRankingValue($attempt->auto_score) }}</strong></span>
+                            <span><small>{{ __('ui.time_seconds') }}</small><strong>{{ $formatRankingValue($attempt->attempt_time) }}s</strong></span>
+                            @else
+                            <span><small>{{ $isRacingRobot ? __('ui.time_seconds') : __('ui.value') }}</small><strong>{{ $formatRankingValue($attempt->attempt_value) }}{{ $isRacingRobot ? ' s' : '' }}</strong></span>
+                            @endif
+                            @unless($attempt->is_valid)<em>{{ __('ui.invalid_attempt') }}</em>@endunless
+                        </div>
+                        <button
+                            class="btn small secondary ranking-edit-trigger"
+                            type="button"
+                            data-ranking-edit-trigger
+                            data-action="{{ route('ranking.attempts.store', [$tournament, $participant]) }}"
+                            data-participant="{{ $participant->id }}"
+                            data-team="{{ $participant->team_name }}"
+                            data-round="{{ $roundNumber }}"
+                            data-attempt-value="{{ $formatRankingValue($attempt->attempt_value) }}"
+                            data-manual-score="{{ $attempt->manual_score }}"
+                            data-auto-score="{{ $attempt->auto_score }}"
+                            data-attempt-time="{{ $attempt->attempt_time }}"
+                            data-valid="{{ $attempt->is_valid ? '1' : '0' }}"
+                        >{{ __('ui.edit_ranking_result') }}</button>
+                    </div>
+                    @else
+                    <form class="ranking-new-result-form {{ $isDroneMission ? 'drone' : '' }}" method="post" action="{{ route('ranking.attempts.store', [$tournament, $participant]) }}" data-ranking-async-form>
+                        @csrf
+                        <input type="hidden" name="attempt_number" value="{{ $roundNumber }}">
+                        <input type="hidden" name="ranking_entry_participant" value="{{ $participant->id }}">
+                        @if($isDroneMission)
+                        <div class="field"><label>{{ __('ui.manual_score') }}</label><input type="number" name="manual_score" value="{{ $isOldEntry ? old('manual_score') : '' }}" min="0" step="0.01" inputmode="decimal" required></div>
+                        <div class="field"><label>{{ __('ui.auto_score') }}</label><input type="number" name="auto_score" value="{{ $isOldEntry ? old('auto_score') : '' }}" min="0" step="0.01" inputmode="decimal" required></div>
+                        <div class="field"><label>{{ __('ui.time_seconds') }}</label><input type="number" name="attempt_time" value="{{ $isOldEntry ? old('attempt_time') : '' }}" min="0" step="0.01" inputmode="decimal" required></div>
+                        @else
+                        <div class="field"><label>{{ $isRacingRobot ? __('ui.time_seconds') : __('ui.value') }}</label><input type="number" name="attempt_value" value="{{ $isOldEntry ? old('attempt_value') : '' }}" min="0" step="0.01" inputmode="decimal" required></div>
+                        @endif
+                        <div class="field ranking-valid-field">
+                            <label>{{ __('ui.valid') }}</label>
+                            <input type="hidden" name="is_valid" value="0">
+                            <input type="checkbox" name="is_valid" value="1" @checked(! $isOldEntry || old('is_valid'))>
+                        </div>
+                        <button class="btn small">{{ __('ui.save') }}</button>
+                    </form>
+                    @endif
+                </div>
+                @endforeach
             </div>
-            <div class="field"><label>{{ __('ui.auto_score') }}</label><input type="number" name="auto_score" min="0" step="0.01" inputmode="decimal" required></div>
-            <div class="field"><label>{{ __('ui.time_seconds') }}</label><input type="number" name="attempt_time" min="0" step="0.01" inputmode="decimal" required></div>
-            @else
-            <div class="field"><label>{{ $isRacingRobot ? __('ui.time_seconds') : __('ui.value') }}</label><input type="number" name="attempt_value" min="0" step="0.01" inputmode="decimal" required></div>
-            @endif
-            <div class="field ranking-valid-field">
-                <label>{{ __('ui.valid') }}</label>
-                <input type="hidden" name="is_valid" value="0">
-                <input type="checkbox" name="is_valid" value="1" checked>
-            </div>
-            <button class="btn small">{{ __('ui.save') }}</button>
-        </form>
+        </div>
         @endforeach
     </div>
 </section>
+
+<dialog class="ranking-edit-modal" data-ranking-edit-modal aria-labelledby="rankingEditModalTitle"
+    data-reopen-participant="{{ old('ranking_edit_participant') }}"
+    data-old-attempt-value="{{ old('attempt_value') }}"
+    data-old-manual-score="{{ old('manual_score') }}"
+    data-old-auto-score="{{ old('auto_score') }}"
+    data-old-attempt-time="{{ old('attempt_time') }}"
+    data-old-valid="{{ old('is_valid') }}">
+    <div class="ranking-edit-modal-head">
+        <div><span>{{ __('ui.edit_ranking_result') }}</span><h2 id="rankingEditModalTitle" data-ranking-edit-title></h2></div>
+        <button type="button" data-ranking-edit-close aria-label="{{ __('ui.close') }}">×</button>
+    </div>
+    <form class="ranking-edit-modal-form" method="post" data-ranking-edit-form data-ranking-async-form>
+        @csrf
+        <input type="hidden" name="attempt_number" data-ranking-edit-round>
+        <input type="hidden" name="ranking_edit_participant" data-ranking-edit-participant>
+        @if($isDroneMission)
+        <div class="field"><label>{{ __('ui.manual_score') }}</label><input type="number" name="manual_score" min="0" step="0.01" inputmode="decimal" required></div>
+        <div class="field"><label>{{ __('ui.auto_score') }}</label><input type="number" name="auto_score" min="0" step="0.01" inputmode="decimal" required></div>
+        <div class="field"><label>{{ __('ui.time_seconds') }}</label><input type="number" name="attempt_time" min="0" step="0.01" inputmode="decimal" required></div>
+        @else
+        <div class="field"><label>{{ $isRacingRobot ? __('ui.time_seconds') : __('ui.value') }}</label><input type="number" name="attempt_value" min="0" step="0.01" inputmode="decimal" required></div>
+        @endif
+        <label class="ranking-edit-valid"><input type="hidden" name="is_valid" value="0"><input type="checkbox" name="is_valid" value="1"> <span>{{ __('ui.valid') }}</span></label>
+        <div class="ranking-edit-modal-actions"><button class="btn secondary" type="button" data-ranking-edit-close>{{ __('ui.cancel') }}</button><button class="btn" type="submit">{{ __('ui.save_corrected_score') }}</button></div>
+    </form>
+</dialog>
 @endif
 
 <div data-live-results>
@@ -257,17 +330,122 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const selector = document.querySelector('[data-ranking-round-selector]');
-
     if (!selector) return;
+    const dialog = document.querySelector('[data-ranking-edit-modal]');
+    const editForm = dialog?.querySelector('[data-ranking-edit-form]');
+    const status = document.querySelector('[data-ranking-save-status]');
+    const editTitleTemplate = @json(__('ui.ranking_edit_title', ['team' => '__TEAM__', 'round' => '__ROUND__']));
+    const processingLabel = @json(__('ui.processing'));
+    const requestFailedLabel = @json(__('ui.request_failed'));
+    let statusTimer;
 
     const syncRound = () => {
-        document.querySelectorAll('[data-ranking-round-input]').forEach((input) => {
-            input.value = selector.value;
+        document.querySelectorAll('[data-ranking-round-panel]').forEach((panel) => {
+            panel.hidden = panel.dataset.round !== selector.value;
         });
     };
 
+    const showStatus = (message, failed = false) => {
+        if (!status) return;
+        window.clearTimeout(statusTimer);
+        status.textContent = message;
+        status.classList.toggle('error', failed);
+        status.hidden = false;
+        statusTimer = window.setTimeout(() => { status.hidden = true; }, 3500);
+    };
+
+    const refreshRankingContent = async () => {
+        const scrollY = window.scrollY;
+        const response = await fetch(window.location.href, {
+            cache: 'no-store',
+            credentials: 'same-origin',
+            headers: { Accept: 'text/html', 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        if (!response.ok) throw new Error(requestFailedLabel);
+
+        const replacementDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const selectors = ['.ranking-entry-list', '[data-live-results]'];
+        selectors.forEach((contentSelector) => {
+            const current = document.querySelector(contentSelector);
+            const replacement = replacementDocument.querySelector(contentSelector);
+            if (current && replacement) current.replaceChildren(...replacement.cloneNode(true).childNodes);
+        });
+        syncRound();
+        document.dispatchEvent(new CustomEvent('easykids:live-content-updated', { detail: { target: document } }));
+        requestAnimationFrame(() => window.scrollTo({ top: scrollY, left: window.scrollX, behavior: 'auto' }));
+    };
+
+    const openEditModal = (trigger, restoreOldInput = false) => {
+        if (!dialog || !editForm) return;
+        editForm.reset();
+        editForm.action = trigger.dataset.action;
+        editForm.elements.attempt_number.value = trigger.dataset.round;
+        editForm.elements.ranking_edit_participant.value = trigger.dataset.participant;
+        dialog.querySelector('[data-ranking-edit-title]').textContent = editTitleTemplate
+            .replace('__TEAM__', trigger.dataset.team)
+            .replace('__ROUND__', trigger.dataset.round);
+
+        ['attempt_value', 'manual_score', 'auto_score', 'attempt_time'].forEach((name) => {
+            const input = editForm.elements[name];
+            if (!input) return;
+            const dataName = name.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+            const oldName = `old${dataName.charAt(0).toUpperCase()}${dataName.slice(1)}`;
+            input.value = restoreOldInput && dialog.dataset[oldName] !== ''
+                ? dialog.dataset[oldName]
+                : trigger.dataset[dataName];
+        });
+        const valid = editForm.querySelector('input[type="checkbox"][name="is_valid"]');
+        if (valid) valid.checked = restoreOldInput ? dialog.dataset.oldValid === '1' : trigger.dataset.valid === '1';
+
+        dialog.showModal();
+        requestAnimationFrame(() => editForm.querySelector('input[type="number"]')?.focus());
+    };
+
     selector.addEventListener('change', syncRound);
+    document.addEventListener('click', (event) => {
+        const trigger = event.target instanceof Element ? event.target.closest('[data-ranking-edit-trigger]') : null;
+        if (trigger) openEditModal(trigger);
+    });
+    dialog?.querySelectorAll('[data-ranking-edit-close]').forEach((button) => button.addEventListener('click', () => dialog.close()));
+    dialog?.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+    document.addEventListener('submit', async (event) => {
+        const form = event.target instanceof HTMLFormElement && event.target.matches('[data-ranking-async-form]') ? event.target : null;
+        if (!form) return;
+        event.preventDefault();
+
+        const submit = form.querySelector('button[type="submit"]');
+        const originalLabel = submit?.textContent;
+        if (submit) { submit.disabled = true; submit.textContent = processingLabel; }
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                const validationMessage = Object.values(payload.errors || {}).flat()[0];
+                throw new Error(validationMessage || payload.message || requestFailedLabel);
+            }
+
+            if (dialog?.open) dialog.close();
+            await refreshRankingContent();
+            showStatus(payload.message || @json(__('ui.attempt_saved', ['number' => '__NUMBER__'])).replace('__NUMBER__', form.elements.attempt_number.value));
+        } catch (error) {
+            showStatus(error instanceof Error ? error.message : requestFailedLabel, true);
+        } finally {
+            if (submit) { submit.disabled = false; submit.textContent = originalLabel; }
+        }
+    });
     syncRound();
+
+    if (dialog?.dataset.reopenParticipant) {
+        const round = @json((string) old('attempt_number'));
+        if (round) { selector.value = round; syncRound(); }
+        const trigger = document.querySelector(`[data-ranking-edit-trigger][data-participant="${CSS.escape(dialog.dataset.reopenParticipant)}"][data-round="${CSS.escape(round)}"]`);
+        if (trigger) openEditModal(trigger, true);
+    }
 });
 </script>
 @endpush
@@ -278,11 +456,17 @@ document.addEventListener('DOMContentLoaded', () => {
 .standings-rule{margin:-8px 0 12px}
 .ranking-round-selector{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:18px 0;padding:18px 20px;border:1px solid rgb(103 216 245 / .42);border-radius:14px;background:linear-gradient(135deg,rgb(103 216 245 / .15),rgb(111 125 255 / .09));box-shadow:0 14px 34px rgb(0 0 0 / .16)}
 .ranking-round-selector>div{display:grid;gap:4px}.ranking-round-selector strong{font-size:1.12rem}.ranking-round-selector span{color:var(--muted);font-size:.9rem}.ranking-round-selector select{width:min(100%,260px);min-height:54px;padding:0 46px 0 18px;border:1px solid rgb(103 216 245 / .55);border-radius:12px;background-color:rgb(9 18 30 / .96);color:#dff8ff;font-size:1.08rem;font-weight:900}
+.ranking-save-status{position:fixed;right:22px;bottom:22px;z-index:1200;max-width:min(420px,calc(100vw - 32px));padding:12px 16px;border:1px solid rgb(73 207 155 / .5);border-radius:10px;background:rgb(16 68 51 / .97);color:#dfffee;font-weight:800;box-shadow:0 18px 42px rgb(0 0 0 / .38)}.ranking-save-status.error{border-color:rgb(255 115 115 / .55);background:rgb(91 30 38 / .98);color:#ffe8eb}
 .ranking-entry-list{display:grid;gap:10px}
-.ranking-entry-row{display:grid;grid-template-columns:minmax(180px,1.2fr) minmax(140px,.7fr) 90px auto;gap:10px;align-items:end;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--soft)}
-.ranking-entry-row.drone{grid-template-columns:minmax(160px,1.1fr) repeat(3,minmax(105px,.65fr)) 76px auto}
+.ranking-entry-row{display:grid;grid-template-columns:minmax(180px,.75fr) minmax(0,2.25fr);gap:16px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}
 .ranking-entry-team label{display:block;font-weight:850}
+.ranking-round-panels{min-width:0}.ranking-new-result-form{display:grid;grid-template-columns:minmax(140px,1fr) 90px auto;gap:10px;align-items:end}.ranking-new-result-form.drone{grid-template-columns:repeat(3,minmax(105px,1fr)) 76px auto}
 .ranking-valid-field input[type="checkbox"]{width:22px;min-height:22px}
+.ranking-saved-result{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:18px;min-height:64px;padding:10px 12px;border:1px solid rgb(73 207 155 / .32);border-radius:9px;background:linear-gradient(135deg,rgb(73 207 155 / .12),rgb(18 42 47 / .18))}.ranking-saved-result.invalid{border-color:rgb(151 161 176 / .25);background:rgb(151 161 176 / .07)}
+.ranking-saved-heading{display:grid;gap:2px}.ranking-saved-heading span{color:var(--muted);font-size:.72rem;font-weight:850;text-transform:uppercase}.ranking-saved-heading strong{white-space:nowrap}.ranking-saved-values{display:flex;align-items:center;gap:9px;min-width:0}.ranking-saved-values>span{display:grid;min-width:86px;gap:2px;padding:6px 10px;border:1px solid rgb(103 216 245 / .18);border-radius:8px;background:rgb(7 18 29 / .34)}.ranking-saved-values small{color:var(--muted);font-size:.68rem}.ranking-saved-values strong{color:#dff8ff}.ranking-saved-values em{color:#ffadb6;font-size:.76rem;font-style:normal;font-weight:850}.ranking-edit-trigger{white-space:nowrap}
+.ranking-edit-modal{width:min(520px,calc(100vw - 24px));max-height:calc(100dvh - 24px);margin:auto;padding:0;overflow:auto;border:1px solid rgb(103 216 245 / .32);border-radius:14px;background:linear-gradient(180deg,rgb(24 34 51 / .99),rgb(11 17 27 / .99));color:var(--ink);box-shadow:0 28px 80px rgb(0 0 0 / .6)}.ranking-edit-modal::backdrop{background:rgb(2 7 12 / .78);backdrop-filter:blur(3px)}
+.ranking-edit-modal-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 18px;border-bottom:1px solid var(--line)}.ranking-edit-modal-head>div{display:grid;gap:3px}.ranking-edit-modal-head span{color:#8feaff;font-size:.7rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.ranking-edit-modal-head h2{margin:0;font-size:1.1rem}.ranking-edit-modal-head>button{width:34px;min-width:34px;min-height:34px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:24px;cursor:pointer}.ranking-edit-modal-head>button:hover{background:var(--soft);color:var(--ink)}
+.ranking-edit-modal-form{display:grid;gap:13px;padding:18px}.ranking-edit-valid{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--soft);font-weight:800}.ranking-edit-valid input[type="checkbox"]{width:22px;min-height:22px}.ranking-edit-modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:3px}
 .ranking-view-hero{display:flex;align-items:center;justify-content:space-between;gap:28px;margin:0 0 14px;padding:26px 28px;overflow:hidden;border:1px solid rgb(103 216 245 / .34);border-radius:16px;background:radial-gradient(circle at 85% 0,rgb(111 125 255 / .22),transparent 42%),linear-gradient(135deg,rgb(18 36 55 / .98),rgb(9 16 27 / .98));box-shadow:0 18px 48px rgb(0 0 0 / .22)}
 .ranking-view-copy{display:grid;gap:7px}.ranking-kicker{color:#8feaff;font-size:.76rem;font-weight:950;letter-spacing:.13em;text-transform:uppercase}.ranking-view-copy h2{margin:0;font-size:clamp(1.45rem,3vw,2.2rem)}.ranking-view-copy p{max-width:720px;margin:0;color:var(--muted)}
 .ranking-round-count{display:grid;flex:0 0 126px;place-items:center;min-height:104px;padding:12px;border:1px solid rgb(103 216 245 / .35);border-radius:14px;background:rgb(5 13 23 / .48);text-align:center}.ranking-round-count strong{color:#8feaff;font-size:2.35rem;line-height:1}.ranking-round-count span{color:var(--muted);font-size:.78rem;font-weight:800;text-transform:uppercase}
@@ -315,8 +499,8 @@ document.addEventListener('DOMContentLoaded', () => {
 .attempt-value{display:inline-flex;align-items:center;justify-content:center;min-width:58px;min-height:26px;padding:2px 8px;border:1px solid rgb(103 216 245 / .34);border-radius:999px;background:linear-gradient(135deg,rgb(103 216 245 / .14),rgb(25 82 105 / .28));color:#dff8ff;font-weight:850;box-shadow:inset 0 1px 0 rgb(255 255 255 / .06)}
 .attempt-value:has(small){flex-direction:column;align-items:flex-start;border-radius:8px;line-height:1.25}.attempt-value small{color:var(--muted);font-size:10px;font-weight:650}
 .attempt-value.invalid{border-color:rgb(151 161 176 / .22);background:rgb(151 161 176 / .08);color:#8290aa;text-decoration:line-through}
-@media(max-width:1100px){.ranking-entry-row.drone{grid-template-columns:1fr repeat(3,minmax(100px,.7fr))}.ranking-entry-row.drone .ranking-valid-field,.ranking-entry-row.drone .btn{grid-column:auto}.ranking-entry-row.drone .btn{grid-column:1/-1;width:100%}}
-@media(max-width:920px){.ranking-entry-row{grid-template-columns:1fr 120px 76px}.ranking-entry-row .btn{grid-column:1/-1;width:100%}.ranking-entry-row.drone{grid-template-columns:repeat(2,1fr)}.ranking-entry-row.drone .ranking-entry-team{grid-column:1/-1}.ranking-leaders{grid-template-columns:1fr}}
-@media(max-width:680px){.ranking-round-selector,.ranking-view-hero{align-items:stretch;flex-direction:column}.ranking-round-selector select{width:100%}.ranking-round-count{display:flex;justify-content:center;gap:10px;min-height:74px}.ranking-round-count span{max-width:90px;text-align:left}.ranking-entry-row{grid-template-columns:1fr 1fr}.ranking-entry-team{grid-column:1/-1}.ranking-valid-field{align-self:center}.standings-table th:first-child,.standings-table td:first-child{position:sticky;left:0;z-index:2;width:48px;background:var(--card)}.standings-table th:nth-child(2),.standings-table td:nth-child(2){position:sticky;left:48px;z-index:2;max-width:150px;overflow:hidden;background:var(--card);text-overflow:ellipsis}.standings-table thead th:first-child,.standings-table thead th:nth-child(2){z-index:3;background:var(--card)}.standings-table th:nth-child(2),.standings-table td:nth-child(2){box-shadow:5px 0 7px -7px rgb(0 0 0 / .75)}}
+@media(max-width:1100px){.ranking-entry-row{grid-template-columns:1fr}.ranking-new-result-form.drone{grid-template-columns:repeat(3,minmax(100px,1fr)) 76px}.ranking-new-result-form.drone .btn{grid-column:1/-1;width:100%}.ranking-saved-values{flex-wrap:wrap}}
+@media(max-width:920px){.ranking-new-result-form{grid-template-columns:1fr 90px}.ranking-new-result-form .btn{grid-column:1/-1;width:100%}.ranking-new-result-form.drone{grid-template-columns:repeat(2,1fr)}.ranking-leaders{grid-template-columns:1fr}.ranking-saved-result{grid-template-columns:auto 1fr}.ranking-saved-result .ranking-edit-trigger{grid-column:1/-1;width:100%}}
+@media(max-width:680px){.ranking-round-selector,.ranking-view-hero{align-items:stretch;flex-direction:column}.ranking-round-selector select{width:100%}.ranking-round-count{display:flex;justify-content:center;gap:10px;min-height:74px}.ranking-round-count span{max-width:90px;text-align:left}.ranking-new-result-form,.ranking-new-result-form.drone{grid-template-columns:1fr 1fr}.ranking-new-result-form .field:first-of-type{grid-column:1/-1}.ranking-valid-field{align-self:center}.ranking-saved-result{grid-template-columns:1fr}.ranking-saved-values{display:grid;grid-template-columns:1fr 1fr}.ranking-saved-result .ranking-edit-trigger{grid-column:auto}.ranking-edit-modal-actions{display:grid;grid-template-columns:1fr 1fr}.ranking-edit-modal-actions .btn{width:100%}.standings-table th:first-child,.standings-table td:first-child{position:sticky;left:0;z-index:2;width:48px;background:var(--card)}.standings-table th:nth-child(2),.standings-table td:nth-child(2){position:sticky;left:48px;z-index:2;max-width:150px;overflow:hidden;background:var(--card);text-overflow:ellipsis}.standings-table thead th:first-child,.standings-table thead th:nth-child(2){z-index:3;background:var(--card)}.standings-table th:nth-child(2),.standings-table td:nth-child(2){box-shadow:5px 0 7px -7px rgb(0 0 0 / .75)}}
 </style>
 @endpush

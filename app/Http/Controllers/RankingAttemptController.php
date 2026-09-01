@@ -8,6 +8,7 @@ use App\Enums\RankingType;
 use App\Models\Participant;
 use App\Models\Tournament;
 use App\Services\RankingService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -16,7 +17,7 @@ class RankingAttemptController extends Controller
 {
     public function __construct(private readonly RankingService $ranking) {}
 
-    public function store(Request $request, Tournament $tournament, Participant $participant): RedirectResponse
+    public function store(Request $request, Tournament $tournament, Participant $participant): JsonResponse|RedirectResponse
     {
         abort_unless($participant->tournament_id === $tournament->id, 404);
         $rules = [
@@ -37,7 +38,7 @@ class RankingAttemptController extends Controller
 
         $data = $request->validate($rules);
         try {
-            $this->ranking->saveAttempt(
+            $attempt = $this->ranking->saveAttempt(
                 $tournament,
                 $participant,
                 (int) $data['attempt_number'],
@@ -48,9 +49,30 @@ class RankingAttemptController extends Controller
                 $data['attempt_time'] ?? null,
             );
 
-            return back()->with('success', __('ui.attempt_saved', ['number' => $data['attempt_number']]));
+            $message = __('ui.attempt_saved', ['number' => $data['attempt_number']]);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $message,
+                    'attempt' => [
+                        'participant_id' => $attempt->participant_id,
+                        'attempt_number' => $attempt->attempt_number,
+                        'attempt_value' => $attempt->attempt_value,
+                        'manual_score' => $attempt->manual_score,
+                        'auto_score' => $attempt->auto_score,
+                        'attempt_time' => $attempt->attempt_time,
+                        'is_valid' => $attempt->is_valid,
+                    ],
+                ]);
+            }
+
+            return back()->with('success', $message);
         } catch (Throwable $exception) {
             report($exception);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $exception->getMessage()], 422);
+            }
 
             return back()->withErrors($exception->getMessage());
         }
