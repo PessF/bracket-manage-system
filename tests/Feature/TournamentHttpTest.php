@@ -184,8 +184,10 @@ class TournamentHttpTest extends TestCase
         $this->get(route('tournaments.index'))
             ->assertOk()
             ->assertSee(asset('assets/logos/favicon.png').'?v=3', false)
-            ->assertSee('property="og:image" content="'.asset('assets/logos/EasyKidsLogoB.png').'?v=4"', false)
-            ->assertSee('name="twitter:card" content="summary_large_image"', false)
+            ->assertSee('property="og:image" content="'.asset('assets/logos/favicon.png').'?v=4"', false)
+            ->assertSee('property="og:image:width" content="40"', false)
+            ->assertSee('property="og:image:height" content="40"', false)
+            ->assertSee('name="twitter:card" content="summary"', false)
             ->assertDontSee(asset('favicon.svg').'?v=2', false);
     }
 
