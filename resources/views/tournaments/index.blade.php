@@ -19,7 +19,7 @@
             <div class="actions">
                 @if($event)
                     <a class="btn secondary" href="{{ route('events.edit', $event) }}">{{ __('events.edit') }}</a>
-                    <form method="post" action="{{ route('events.destroy', $event) }}" data-confirm="{{ __('events.delete_confirm') }}">@csrf @method('delete')<button class="btn danger">{{ __('ui.delete_button') }}</button></form>
+                    <form method="post" action="{{ route('events.destroy', $event) }}" data-confirm="{{ __('events.delete_confirm') }}">@csrf @method('delete')<button class="btn danger">{{ __('events.delete') }}</button></form>
                 @endif
                 <a class="btn dashboard-create" href="{{ route('tournaments.create', $event ? ['event_id' => $event->id] : []) }}"><span aria-hidden="true">+</span> {{ __('ui.new_tournament') }}</a>
             </div>

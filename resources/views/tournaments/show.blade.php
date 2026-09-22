@@ -7,13 +7,6 @@
     $bracketPrepared = ($tournament->matches_count ?? 0) > 0;
     $rosterEditable = in_array($tournament->status, [App\Enums\TournamentStatus::DRAFT, App\Enums\TournamentStatus::READY], true) && ! $bracketPrepared;
 @endphp
-@push('styles')
-<style>
-    #add-participant:target{border-color:#4d8db8;scroll-margin-top:calc(var(--top-height) + 12px)}
-    .participant-list{display:flex;flex-direction:column;gap:8px}.participant-item{min-width:0;border:1px solid var(--line);border-radius:7px;background:var(--card);overflow:hidden}.participant-summary,.participant-list-head{display:grid;grid-template-columns:minmax(120px,1fr) minmax(170px,1.5fr) minmax(160px,1.5fr);gap:12px;align-items:center;padding:10px 12px;list-style:none}.participant-list-head{margin-bottom:8px;border:1px solid var(--line);border-radius:7px;background:var(--soft);color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.participant-item details>.participant-summary{cursor:pointer}.participant-summary::-webkit-details-marker{display:none}.participant-item details>.participant-summary:hover{background:var(--soft)}.participant-team{min-width:0}.participant-team strong{display:block}.participant-team small{display:block}.participant-edit{padding:15px;border-top:1px solid var(--line);background:var(--soft)}.participant-chevron{color:var(--muted);transition:transform .15s}.participant-item details[open] .participant-chevron{transform:rotate(180deg)}@media(max-width:680px){.participant-summary,.participant-list-head{grid-template-columns:1fr auto;gap:8px;padding:10px}.participant-summary>*:nth-child(3),.participant-list-head>*:nth-child(3){grid-column:1 / -1}.participant-team strong,.participant-team small{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.participant-edit{padding:13px}.participant-edit .form-grid{grid-template-columns:1fr}}
-    @media(hover:none){.participant-item details>.participant-summary:hover{background:transparent}}
-</style>
-@endpush
 @section('content')
 <div class="page-head">
     <div><div class="actions" style="margin-bottom:4px"><h1 style="margin:0">{{ $tournament->name }}</h1><span class="badge {{ $tournament->status->value }}">{{ __('ui.tournament_status_labels.'.$tournament->status->value) }}</span></div><div class="muted">{{ $tournament->competition }} · {{ $tournament->division }} · {{ __('ui.format_labels.'.$tournament->format->value) }}</div></div>

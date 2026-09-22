@@ -1,8 +1,5 @@
 @extends('layouts.app')
 @section('title', __('ui.title_matches').' · '.$tournament->name)
-@push('styles')
-<style>.match-card-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:10px;font-size:12px}.match-card-head>span:first-child{min-width:0;overflow-wrap:anywhere}.match-team-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:42px;padding:9px 10px;background:var(--soft);border-radius:6px}.match-team-row>span{min-width:0;overflow-wrap:anywhere}.match-team-row>strong{flex:0 0 auto}.match-team-row+.match-team-row{margin-top:5px}.match-team-row.winner{background:#10271f;color:#8bddb5;font-weight:650}.match-winner{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:13px}.match:target{border-color:#4d8db8;box-shadow:0 0 0 2px rgb(77 141 184 / .2)}</style>
-@endpush
 @section('content')
 @php
     $isPublicView = request()->routeIs('public.tournaments.*');

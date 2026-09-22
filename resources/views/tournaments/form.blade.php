@@ -44,7 +44,7 @@
 <div class="field"><label for="division">{{ __('ui.division') }}</label><input id="division" name="division" required maxlength="200" value="{{ old('division', $tournament->division) }}"></div>
 <div class="field full">
     <label for="comp_date_part">{{ __('ui.competition_date') }}</label>
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+    <div class="date-time-grid">
         <div>
             <label for="comp_date_part" style="font-size:12px; color:var(--muted); font-weight:normal; margin-bottom:4px;">{{ __('ui.competition_date_only') }}</label>
             <div class="date-picker-field">
@@ -147,47 +147,6 @@
 @endif
 @endsection
 
-@push('styles')
-<style>
-    .format-config-panel { min-width:0; padding: 15px; border: 1px solid var(--line); border-radius: 7px; background: var(--soft); }
-    .format-config-panel[hidden] { display: none; }
-    .format-config-panel.compact { padding: 14px 15px; }
-    .format-config-head { display: flex; gap: 11px; align-items: flex-start; }
-    .format-config-head > div { display: flex; flex-direction: column; min-width: 0; }
-    .format-config-head strong { font-size: 14px; }
-    .format-config-head span:not(.format-config-icon) { margin-top: 2px; color: var(--muted); font-size: 13px; }
-    .format-config-icon { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--card); color: #b4c0cc; font-size: 12px; font-weight: 800; }
-    .format-settings-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 14px; }
-    .format-settings-grid.three { grid-template-columns: repeat(3,minmax(0,1fr)); }
-    .format-settings-grid .field { margin: 0; }
-    .choice-grid { display:grid; min-width:0; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:15px 0 0; }
-    .choice-card { display:flex; align-items:flex-start; gap:10px; min-height:76px; margin:0; padding:13px; border:1px solid var(--line-strong); border-radius:7px; background:var(--card); cursor:pointer; }
-    .choice-card:has(input:checked) { border-color:#4d8db8; background:#132536; box-shadow:0 0 0 2px rgb(77 141 184 / .14); }
-    .choice-card input { flex:0 0 auto; width:20px; height:20px; min-height:20px; margin:1px 0 0; }
-    .choice-card span { display:flex; min-width:0; flex-direction:column; }
-    .choice-card small { margin-top:3px; color:var(--muted); font-weight:500; }
-    .compact-choice { min-height: 0; align-items: center; }
-    .advanced-builder-panel { border-color: rgba(103,232,249,.38); background: linear-gradient(135deg, rgba(21,94,117,.2), rgba(15,23,42,.88)); }
-    .group-limit-editor { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
-    .group-limit-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-    .group-limit-head > div { display: flex; min-width: 0; flex-direction: column; }
-    .group-limit-head span { margin-top: 2px; color: var(--muted); font-size: 13px; }
-    .group-limit-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-top: 12px; }
-    .group-limit-field[hidden] { display: none; }
-    .group-limit-summary { margin-top: 9px; font-size: 13px; }
-    .btn.tiny { min-height: 34px; padding: 7px 10px; font-size: 12px; }
-    .danger-row { gap:14px; padding:12px 0; border-top:1px solid var(--line); }
-    .danger-row:first-of-type { border-top:0; padding-top:0; }
-    .danger-row:last-child { padding-bottom:0; }
-    .date-picker-field { position:relative; }
-    .date-picker-field #comp_date_display { padding-right:48px; cursor:pointer; }
-    .date-picker-native { position:absolute; width:1px !important; height:1px !important; padding:0 !important; border:0 !important; opacity:0; pointer-events:none; }
-    .date-picker-button { position:absolute; top:50%; right:6px; display:grid; width:36px; height:36px; min-height:36px; padding:8px; place-items:center; border:1px solid #d4af37; border-radius:6px; background:#d4af37; color:#171a20; cursor:pointer; transform:translateY(-50%); }
-    .date-picker-button svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-    @media (max-width: 820px) { .format-settings-grid.three, .group-limit-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
-    @media (max-width: 680px) { .format-settings-grid, .choice-grid, .group-limit-grid { grid-template-columns: 1fr; } .choice-card { min-height:86px; padding:16px; } .danger-row, .group-limit-head { align-items:flex-start; flex-direction:column; } }
-</style>
-@endpush
 
 @push('scripts')
 <script>

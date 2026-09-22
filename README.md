@@ -150,7 +150,15 @@ If the host itself still resolves the wrong IP, also correct the Linux/network-m
 - Third-place games require two real semifinal losers. Three entrants have only one such loser, so no unplayable bronze game is created.
 - Double elimination omits bye nodes after copying their automatic advances and builds a compact upper/lower graph with `2N - 2` base games. Every upper-bracket loser has a lower path, ending at the grand final. With reset mode enabled, a lower-bracket win in the first final adds one game (`2N - 1` total).
 - Round robin schedules each unordered pair exactly once (`N(N - 1)/2`). Ranking uses attempt records, not match nodes.
-- Layout reserves 112px between columns and 40px between cards, including room for admin controls. Successor positions follow feeder positions; rounds are not independently recentered. Horizontal scrolling and mobile zoom accommodate larger fields.
+- The connected layout reserves 112px between columns and 40px between cards. Successor positions follow feeder positions; rounds are not independently recentered. If the diagram cannot fit its container, it becomes readable round columns; phones show rounds vertically. The same match nodes and controls are reused, with logical DOM/keyboard order and no horizontal scrolling or miniature text.
+
+### Frontend layout and styling
+
+- `resources/css/app.css` is the Vite entry point. `ui.css` contains shared primitives and feature components; `responsive.css` owns the final palette, spacing, interaction states, and adaptive layouts. Do not add another theme layer or duplicate styles in Blade. The no-build fallback reads these same two files.
+- Grids use shrinkable tracks, long names wrap, navigation follows document flow, and card reorder controls have their own row. At narrow widths, labeled table cells become cards; bracket rounds remain readable without zoom. Native tables remain available to assistive technology.
+- `resources/js/responsive.js` associates legacy field labels and prepares mobile table labels, including after live updates. Dropdowns retain keyboard selection, Escape handling, viewport bounds, and visible focus. Reduced-motion preferences disable animation.
+- Browser regression check: seed a **disposable** local database with `php artisan migrate --seed`, serve the app, and launch a separate headless Chromium/Brave profile with remote debugging on port 9333. With Node 22+, run `UI_BASE_URL=http://127.0.0.1:8097 node tests/browser/responsive.mjs`. The check navigates demo events, competitions, brackets, results, forms, and documentation at 320, 390, 768, and 1366 pixels, failing on page overflow, overlapping match nodes, or JavaScript exceptions.
+- Set `UI_ADMIN_EMAIL` and `UI_ADMIN_PASSWORD` to a disposable test admin to include management pages. `UI_EXTRA_ADMIN_PATHS` accepts a JSON array of paths for seeded ranking/group fixtures; `UI_REPORT_PATH` optionally saves the detailed report. This check clears cookies in the dedicated browser. Never point it at your personal browser profile or use production seeding.
 
 ### Validation and deployment
 

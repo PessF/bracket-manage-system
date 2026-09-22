@@ -6,6 +6,7 @@ return [
     'help' => 'Choose an event to explore its competitions and results.',
     'new' => 'Add event',
     'edit' => 'Edit event',
+    'delete' => 'Delete event',
     'name' => 'Event name',
     'description' => 'Description',
     'starts_on' => 'Start date',

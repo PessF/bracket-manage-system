@@ -35,7 +35,8 @@ class EventHierarchyTest extends TestCase
         $this->get(route('events.show', $event))->assertOk()->assertSee($competition->name)->assertDontSee($outside->name);
         $this->actingAs(User::factory()->create(['role' => UserRole::ADMIN]));
         $this->get(route('events.show', $event))->assertOk()->assertSee($competition->name)->assertDontSee($outside->name)
-            ->assertSee(route('events.edit', $event));
+            ->assertSee(route('events.edit', $event))
+            ->assertSee(__('events.delete'));
     }
 
     public function test_event_web_crud_requires_admin_and_preserves_competitions(): void

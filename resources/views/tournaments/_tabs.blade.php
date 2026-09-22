@@ -7,11 +7,11 @@
     $overviewRoute = $isAdmin ? 'tournaments.show' : 'tournaments.overview';
 @endphp
 
-<nav aria-label="{{ __('events.title') }}" class="actions" style="margin-bottom:16px">
+<nav aria-label="{{ __('events.title') }}" class="breadcrumbs">
     <a href="{{ route('events.index') }}">{{ __('events.title') }}</a>
     <span aria-hidden="true">/</span>
     <a href="{{ route('events.show', $tournament->event_id) }}">{{ $tournament->event->name }}</a>
-    <span aria-hidden="true">/</span><span>{{ $tournament->name }}</span>
+    <span aria-hidden="true">/</span><span aria-current="page">{{ $tournament->name }}</span>
 </nav>
 @if($isPublicView && !$isAdmin)
 @if($tournament->format !== App\Enums\TournamentFormat::RANKING)

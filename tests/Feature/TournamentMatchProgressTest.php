@@ -88,8 +88,8 @@ class TournamentMatchProgressTest extends TestCase
             ->assertSee(__('ui.blue_side'))
             ->assertSee(__('ui.match_status_labels.LIVE'))
             ->assertSee('bracket-match-node in-progress', false)
-            ->assertSee('width:36px', false)
-            ->assertSee('height:36px', false)
+            ->assertSee('bracket-icon-button', false)
+            ->assertSee('data-score-modal-trigger', false)
             ->assertDontSee('data-scheduled-time', false)
             ->assertDontSee('class="bracket-time"', false);
 

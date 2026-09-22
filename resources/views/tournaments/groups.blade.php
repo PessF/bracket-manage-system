@@ -69,28 +69,6 @@
 </section>
 @endsection
 
-@push('styles')
-<style>
-    .group-assignment-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:16px 0; }
-    .group-summary-card { display:flex; flex-direction:column; gap:3px; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--soft); }
-    .group-summary-card span { color:var(--muted); font-size:13px; }
-    .group-summary-card small { min-height:18px; color:var(--muted); font-size:12px; font-weight:700; }
-    .group-summary-card.complete { border-color:rgb(73 207 155 / .45); background:rgb(22 82 59 / .34); }
-    .group-summary-card.complete small { color:#8cf0bf; }
-    .group-summary-card.over { border-color:rgb(255 117 145 / .52); background:rgb(91 29 47 / .28); }
-    .group-summary-card.over small { color:#ff9caf; }
-    .group-summary-card.open small { color:#8be9ff; }
-    .participant-group-table { display:flex; flex-direction:column; gap:8px; }
-    .participant-group-row { display:grid; grid-template-columns:90px minmax(0,1fr) minmax(190px,280px); gap:12px; align-items:center; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--card); }
-    .participant-group-head { color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; background:transparent; }
-    .participant-group-row .field { margin:0; }
-    .participant-seed { color:var(--accent); font-weight:800; }
-    .group-form-status { margin-top:8px; font-size:13px; }
-    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-    @media (max-width: 900px) { .group-assignment-summary { grid-template-columns:repeat(2,minmax(0,1fr)); } .participant-group-row { grid-template-columns:70px minmax(0,1fr); } .participant-group-row > .field { grid-column:1 / -1; } }
-    @media (max-width: 560px) { .group-assignment-summary { grid-template-columns:1fr; } }
-</style>
-@endpush
 
 @push('scripts')
 <script>

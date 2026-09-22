@@ -1,4 +1,5 @@
 import './bootstrap';
+import './responsive';
 
 const toastRegion = document.querySelector('[data-toast-region]');
 const showToast = (message, tone = 'success') => {
@@ -223,7 +224,10 @@ document.addEventListener('click', (event) => {
     });
 });
 document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') document.querySelectorAll('.language-menu[open], .mobile-menu[open]').forEach((menu) => menu.removeAttribute('open'));
+    if (event.key === 'Escape') document.querySelectorAll('.language-menu[open], .mobile-menu[open]').forEach((menu) => {
+        menu.removeAttribute('open');
+        menu.querySelector('summary')?.focus();
+    });
 });
 
 document.querySelectorAll('.tabs').forEach((tabs) => {
@@ -343,6 +347,7 @@ document.querySelectorAll('.tabs').forEach((tabs) => {
         trigger.setAttribute('aria-haspopup', 'listbox');
         trigger.setAttribute('aria-expanded', 'false');
         trigger.setAttribute('aria-controls', menuId);
+        trigger.setAttribute('aria-label', select.labels?.[0]?.textContent.trim() || select.getAttribute('aria-label') || select.name);
         trigger.innerHTML = `<span class="smart-select-value"></span>${chevron}`;
         wrapper.appendChild(trigger);
 
