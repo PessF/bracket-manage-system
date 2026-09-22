@@ -7,6 +7,12 @@
     $overviewRoute = $isAdmin ? 'tournaments.show' : 'tournaments.overview';
 @endphp
 
+<nav aria-label="{{ __('events.title') }}" class="actions" style="margin-bottom:16px">
+    <a href="{{ route('events.index') }}">{{ __('events.title') }}</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ route('events.show', $tournament->event_id) }}">{{ $tournament->event->name }}</a>
+    <span aria-hidden="true">/</span><span>{{ $tournament->name }}</span>
+</nav>
 @if($isPublicView && !$isAdmin)
 @if($tournament->format !== App\Enums\TournamentFormat::RANKING)
 <nav class="viewer-only-nav" aria-label="{{ __('ui.tournament_navigation') }}">
@@ -17,7 +23,7 @@
 @endif
 @else
 <nav class="tabs {{ $isAdmin ? 'admin-control-tabs' : 'viewer-control-tabs' }}" aria-label="{{ __('ui.tournament_navigation') }}">
-    <a class="tab-all all-tournaments-tab {{ request()->routeIs('tournaments.index') ? 'active' : '' }}" href="{{ route('tournaments.index') }}" @if(request()->routeIs('tournaments.index')) aria-current="page" @endif>{{ __('ui.all_tournaments') }}</a>
+    <a class="tab-all all-tournaments-tab" href="{{ route('events.show', $tournament->event_id) }}">{{ __('events.back') }}</a>
     @if($isAdmin)
     <a class="tab-overview {{ request()->routeIs('tournaments.show', 'tournaments.overview') ? 'active' : '' }}" href="{{ route($overviewRoute, $tournament) }}" @if(request()->routeIs('tournaments.show', 'tournaments.overview')) aria-current="page" @endif>{{ __('ui.overview_participants') }}</a>
     @endif

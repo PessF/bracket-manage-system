@@ -16,33 +16,33 @@ class LiveViewerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_public_and_viewer_lists_do_not_reveal_competitions(): void
+    public function test_public_and_viewer_lists_show_all_competitions(): void
     {
         $live = Tournament::factory()->create(['name' => 'Live Event', 'status' => TournamentStatus::LIVE]);
         $draft = Tournament::factory()->create(['name' => 'Secret Draft', 'status' => TournamentStatus::DRAFT]);
         $completed = Tournament::factory()->create(['name' => 'Past Event', 'status' => TournamentStatus::COMPLETED]);
 
         $this->get(route('tournaments.index'))
-            ->assertOk()->assertDontSee($live->name)->assertDontSee($draft->name)->assertDontSee($completed->name)
-            ->assertSee(__('ui.share_link_required'));
+            ->assertOk()->assertSee($live->name)->assertSee($draft->name)->assertSee($completed->name)
+            ->assertDontSee(route('tournaments.create'));
 
         $viewer = User::factory()->create(['role' => UserRole::VIEWER]);
         $this->actingAs($viewer)->get(route('tournaments.index'))
-            ->assertOk()->assertDontSee($live->name)->assertDontSee($draft->name)->assertDontSee($completed->name)
-            ->assertSee(__('ui.share_link_required'));
+            ->assertOk()->assertSee($live->name)->assertSee($draft->name)->assertSee($completed->name)
+            ->assertDontSee(route('tournaments.create'));
     }
 
-    public function test_non_live_competitions_are_hidden_from_viewers_but_available_to_admins(): void
+    public function test_all_competition_states_are_available_to_viewers_and_admins(): void
     {
         $draft = Tournament::factory()->create(['status' => TournamentStatus::DRAFT]);
         $live = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
 
-        $this->get(route('tournaments.show', $draft))->assertNotFound();
-        $this->get(route('tournaments.show', $live))->assertNotFound();
+        $this->get(route('tournaments.show', $draft))->assertRedirect(route('tournaments.bracket', $draft));
+        $this->get(route('tournaments.show', $live))->assertRedirect(route('tournaments.bracket', $live));
 
         $viewer = User::factory()->create(['role' => UserRole::VIEWER]);
-        $this->actingAs($viewer)->get(route('tournaments.show', $draft))->assertNotFound();
-        $this->actingAs($viewer)->get(route('tournaments.show', $live))->assertNotFound();
+        $this->actingAs($viewer)->get(route('tournaments.show', $draft))->assertRedirect(route('tournaments.bracket', $draft));
+        $this->actingAs($viewer)->get(route('tournaments.show', $live))->assertRedirect(route('tournaments.bracket', $live));
 
         $admin = User::factory()->create(['role' => UserRole::ADMIN]);
         $this->actingAs($admin)->get(route('tournaments.show', $draft))->assertOk();
@@ -78,20 +78,20 @@ class LiveViewerTest extends TestCase
         $this->post(route('locale.update', 'en'))->assertRedirect();
         $this->get($live->publicShareUrl())
             ->assertOk()
-            ->assertSee('Live bracket · swipe sideways to view later rounds')
-            ->assertSee('data-theme="dark"', false)
+            ->assertSee(__('ui.viewer_bracket_help'))
+            ->assertSee('data-theme="easykids"', false)
             ->assertDontSee('data-theme-toggle', false)
             ->assertDontSee('data-light-label', false)
             ->assertDontSee(__('ui.all_tournaments'))
             ->assertDontSee(__('ui.login'));
     }
 
-    public function test_share_link_is_unavailable_when_competition_is_not_live(): void
+    public function test_share_link_remains_available_for_completed_competitions(): void
     {
         $completed = Tournament::factory()->create(['status' => TournamentStatus::COMPLETED]);
         $admin = User::factory()->create(['role' => UserRole::ADMIN]);
 
-        $this->actingAs($admin)->get($completed->publicShareUrl())->assertNotFound();
+        $this->actingAs($admin)->get($completed->publicShareUrl())->assertOk();
     }
 
     public function test_each_competition_has_a_unique_private_share_token(): void
@@ -113,7 +113,7 @@ class LiveViewerTest extends TestCase
         $this->actingAs($admin)->get(route('tournaments.show', $draft))
             ->assertOk()
             ->assertSee($draft->name)
-            ->assertSee('ลิงก์สำหรับผู้ชมยังไม่พร้อมใช้งาน')
+            ->assertSee(__('ui.share_link_not_ready'))
             ->assertSee('php artisan migrate --force');
     }
 
@@ -146,14 +146,14 @@ class LiveViewerTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function test_competition_api_is_private_and_admin_token_reads_all(): void
+    public function test_competition_api_public_and_admin_reads_include_all_states(): void
     {
         $live = Tournament::factory()->create(['name' => 'API Live', 'status' => TournamentStatus::LIVE]);
         $draft = Tournament::factory()->create(['name' => 'API Draft', 'status' => TournamentStatus::DRAFT]);
 
         $this->getJson('/api/tournaments')
-            ->assertUnauthorized()->assertJsonMissing(['name' => $live->name])->assertJsonMissing(['name' => $draft->name]);
-        $this->getJson('/api/tournaments/'.$draft->id)->assertUnauthorized();
+            ->assertOk()->assertJsonFragment(['name' => $live->name])->assertJsonFragment(['name' => $draft->name]);
+        $this->getJson('/api/tournaments/'.$draft->id)->assertOk();
 
         $token = str_repeat('z', 64);
         User::factory()->create([

@@ -15,6 +15,6 @@ class ExampleTest extends TestCase
         $this->assertSame('sqlite', config('database.default'));
         $response = $this->get('/');
 
-        $response->assertRedirect('/tournaments');
+        $response->assertRedirect('/events');
     }
 }

@@ -24,15 +24,15 @@ class AccessControlTest extends TestCase
         $this->withoutMiddleware(ValidateCsrfToken::class);
     }
 
-    public function test_public_visitors_need_a_share_link_and_cannot_open_admin_pages(): void
+    public function test_public_visitors_can_browse_but_cannot_open_admin_pages(): void
     {
         $tournament = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
 
         $this->get(route('tournaments.index'))
             ->assertOk()
-            ->assertDontSee($tournament->name)
-            ->assertSee(__('ui.share_link_required'));
-        $this->get(route('tournaments.show', $tournament))->assertNotFound();
+            ->assertSee($tournament->name)
+            ->assertDontSee(route('tournaments.create'));
+        $this->get(route('tournaments.show', $tournament))->assertRedirect(route('tournaments.bracket', $tournament));
         $this->get($tournament->publicShareUrl())->assertOk()->assertSee($tournament->name);
         $this->get(route('tournaments.create'))->assertRedirect(route('login'));
         $this->post(route('tournaments.start', $tournament))->assertRedirect(route('login'));
@@ -48,9 +48,9 @@ class AccessControlTest extends TestCase
         $this->actingAs($admin)->get(route('tournaments.create'))->assertOk();
         $this->actingAs($admin)->get(route('tournaments.index'))
             ->assertOk()
-            ->assertSee('หน้าจัดการสำหรับผู้ดูแล')
+            ->assertSee(__('ui.tournaments'))
             ->assertSee(route('tournaments.create'))
-            ->assertSee('data-theme="dark"', false)
+            ->assertSee('data-theme="easykids"', false)
             ->assertDontSee('data-theme-toggle', false);
         $this->actingAs($admin)->get(route('admin.users.index'))->assertOk()->assertSee($viewer->email);
     }
@@ -66,8 +66,8 @@ class AccessControlTest extends TestCase
         $this->post(route('login.store'), ['email' => $admin->email, 'password' => 'wrong'])
             ->assertSessionHasErrors('email');
         $this->post(route('login.store'), ['email' => strtoupper($admin->email), 'password' => 'SecurePassword123!'])
-            ->assertRedirect(route('tournaments.index'))
-            ->assertSessionHas('success', 'เข้าสู่ระบบในฐานะผู้ดูแลแล้ว สามารถจัดการการแข่งขันได้ทุกรายการ');
+            ->assertRedirect(route('events.index'))
+            ->assertSessionHas('success', __('ui.admin_login_success'));
         $this->assertAuthenticatedAs($admin);
     }
 
@@ -84,7 +84,7 @@ class AccessControlTest extends TestCase
 
         $this->post(route('admin.setup.store'), $payload)->assertSessionHasErrors('setup_token');
         $payload['setup_token'] = 'private-setup-token';
-        $this->post(route('admin.setup.store'), $payload)->assertRedirect(route('tournaments.index'));
+        $this->post(route('admin.setup.store'), $payload)->assertRedirect(route('events.index'));
 
         $admin = User::query()->where('email', 'first@example.com')->firstOrFail();
         $this->assertSame(UserRole::ADMIN, $admin->role);
@@ -92,10 +92,10 @@ class AccessControlTest extends TestCase
         $this->get(route('admin.setup'))->assertRedirect(route('login'));
     }
 
-    public function test_api_competition_resources_require_an_admin_token(): void
+    public function test_api_competition_writes_require_an_admin_token(): void
     {
         $tournament = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
-        $this->getJson('/api/tournaments/'.$tournament->id)->assertUnauthorized()->assertJsonPath('success', false);
+        $this->getJson('/api/tournaments/'.$tournament->id)->assertOk()->assertJsonPath('success', true);
 
         $payload = [
             'name' => 'API Tournament',
@@ -105,7 +105,7 @@ class AccessControlTest extends TestCase
             'seeding_method' => 'REGISTRATION_ORDER',
         ];
         $this->postJson('/api/tournaments', $payload)->assertUnauthorized()->assertJsonPath('success', false);
-        $this->getJson('/api/tournaments/not-a-real-id')->assertUnauthorized()->assertJsonPath('success', false);
+        $this->getJson('/api/tournaments/not-a-real-id')->assertNotFound()->assertJsonPath('success', false);
 
         $viewerToken = str_repeat('v', 64);
         User::factory()->create(['role' => UserRole::VIEWER, 'api_token_hash' => hash('sha256', $viewerToken)]);

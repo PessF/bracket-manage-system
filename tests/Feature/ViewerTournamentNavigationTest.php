@@ -62,7 +62,7 @@ class ViewerTournamentNavigationTest extends TestCase
             ->assertSee('aria-current="page"', false)
             ->assertSee('href="'.route('tournaments.show', $tournament).'"', false)
             ->assertSeeInOrder([
-                'href="'.route('tournaments.index').'"',
+                'href="'.route('events.show', $tournament->event_id).'"',
                 'href="'.route('tournaments.show', $tournament).'"',
                 'href="'.route('tournaments.bracket', $tournament).'"',
                 'href="'.route('tournaments.results', $tournament).'"',

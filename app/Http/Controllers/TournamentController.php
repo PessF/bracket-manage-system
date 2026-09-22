@@ -14,6 +14,7 @@ use App\Enums\StageType;
 use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
 use App\Enums\TournamentStructure;
+use App\Models\Event;
 use App\Models\Stage;
 use App\Models\Tournament;
 use App\Services\AdvancedTournamentBuilderService;
@@ -30,13 +31,13 @@ use Illuminate\View\View;
 
 class TournamentController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, ?Event $event = null): View
     {
-        $isAdmin = $request->user()?->isAdmin() ?? false;
         $canBrowseTournaments = true;
+        $search = trim((string) $request->query('q', ''));
 
         try {
-            $tournaments = Tournament::query()->withCount([
+            $tournaments = Tournament::query()->when($event, fn ($query) => $query->where('event_id', $event->id))->withCount([
                 'participants',
                 'matches',
                 'rankingAttempts',
@@ -44,9 +45,31 @@ class TournamentController extends Controller
                 'matches as progress_completed_matches_count' => fn ($query) => $query->where('is_bye', false)->whereIn('status', [MatchStatus::FINISHED->value, MatchStatus::DQ->value]),
             ])
                 ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+                ->when($search !== '', function ($query) use ($search): void {
+                    $query->where(function ($query) use ($search): void {
+                        $term = '%'.$search.'%';
+
+                        $query->where('name', 'like', $term)
+                            ->orWhere('competition', 'like', $term)
+                            ->orWhere('division', 'like', $term)
+                            ->orWhere('venue', 'like', $term);
+                    });
+                })
                 ->orderByRaw('display_order IS NULL')
                 ->orderBy('display_order')
                 ->orderByDesc('source_created_at')->paginate(12)->withQueryString();
+
+            $statusCounts = Tournament::query()
+                ->when($event, fn ($query) => $query->where('event_id', $event->id))
+                ->selectRaw('status, count(*) as aggregate')
+                ->groupBy('status')
+                ->pluck('aggregate', 'status');
+            $dashboardCounts = [
+                'total' => (int) $statusCounts->sum(),
+                'live' => (int) ($statusCounts[TournamentStatus::LIVE->value] ?? 0),
+                'ready' => (int) ($statusCounts[TournamentStatus::READY->value] ?? 0),
+                'completed' => (int) ($statusCounts[TournamentStatus::COMPLETED->value] ?? 0),
+            ];
         } catch (QueryException $exception) {
             throw_unless(app()->isLocal(), $exception);
 
@@ -60,9 +83,10 @@ class TournamentController extends Controller
                     'query' => $request->query(),
                 ],
             );
+            $dashboardCounts = ['total' => 0, 'live' => 0, 'ready' => 0, 'completed' => 0];
         }
 
-        return view('tournaments.index', compact('tournaments', 'canBrowseTournaments'));
+        return view('tournaments.index', compact('tournaments', 'canBrowseTournaments', 'dashboardCounts', 'event'));
     }
 
     public function updateDisplayOrder(Request $request): JsonResponse
@@ -85,9 +109,11 @@ class TournamentController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('tournaments.form', ['tournament' => new Tournament]);
+        $data = $request->validate(['event_id' => ['sometimes', 'required', 'uuid', 'exists:events,id']]);
+
+        return view('tournaments.form', ['tournament' => new Tournament($data), 'events' => Event::orderBy('name')->get()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -135,7 +161,7 @@ class TournamentController extends Controller
 
     public function edit(Tournament $tournament): View
     {
-        return view('tournaments.form', compact('tournament'));
+        return view('tournaments.form', ['tournament' => $tournament, 'events' => Event::orderBy('name')->get()]);
     }
 
     public function update(Request $request, Tournament $tournament): RedirectResponse
@@ -166,9 +192,10 @@ class TournamentController extends Controller
 
     public function destroy(Tournament $tournament): RedirectResponse
     {
+        $eventId = $tournament->event_id;
         $tournament->delete();
 
-        return redirect()->route('tournaments.index')->with('success', __('ui.tournament_deleted'));
+        return redirect()->route('events.show', $eventId)->with('success', __('ui.tournament_deleted'));
     }
 
     public function updateShareLink(Request $request, Tournament $tournament): RedirectResponse
@@ -206,6 +233,7 @@ class TournamentController extends Controller
     private function validatedMetadata(Request $request): array
     {
         return $request->validate([
+            'event_id' => ['sometimes', 'required', 'uuid', 'exists:events,id'],
             'name' => ['required', 'string', 'max:200'], 'competition' => ['required', 'string', 'max:200'],
             'division' => ['required', 'string', 'max:200'], 'competition_date' => ['nullable', 'date'],
             'bracket_schedule_start_time' => ['nullable', 'date_format:H:i'],

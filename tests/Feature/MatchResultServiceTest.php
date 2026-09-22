@@ -70,17 +70,23 @@ class MatchResultServiceTest extends TestCase
         $loserDestination->refresh();
 
         $this->assertSame($participantA->id, $winnerDestination->participant_b_id);
-        $this->assertSame(MatchStatus::READY, $winnerDestination->status);
+        $this->assertSame(MatchStatus::LIVE, $winnerDestination->status);
         $this->assertSame($participantB->id, $loserDestination->participant_a_id);
         $this->assertSame(MatchStatus::READY, $loserDestination->status);
 
-        $corrected = app(MatchResultService::class)->confirm($source, '2', '11');
+        try {
+            app(MatchResultService::class)->confirm($source, '2', '11');
+            $this->fail('Winner changes must be rejected after a destination starts.');
+        } catch (DomainException $exception) {
+            $this->assertSame(__('ui.score_correction_next_match_started', ['number' => 2]), $exception->getMessage());
+        }
         $winnerDestination->refresh();
         $loserDestination->refresh();
 
-        $this->assertSame($participantB->id, $corrected->winner_id);
-        $this->assertSame($participantB->id, $winnerDestination->participant_b_id);
-        $this->assertSame($participantA->id, $loserDestination->participant_a_id);
+        $this->assertSame($participantA->id, $source->refresh()->winner_id);
+        $this->assertSame('10.500000', $source->score_a);
+        $this->assertSame($participantA->id, $winnerDestination->participant_b_id);
+        $this->assertSame($participantB->id, $loserDestination->participant_a_id);
     }
 
     public function test_it_rejects_an_elimination_tie_without_partial_writes(): void
@@ -158,13 +164,19 @@ class MatchResultServiceTest extends TestCase
 
         $reset = $tournament->matches()->where('match_number', 2)->firstOrFail();
         $this->assertSame(BracketType::GRAND_FINAL, $reset->bracket_type);
-        $this->assertSame(MatchStatus::READY, $reset->status);
+        $this->assertSame(MatchStatus::LIVE, $reset->status);
         $this->assertSame($winnersFinalist->id, $reset->participant_a_id);
         $this->assertSame($losersFinalist->id, $reset->participant_b_id);
 
-        app(MatchResultService::class)->confirm($grandFinal, 3, 1);
+        try {
+            app(MatchResultService::class)->confirm($grandFinal, 3, 1);
+            $this->fail('An in-progress reset final must not be deleted by a correction.');
+        } catch (DomainException $exception) {
+            $this->assertSame(__('ui.score_correction_next_match_started', ['number' => 2]), $exception->getMessage());
+        }
 
-        $this->assertSame(1, $tournament->matches()->where('bracket_type', BracketType::GRAND_FINAL)->count());
+        $this->assertSame(2, $tournament->matches()->where('bracket_type', BracketType::GRAND_FINAL)->count());
+        $this->assertSame($losersFinalist->id, $grandFinal->refresh()->winner_id);
     }
 
     public function test_single_grand_final_mode_does_not_create_a_reset_match(): void

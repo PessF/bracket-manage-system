@@ -16,7 +16,7 @@ class AuthenticatedSessionController extends Controller
     public function create(): View|RedirectResponse
     {
         if (Auth::check()) {
-            return redirect()->route('tournaments.index');
+            return redirect()->route('events.index');
         }
 
         return view('auth.login');
@@ -51,7 +51,7 @@ class AuthenticatedSessionController extends Controller
             ? __('ui.admin_login_success')
             : __('ui.viewer_login_success');
 
-        return redirect()->intended(route('tournaments.index'))->with('success', $message);
+        return redirect()->intended(route('events.index'))->with('success', $message);
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -60,6 +60,6 @@ class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('tournaments.index');
+        return redirect()->route('events.index');
     }
 }

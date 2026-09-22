@@ -28,9 +28,19 @@ Thai is the default interface language and the application timezone defaults to 
 
 ## Access control
 
-Viewer accounts and public visitors do not receive a public competition list. They can open only a private `/view/{token}` link shared by an administrator, and that link works only while its competition is `LIVE`. The shared overview, bracket, matches, participants, and standings are read-only. Administrators sign in to see every competition and manage users, participants, CSV imports, lifecycle, and results.
+The home page redirects to `/events`. Visitors and signed-in users see the same Event → Competition → Bracket hierarchy. `/events/{event}` lists only that event's competitions, including draft, ready, live, completed, and archived entries. Visitors and viewer accounts can browse without a login. Administrators also receive event and competition CRUD controls, participant management, imports, lifecycle actions, and score entry. Web writes require both `auth` and `admin` middleware; hiding buttons is not the security boundary.
 
-Each competition has a private viewer link in its administrator overview. This `/view/{token}` URL opens only that competition, preserves the read-only mode across Overview, Bracket, Matches, and Results, and is available only while the competition is `LIVE`. Administrators can replace the generated token with a unique 4–36 character short name; doing so immediately disables the previous URL.
+Existing `/tournaments/{id}` URLs remain valid. The optional `/view/{token}` link offers a compact, read-only display from READY onward, including completed results. It is a convenience link, not an access-control secret: the event and competition pages are public. Administrators can replace it with a unique 4–36 character short name; the old share URL then stops working.
+
+## Event structure and migration
+
+`Event` (`events`) owns many `Tournament` records (`external_tournaments`). “Competition” is the user-facing name for the existing Tournament model. Its `competition` text field remains descriptive metadata; it is not an event identifier. Stages, groups, participants, matches, ranking attempts, and standings retain their existing tournament foreign keys.
+
+The new `2026_09_22_000000_add_events_to_competitions.php` migration creates the event table, adds `external_tournaments.event_id`, places every existing competition in one **Existing competitions** event, then makes the foreign key non-null. No applied migration is modified and no bracket or result is regenerated. Administrators can rename this event and move competitions through their settings or by updating `event_id` through the flat competition API.
+
+For compatibility, older integrations and seeders that omit `event_id` on creation are assigned to **Existing competitions**. New web forms require an event selection. Supplied IDs must identify an existing event. An event with competitions cannot be deleted (HTTP 409); move or explicitly delete its competitions first. The database also restricts deletion of referenced events. Deleting a competition retains the existing cascade behavior for its own dependent data.
+
+Event fields are `name`, `description`, `venue`, `starts_on`, and `ends_on`. The end date cannot precede the start date. Event dates describe the overall event; competition schedules remain independent.
 
 To create the first administrator:
 
@@ -81,7 +91,18 @@ MySQL data is kept in the `mysql-data` Docker volume. `docker compose down` pres
 
 Open `/api/docs` for the complete endpoint list and request examples.
 
-The health endpoint is public. Every competition REST endpoint requires an administrator bearer token and covers tournament CRUD, participant CRUD and CSV import, lifecycle changes, match results and safe score corrections, and ranking attempts. Viewer access uses the private web share link instead of the API. Create or revoke a bearer token from **API access** in the administrator navigation. API messages can be selected with `?lang=th` / `?lang=en` or the `Accept-Language` header.
+The detailed Thai integration guide is available at [`docs/API_MANUAL_TH.md`](docs/API_MANUAL_TH.md).
+
+Read endpoints are public; all API writes require an administrator bearer token. Existing competition APIs cover standard and advanced blueprints, stages, groups and assignments, participant/member CRUD and CSV import, lifecycle, match progress/results and score corrections, ranking attempts, and standings. Create or revoke a bearer token from **API access**. API messages can be selected with `?lang=th` / `?lang=en` or the `Accept-Language` header. An invalid bearer token on a flat read endpoint is rejected; anonymous reads need no token.
+
+| Resource | Public read | Admin write |
+| --- | --- | --- |
+| Events | `GET /api/events`, `GET /api/events/{event}` | `POST /api/events`, `PUT/PATCH/DELETE /api/events/{event}` |
+| Event competitions | `GET /api/events/{event}/competitions` | `POST /api/events/{event}/competitions` |
+| Scoped competition | `GET /api/events/{event}/competitions/{tournament}` | `PUT/PATCH/DELETE` on the same URL |
+| Bracket matches | `GET /api/events/{event}/competitions/{tournament}/bracket` | Use existing match-result endpoints |
+
+Nested routes return 404 if a competition belongs to another event. Their URL determines the event on writes. To move a competition, use `PATCH /api/tournaments/{id}` with `event_id`. The existing flat list also supports `?event_id={uuid}`; pagination is capped at 100. Bracket responses use the existing match-list contract (unpaginated unless pagination is requested), including source and destination IDs.
 
 Responses use a consistent `{ "success": true, "data": ... }` envelope.
 
@@ -114,10 +135,34 @@ If the host itself still resolves the wrong IP, also correct the Linux/network-m
 
 ## Architecture
 
+### Data flow
+
+1. Public event controllers query events and event-scoped competitions. The same views add management actions for administrators.
+2. Admin requests validate input before saving events or competition metadata. Competition controllers create standard or advanced stage blueprints within database transactions.
+3. `TournamentLifecycleService` seeds entrants, asks `BracketGenerator` for a complete graph, assigns stable database match IDs, and persists both outgoing winner/loser destinations and incoming participant-source references.
+4. `MatchResultService` records scores and propagates winner/loser IDs atomically, recomputes standings, and starts the next playable match when no match is live. Corrections cannot change a winner once an affected downstream match has started. A playable match may therefore be READY **or LIVE**; consumers must handle both.
+5. Bracket pages load every match, group them by stage/group and bracket type, and position cards from their actual dependency edges. Live-state checks refresh displayed results. Ranking competitions use standings instead of an empty bracket.
+
+### Bracket principles
+
+- Single elimination pads the seed field to the next power of two. The graph contains `size - 1` nodes, of which `size - N` are first-round byes; exactly `N - 1` games are played. Bye winners advance without a score.
+- Retained placeholder bye nodes keep their outgoing edges. When group qualifiers populate the playoff skeleton, bye winners receive real participant IDs as well as display labels.
+- Third-place games require two real semifinal losers. Three entrants have only one such loser, so no unplayable bronze game is created.
+- Double elimination omits bye nodes after copying their automatic advances and builds a compact upper/lower graph with `2N - 2` base games. Every upper-bracket loser has a lower path, ending at the grand final. With reset mode enabled, a lower-bracket win in the first final adds one game (`2N - 1` total).
+- Round robin schedules each unordered pair exactly once (`N(N - 1)/2`). Ranking uses attempt records, not match nodes.
+- Layout reserves 112px between columns and 40px between cards, including room for admin controls. Successor positions follow feeder positions; rounds are not independently recentered. Horizontal scrolling and mobile zoom accommodate larger fields.
+
+### Validation and deployment
+
+Run `php artisan test`, `vendor/bin/pint --test`, and `npm run build`. Tests use an isolated in-memory SQLite database. `BracketCompletenessTest` plays through multiple power-of-two and uneven fields through completion, including reset finals. `EventHierarchyTest` exercises public browsing, scoped API boundaries, validation, and protected mutations.
+
+Before deploying in Atomhost/Plesk, back up the production database and use the deployment commands above on the intended Git revision. Verify `/events`, an existing event and bracket, `/api/events`, and anonymous write rejection after migration. Do not reset or regenerate live brackets during deployment. Code changes affect newly generated graphs; historical match data is preserved. A database rollback removes event grouping metadata, so keep the backup if rollback is necessary.
+
 - Schema migration: `database/migrations/2026_08_21_100000_create_external_tournament_tables.php`
 - Enums: `app/Enums`
 - Tournament graph generator: `app/Services/BracketGenerator.php`
 - Atomic result propagation: `app/Services/MatchResultService.php`
 - Lifecycle: `app/Services/TournamentLifecycleService.php`
-- Ranking and Round Robin standings: `app/Services/RankingService.php`, `app/Services/RoundRobinStandingsService.php`
+- Event model and controllers: `app/Models/Event.php`, `app/Http/Controllers/EventController.php`, `app/Http/Controllers/Api/EventController.php`
+- Ranking and Round Robin standings: `app/Services/RankingService.php`, `app/Services/MatchStandingsService.php`
 - Demo data: `database/seeders/DatabaseSeeder.php`

@@ -232,6 +232,20 @@
         body[data-theme="easykids"] .bracket-card-actions .bracket-icon-button { width:36px; min-width:36px; height:36px; min-height:36px; }
     }
     @media(max-width:380px){.score-modal-actions{grid-template-columns:1fr}.bracket-destinations{align-items:flex-start;flex-direction:column;gap:2px}.bracket-destinations span{white-space:normal}}
+    /* Calm surfaces and generous card padding keep large brackets readable. */
+    body[data-theme="easykids"] .bracket-round-lane,
+    body[data-theme="easykids"] .bracket-round-lane.is-alternate { background:transparent; border:0; box-shadow:none; }
+    body[data-theme="easykids"] .bracket-match-node,
+    body[data-theme="easykids"] .bracket-match-node.is-finished { width:272px; padding:12px; border-color:var(--line); box-shadow:none; }
+    body[data-theme="easykids"] .bracket-match-node.is-finished::after { display:none; }
+    body[data-theme="easykids"] .bracket-match-node.is-unscored,
+    body[data-theme="easykids"] .bracket-match-node:hover { border-color:var(--line-strong); box-shadow:none; }
+    body[data-theme="easykids"] .bracket-match-node.in-progress { border-color:#d4af37; box-shadow:none; }
+    body[data-theme="easykids"] .bracket-team { min-height:36px; padding:6px 8px; background:transparent; border-color:transparent; }
+    body[data-theme="easykids"] .bracket-team + .bracket-team { margin-top:6px; border-top-color:var(--line); }
+    body[data-theme="easykids"] .bracket-team.winner { background:rgb(73 207 155 / .10); }
+    .bracket-grid { gap:32px 56px; padding:24px; }
+    @media(max-width:680px) { body[data-theme="easykids"] .bracket-match-node { width:252px; padding:10px; } }
 </style>
 @endpush
 
@@ -452,7 +466,7 @@
             $layoutSortNumber = $isThirdPlace ? $match->match_number + 100000 : $match->match_number;
         @endphp
         <article class="bracket-match-node {{ $match->status === App\Enums\MatchStatus::LIVE ? 'in-progress' : '' }} {{ $match->status === App\Enums\MatchStatus::FINISHED ? 'is-finished' : '' }} {{ $match->status === App\Enums\MatchStatus::READY ? 'is-ready' : '' }} {{ $isUnscored ? 'is-unscored' : '' }}"
-            data-match-id="{{ $match->id }}" data-match-number="{{ $displayMatchNumber }}" data-round="{{ $match->round_number }}" data-number="{{ $layoutSortNumber }}"
+            data-match-id="{{ $match->id }}" data-match-number="{{ $displayMatchNumber }}" data-round="{{ $match->round_number }}" data-number="{{ $layoutSortNumber }}" data-bracket-kind="{{ $match->bracket_type->value }}"
             data-winner-next="{{ $match->winner_next_match_id }}" data-loser-next="{{ $match->loser_next_match_id }}" data-third-place="{{ $isThirdPlace ? 'true' : 'false' }}">
             <div class="bracket-match-meta">
                 <span class="bracket-match-number"><span>{{ __('ui.display_match') }}</span><strong>#{{ $displayMatchNumber }}</strong>@if(isset($estimatedStartTimes[(string) $match->id]))<i class="bracket-scheduled-time">{{ $estimatedStartTimes[(string) $match->id] }} {{ __('ui.time_suffix') }}</i>@endif</span>
@@ -631,13 +645,14 @@ document.addEventListener('change', (event) => {
 
 (() => {
     const SVG_NS = 'http://www.w3.org/2000/svg';
-    const HEADER = 54;
-    const GAP_X = 56;
-    const GAP_Y = 12;
+    const HEADER = 64;
+    const GAP_X = 112;
+    const GAP_Y = 40;
     const ACTION_GUTTER = 44;
     const ROUND_COLORS = ['#d4af37'];
     const ROUND_LABEL = @json(__('ui.round'));
     const FINAL_LABEL = @json(__('ui.final'));
+    const GRAND_FINAL_LABEL = @json(__('ui.grand_final'));
     const SEMIFINAL_LABEL = @json(__('ui.semifinals'));
     const QUARTERFINAL_LABEL = @json(__('ui.quarterfinals'));
     const FINALS_LABEL = @json(__('ui.finals'));
@@ -699,7 +714,7 @@ document.addEventListener('change', (event) => {
         zoomStages.push({ stage, canvas });
         nodes.forEach((node) => canvas.appendChild(node));
         const matches = nodes.map((node) => ({
-            node, id: node.dataset.matchId, round: Number(node.dataset.round), number: Number(node.dataset.number),
+            node, id: node.dataset.matchId, round: Number(node.dataset.round), number: Number(node.dataset.number), kind: node.dataset.bracketKind,
             winnerNext: node.dataset.winnerNext || null, loserNext: node.dataset.loserNext || null, thirdPlace: node.dataset.thirdPlace === 'true',
         }));
         const ids = new Set(matches.map((match) => match.id));
@@ -760,13 +775,8 @@ document.addEventListener('change', (event) => {
                 placeRound(inRound, ideals);
             }
 
-            const layoutCenter = (anchorCount - 1) * base / 2;
-            matchesByRound.forEach((inRound) => {
-                const positions = inRound.map((match) => y.get(match.id));
-                const roundCenter = (Math.min(...positions) + Math.max(...positions)) / 2;
-                const shift = layoutCenter - roundCenter;
-                inRound.forEach((match) => y.set(match.id, y.get(match.id) + shift));
-            });
+            // Keep feeder-derived positions: independently centering every round
+            // misaligns paths in uneven brackets and around third-place matches.
 
             const minY = Math.min(0, ...y.values());
             if (minY < 0) y.forEach((value, id) => y.set(id, value - minY));
@@ -782,11 +792,12 @@ document.addEventListener('change', (event) => {
             const roundTitle = (round, index) => {
                 const type = viewport.dataset.bracketType;
                 const sectionType = type.split(':').pop();
-                const hasGrandFinal = viewport.dataset.hasGrandFinal === 'true';
-                const remaining = rounds.length - index;
+                const grandFinalRounds = rounds.filter(value => matches.some(match => match.round === value && match.kind === 'GRAND_FINAL'));
+                const eliminationRounds = rounds.filter(value => !grandFinalRounds.includes(value));
+                const remaining = eliminationRounds.length - eliminationRounds.indexOf(round);
 
+                if (grandFinalRounds.includes(round)) return grandFinalRounds.length > 1 ? `${GRAND_FINAL_LABEL} ${grandFinalRounds.indexOf(round) + 1}` : GRAND_FINAL_LABEL;
                 if (sectionType === 'LOSERS') return `${LOSERS_ROUND_LABEL} ${index + 1}`;
-                if (sectionType === 'GRAND_FINAL') return rounds.length > 1 ? `${FINAL_LABEL} ${index + 1}` : FINAL_LABEL;
                 if (sectionType === 'WINNERS') {
                     if (remaining === 1) return FINALS_LABEL;
                     if (remaining === 2) return SEMIFINAL_LABEL;

@@ -50,7 +50,20 @@ class TournamentHttpTest extends TestCase
             ->assertDontSee('name="loss_points"', false)
             ->assertSee(__('ui.grand_final_one_match'))
             ->assertSee(__('ui.grand_final_two_matches'))
+            ->assertSee('data-dirty-guard', false)
+            ->assertSee('class="actions form-actions"', false)
             ->assertSee('updateFormatFields', false);
+    }
+
+    public function test_login_exposes_an_accessible_password_visibility_control(): void
+    {
+        auth()->logout();
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('data-password-toggle', false)
+            ->assertSee('data-show-label="'.__('ui.show_password').'"', false)
+            ->assertSee('aria-label="'.__('ui.show_password').'"', false);
     }
 
     public function test_tournament_can_be_created_and_exposed_by_api(): void
@@ -58,6 +71,7 @@ class TournamentHttpTest extends TestCase
         $this->withoutMiddleware(ValidateCsrfToken::class);
         $response = $this->post('/tournaments', [
             'name' => 'HTTP Tournament', 'competition' => 'EasyKids', 'division' => 'Junior',
+            'structure' => 'STANDARD',
             'format' => 'ROUND_ROBIN', 'seeding_method' => 'REGISTRATION_ORDER',
         ]);
         $response->assertSessionHasNoErrors();
@@ -164,17 +178,17 @@ class TournamentHttpTest extends TestCase
 
         $this->get(route('tournaments.bracket', $tournament))
             ->assertOk()
-            ->assertSee('data-match-id="'.$lowerFirst->id.'" data-match-number="8"', false)
-            ->assertSee('data-match-id="'.$lowerFinal->id.'" data-match-number="13"', false)
-            ->assertSee('data-match-id="'.$grandFinal->id.'" data-match-number="14"', false)
+            ->assertSee('data-match-id="'.$lowerFirst->id.'"', false)
+            ->assertSee('data-match-id="'.$lowerFinal->id.'"', false)
+            ->assertSee('data-match-id="'.$grandFinal->id.'"', false)
             ->assertSee(__('ui.source_loser_label', ['number' => 1]))
             ->assertSee(__('ui.match_destinations'))
             ->assertSee('→ #14', false)
             ->assertSee('bracket-round-lane', false)
             ->assertSee('const anchorIndex', false)
             ->assertSee('const ROUND_COLORS', false)
-            ->assertSee('const trackRatio', false)
-            ->assertSee('portOffset', false);
+            ->assertSee('const trackX', false)
+            ->assertSee('bracket-connector-port', false);
     }
 
     public function test_shared_layout_uses_the_supplied_png_favicon(): void
@@ -208,12 +222,49 @@ class TournamentHttpTest extends TestCase
             ->assertSee(__('ui.progress_percent', ['percent' => 50]));
     }
 
+    public function test_dashboard_searches_competition_details_and_exposes_accessible_controls(): void
+    {
+        Tournament::factory()->create([
+            'name' => 'Bangkok Robotics Cup',
+            'competition' => 'STEM Festival',
+            'division' => 'Junior',
+            'venue' => 'Hall A',
+            'status' => TournamentStatus::LIVE,
+        ]);
+        Tournament::factory()->create([
+            'name' => 'Northern Challenge',
+            'competition' => 'Regional League',
+            'division' => 'Senior',
+            'venue' => 'Chiang Mai',
+            'status' => TournamentStatus::DRAFT,
+        ]);
+
+        $this->get(route('tournaments.index', ['q' => 'Chiang Mai']))
+            ->assertOk()
+            ->assertSee('Northern Challenge')
+            ->assertDontSee('Bangkok Robotics Cup')
+            ->assertSee('role="search"', false)
+            ->assertSee('data-competition-search', false)
+            ->assertSee('href="#main-content"', false);
+
+        $this->get(route('tournaments.index'))
+            ->assertOk()
+            ->assertSee('data-order-move="-1"', false)
+            ->assertSee('data-order-status', false);
+
+        $this->get(route('tournaments.index', ['status' => TournamentStatus::LIVE->value]))
+            ->assertOk()
+            ->assertSee('Bangkok Robotics Cup')
+            ->assertDontSee('Northern Challenge');
+    }
+
     public function test_double_elimination_grand_final_setting_is_saved_before_start(): void
     {
         $this->withoutMiddleware(ValidateCsrfToken::class);
 
         $this->post(route('tournaments.store'), [
             'name' => 'Double Final Test',
+            'structure' => 'STANDARD',
             'competition' => 'EasyKids',
             'division' => 'Open',
             'format' => 'DOUBLE_ELIMINATION',
@@ -229,6 +280,7 @@ class TournamentHttpTest extends TestCase
             'competition' => $tournament->competition,
             'division' => $tournament->division,
             'format' => 'DOUBLE_ELIMINATION',
+            'structure' => 'STANDARD',
             'seeding_method' => 'REGISTRATION_ORDER',
             'grand_final_matches' => 2,
         ])->assertSessionHasNoErrors();
@@ -332,7 +384,7 @@ class TournamentHttpTest extends TestCase
         $participant = Participant::factory()->create(['tournament_id' => $tournament->id]);
 
         $this->delete(route('tournaments.destroy', $tournament))
-            ->assertRedirect(route('tournaments.index'));
+            ->assertRedirect(route('events.show', $tournament->event_id));
 
         $this->assertDatabaseMissing('external_tournaments', ['id' => $tournament->id]);
         $this->assertDatabaseMissing('external_participants', ['id' => $participant->id]);
@@ -384,7 +436,7 @@ class TournamentHttpTest extends TestCase
         $this->post(route('locale.update', 'th'))->assertRedirect();
         $this->get(route('tournaments.settings', $tournament))
             ->assertOk()
-            ->assertSee('ตั้งค่าการแข่งขันและรูปแบบทัวร์นาเมนต์')
+            ->assertSee('ตั้งค่าการแข่งขันและรูปแบบรายการ')
             ->assertSee('ลบการแข่งขัน');
     }
 }

@@ -11,6 +11,7 @@ use App\Models\Participant;
 use App\Models\Tournament;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ParticipantController extends Controller
@@ -22,14 +23,51 @@ class ParticipantController extends Controller
         }
 
         $data = $request->validate($this->rules());
-        $participant = $tournament->participants()->create($data + [
+        $participant = $tournament->participants()->create(array_merge($data, [
             'status' => $data['status'] ?? ParticipantStatus::ACTIVE,
             'source_created_at' => now(),
             'synced_at' => now(),
-        ]);
+        ]));
         $this->syncCount($tournament);
 
         return $this->success($participant, 201);
+    }
+
+    public function bulkStore(Request $request, Tournament $tournament): JsonResponse
+    {
+        if (! $this->editable($tournament)) {
+            return $this->error(__('ui.roster_locked'), 422);
+        }
+
+        $data = $request->validate([
+            'participants' => ['required', 'array', 'min:1', 'max:1000'],
+            'participants.*.team_name' => ['required', 'string', 'max:200'],
+            'participants.*.team_code' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'participants.*.school' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'participants.*.coach_name' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'participants.*.seed_number' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'participants.*.status' => ['sometimes', 'nullable', Rule::enum(ParticipantStatus::class)],
+        ]);
+
+        $participants = DB::transaction(function () use ($tournament, $data) {
+            $created = collect();
+            $nextSeed = ((int) $tournament->participants()->max('seed_number')) + 1;
+
+            foreach ($data['participants'] as $index => $row) {
+                $created->push($tournament->participants()->create(array_merge($row, [
+                    'seed_number' => $row['seed_number'] ?? ($nextSeed + $index),
+                    'status' => $row['status'] ?? ParticipantStatus::ACTIVE,
+                    'source_created_at' => now(),
+                    'synced_at' => now(),
+                ])));
+            }
+
+            $this->syncCount($tournament);
+
+            return $created;
+        }, 3);
+
+        return $this->success($participants, 201);
     }
 
     public function update(Request $request, Tournament $tournament, Participant $participant): JsonResponse
@@ -56,6 +94,19 @@ class ParticipantController extends Controller
         return $this->success(['deleted' => true]);
     }
 
+    public function destroyAll(Tournament $tournament): JsonResponse
+    {
+        if (! $this->editable($tournament)) {
+            return $this->error(__('ui.roster_locked'), 422);
+        }
+
+        $deleted = $tournament->participants()->count();
+        $tournament->participants()->delete();
+        $this->syncCount($tournament);
+
+        return $this->success(['deleted' => $deleted]);
+    }
+
     /** @return array<string, mixed> */
     private function rules(bool $partial = false): array
     {
@@ -73,7 +124,8 @@ class ParticipantController extends Controller
 
     private function editable(Tournament $tournament): bool
     {
-        return in_array($tournament->status, [TournamentStatus::DRAFT, TournamentStatus::READY], true);
+        return in_array($tournament->status, [TournamentStatus::DRAFT, TournamentStatus::READY], true)
+            && ! $tournament->matches()->exists();
     }
 
     private function assertOwner(Tournament $tournament, Participant $participant): void

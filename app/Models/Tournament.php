@@ -12,6 +12,7 @@ use App\Enums\TournamentStructure;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -29,6 +30,7 @@ class Tournament extends Model
 
     protected $fillable = [
         'id',
+        'event_id',
         'public_token',
         'name',
         'competition',
@@ -64,7 +66,18 @@ class Tournament extends Model
     {
         static::creating(function (Tournament $tournament): void {
             $tournament->public_token ??= (string) Str::uuid();
+            // Older integrations and seeders can still create competitions without
+            // event_id. Keep them inside the hierarchy rather than orphaning them.
+            $tournament->event_id ??= Event::unguarded(fn () => Event::firstOrCreate(
+                ['id' => '00000000-0000-4000-8000-000000000001'],
+                ['name' => 'Existing competitions'],
+            ))->id;
         });
+    }
+
+    public function event(): BelongsTo
+    {
+        return $this->belongsTo(Event::class);
     }
 
     public function publicShareUrl(): ?string

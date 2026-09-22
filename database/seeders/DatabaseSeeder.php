@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Enums\SeedingMethod;
-use App\Enums\StageStatus;
 use App\Enums\StageSourceType;
+use App\Enums\StageStatus;
 use App\Enums\StageType;
 use App\Enums\TournamentFormat;
-use App\Enums\TournamentStructure;
 use App\Enums\TournamentStatus;
+use App\Enums\TournamentStructure;
+use App\Models\Event;
 use App\Models\Participant;
 use App\Models\Stage;
 use App\Models\Tournament;
@@ -30,7 +31,9 @@ class DatabaseSeeder extends Seeder
         }
 
         $now = now();
+        $event = Event::query()->firstOrCreate(['name' => 'EasyKids Robotics Championship']);
         $tournament = Tournament::query()->create([
+            'event_id' => $event->id,
             'public_token' => (string) Str::uuid(),
             'name' => 'EasyKids 8-Team Double Elimination Demo',
             'competition' => 'EasyKids Robotics Championship',

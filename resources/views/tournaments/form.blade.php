@@ -35,9 +35,10 @@
 <div class="page-head"><div><h1>{{ __('ui.create_tournament') }}</h1><div class="muted">{{ __('ui.create_help') }}</div></div></div>
 @endif
 
-<form method="post" action="{{ $editing ? route('tournaments.update', $tournament) : route('tournaments.store') }}">@csrf @if($editing)@method('PUT')@endif
+<form class="competition-form" method="post" action="{{ $editing ? route('tournaments.update', $tournament) : route('tournaments.store') }}" data-dirty-guard data-unsaved-message="{{ __('ui.unsaved_changes') }}">@csrf @if($editing)@method('PUT')@endif
 <section class="card"><h2>{{ __('ui.competition_information') }}</h2><div class="muted" style="margin:-9px 0 17px">{{ __('ui.competition_information_help') }}</div>
 <div class="form-grid">
+<div class="field full"><label for="event_id">{{ __('events.event') }}</label><select id="event_id" name="event_id" required data-native-select><option value="">{{ __('events.select') }}</option>@foreach($events as $event)<option value="{{ $event->id }}" @selected(old('event_id', $tournament->event_id) === $event->id)>{{ $event->name }}</option>@endforeach</select><a href="{{ route('events.create') }}">{{ __('events.new') }}</a></div>
 <div class="field"><label for="name">{{ __('ui.tournament_name') }}</label><input id="name" name="name" required maxlength="200" value="{{ old('name', $tournament->name) }}"></div>
 <div class="field"><label for="competition">{{ __('ui.competition_event') }}</label><input id="competition" name="competition" required maxlength="200" value="{{ old('competition', $tournament->competition) }}"></div>
 <div class="field"><label for="division">{{ __('ui.division') }}</label><input id="division" name="division" required maxlength="200" value="{{ old('division', $tournament->division) }}"></div>
@@ -127,7 +128,7 @@
 </div>
 </div></section>
 
-<div class="actions"><button class="btn">{{ $editing ? __('ui.save_settings') : __('ui.create') }}</button><a class="btn secondary" href="{{ $editing ? route('tournaments.show', $tournament) : route('tournaments.index') }}">{{ __('ui.cancel') }}</a></div>
+<div class="actions form-actions"><button class="btn">{{ $editing ? __('ui.save_settings') : __('ui.create') }}</button><a class="btn secondary" href="{{ $editing ? route('tournaments.show', $tournament) : route('tournaments.index') }}">{{ __('ui.cancel') }}</a></div>
 </form>
 
 @if($editing)

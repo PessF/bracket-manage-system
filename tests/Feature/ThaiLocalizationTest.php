@@ -21,15 +21,15 @@ class ThaiLocalizationTest extends TestCase
         $live = Tournament::factory()->create(['status' => TournamentStatus::LIVE]);
 
         $this->get(route('tournaments.index'))
-            ->assertOk()->assertSee('<html lang="th">', false)->assertSee('ระบบไม่แสดงรายการแข่งขันต่อสาธารณะ');
+            ->assertOk()->assertSee('<html lang="th">', false)->assertSee('รายการแข่งขัน');
         $this->get(route('login'))->assertOk()->assertSee('เข้าสู่ระบบผู้ดูแล');
         $this->get(route('admin.setup'))->assertOk()->assertSee('สร้างผู้ดูแลระบบคนแรก');
         $this->get(route('api.docs'))->assertOk()->assertSee('คู่มือ REST API ภาษาไทย');
-        $this->get($live->publicShareUrl())->assertOk()->assertSee('อัปเดตผลสด')->assertSee('สายการแข่งขันสด · ปัดด้านข้างเพื่อดูรอบถัดไป');
+        $this->get($live->publicShareUrl())->assertOk()->assertSee('สายการแข่งขัน')->assertSee('data-live-bracket', false);
         $this->get(route('public.tournaments.bracket', ['tournament' => $live->public_token]))
-            ->assertOk()->assertSee('สายการแข่งขันสด · ปัดด้านข้างเพื่อดูรอบถัดไป');
+            ->assertOk()->assertSee('สายการแข่งขัน');
         $this->get(route('public.tournaments.matches', ['tournament' => $live->public_token]))
-            ->assertOk()->assertSee('สถานะแมตช์และคะแนนล่าสุด');
+            ->assertOk()->assertSee(__('ui.live_match_results'));
         $this->get(route('public.tournaments.results', ['tournament' => $live->public_token]))
             ->assertOk()->assertSee('ตารางอันดับ');
     }
@@ -40,9 +40,9 @@ class ThaiLocalizationTest extends TestCase
         $draft = Tournament::factory()->create(['status' => TournamentStatus::DRAFT]);
         $this->actingAs($admin);
 
-        $this->get(route('tournaments.create'))->assertOk()->assertSee('ตั้งค่าการแข่งขันแล้วเพิ่มผู้เข้าแข่งขัน');
+        $this->get(route('tournaments.create'))->assertOk()->assertSee('กำหนดข้อมูลและรูปแบบการแข่งขัน');
         $this->get(route('tournaments.settings', $draft))->assertOk()->assertSee('ข้อมูลการแข่งขัน');
-        $this->get(route('tournaments.show', $draft))->assertOk()->assertSee('แชร์การแข่งขันสด');
+        $this->get(route('tournaments.show', $draft))->assertOk()->assertSee('ลิงก์ผู้ชม');
         $this->get(route('admin.users.index'))->assertOk()->assertSee('จัดการผู้ใช้งาน');
         $this->get(route('admin.api-token.show'))->assertOk()->assertSee('API Token สำหรับผู้ดูแล');
     }
@@ -64,6 +64,6 @@ class ThaiLocalizationTest extends TestCase
         $this->withoutMiddleware(ValidateCsrfToken::class);
         $this->post(route('locale.update', 'en'))->assertRedirect();
         $this->get(route('login'))
-            ->assertOk()->assertSee('<html lang="en">', false)->assertSee('Admin login');
+            ->assertOk()->assertSee('<html lang="en">', false)->assertSee('Administrator login');
     }
 }

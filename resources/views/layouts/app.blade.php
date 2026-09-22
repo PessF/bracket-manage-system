@@ -701,16 +701,17 @@
     @stack('styles')
 </head>
 <body class="{{ $isPublicViewer ? 'viewer-shell' : '' }}" data-theme="easykids" data-processing-label="{{ __('ui.processing') }}">
+<a class="skip-link" href="#main-content">{{ __('ui.skip_to_content') }}</a>
 <header class="top">
     <div class="inner">
-        <a class="brand" href="{{ $isPublicViewer ? url()->current() : route('tournaments.index') }}">
+        <a class="brand" href="{{ route('events.index') }}">
             <span class="brand-logo-slot"><img class="brand-logo brand-logo--dark" src="{{ asset('assets/logos/EasyKidsLogoW.png') }}" alt="EasyKids Robotics"></span>
             <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v3a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v1a4 4 0 0 0 4 4M17 6h3v1a4 4 0 0 1-4 4"/></svg>
             <span class="brand-name">{{ __('ui.app_name') }}</span><span class="brand-short">EasyKids</span>
         </a>
         <nav>
             @unless($isPublicViewer)
-            <a class="desktop-only nav-all-tournaments {{ request()->routeIs('tournaments.index', 'tournaments.show', 'tournaments.overview', 'tournaments.bracket', 'tournaments.matches', 'tournaments.results', 'tournaments.settings', 'tournaments.edit') ? 'active' : '' }}" href="{{ route('tournaments.index') }}">{{ __('ui.all_tournaments') }}</a>
+            <a class="desktop-only nav-all-tournaments {{ request()->routeIs('events.*', 'tournaments.*') ? 'active' : '' }}" href="{{ route('events.index') }}">{{ __('events.title') }}</a>
             @if($isAdmin)
             <a class="desktop-only {{ request()->routeIs('tournaments.create') ? 'active' : '' }}" href="{{ route('tournaments.create') }}">{{ __('ui.create') }}</a>
             <a class="desktop-only {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">{{ __('ui.users') }}</a>
@@ -726,7 +727,7 @@
                 <summary>{{ __('ui.menu') }}</summary>
                 <div class="mobile-popover">
                     @auth<div class="mobile-user">{{ auth()->user()->name }} · {{ __('ui.role_labels.'.auth()->user()->role->value) }}</div>@endauth
-                    <a href="{{ route('tournaments.index') }}">{{ __('ui.all_tournaments') }}</a>
+                    <a href="{{ route('events.index') }}">{{ __('events.title') }}</a>
                     @if($isAdmin)
                     <a href="{{ route('tournaments.create') }}">{{ __('ui.create') }}</a>
                     <a href="{{ route('admin.users.index') }}">{{ __('ui.users') }}</a>
@@ -754,12 +755,13 @@
         </nav>
     </div>
 </header>
-<main class="container @yield('container-class')">
-    @if(session('success'))<div class="alert success">{{ session('success') }}</div>@endif
-    @if(isset($errors) && $errors->any())<div class="alert error"><strong>{{ __('ui.please_fix') }}</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+<main id="main-content" class="container @yield('container-class')" tabindex="-1">
+    @if(session('success'))<div class="alert success dismissible" role="status"><span>{{ session('success') }}</span><button type="button" data-dismiss-alert aria-label="{{ __('ui.dismiss') }}">×</button></div>@endif
+    @if(isset($errors) && $errors->any())<div class="alert error dismissible" role="alert"><div><strong>{{ __('ui.please_fix') }}</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div><button type="button" data-dismiss-alert aria-label="{{ __('ui.dismiss') }}">×</button></div>@endif
     @if(session('import_errors'))<div class="alert warning"><strong>{{ __('ui.csv_skipped_title') }}</strong><ul>@foreach(session('import_errors') as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     @yield('content')
 </main>
+<div class="toast-region" aria-live="polite" aria-atomic="true" data-toast-region></div>
 @stack('scripts')
 </body>
 </html>

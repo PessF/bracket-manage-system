@@ -36,7 +36,8 @@ class TournamentLifecycleServiceTest extends TestCase
         $this->assertSame(7, $tournament->matches()->where('bracket_type', BracketType::WINNERS)->count());
         $this->assertSame(6, $tournament->matches()->where('bracket_type', BracketType::LOSERS)->count());
         $this->assertSame(1, $tournament->matches()->where('bracket_type', BracketType::GRAND_FINAL)->count());
-        $this->assertSame(4, $tournament->matches()->where('status', MatchStatus::READY)->count());
+        $this->assertSame(3, $tournament->matches()->where('status', MatchStatus::READY)->count());
+        $this->assertSame(1, $tournament->matches()->where('status', MatchStatus::LIVE)->count());
         $this->assertGreaterThan(0, $tournament->matches()->whereNotNull('loser_next_match_id')->count());
         $this->assertSame(StageStatus::LIVE, $tournament->stages()->first()->status);
     }
@@ -102,7 +103,7 @@ class TournamentLifecycleServiceTest extends TestCase
 
         for ($played = 0; $played < 42; $played++) {
             $next = $tournament->matches()
-                ->where('status', MatchStatus::READY)
+                ->whereIn('status', [MatchStatus::READY, MatchStatus::LIVE])
                 ->orderBy('match_number')
                 ->first();
 

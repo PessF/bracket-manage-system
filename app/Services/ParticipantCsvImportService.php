@@ -20,7 +20,8 @@ class ParticipantCsvImportService
     /** @return array{imported: int, skipped: int, errors: list<string>} */
     public function import(Tournament $tournament, UploadedFile $file): array
     {
-        if (! in_array($tournament->status, [TournamentStatus::DRAFT, TournamentStatus::READY], true)) {
+        if (! in_array($tournament->status, [TournamentStatus::DRAFT, TournamentStatus::READY], true)
+            || $tournament->matches()->exists()) {
             throw new DomainException(__('ui.roster_locked'));
         }
 

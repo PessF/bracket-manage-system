@@ -36,7 +36,13 @@ Accept-Language: th-TH</code></pre><div class="api-note">{{ __('api.security_not
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -H "Accept-Language: th-TH" \
-  -d '{"name":"EasyKids 2026","competition":"Robot Challenge","division":"Junior","format":"DOUBLE_ELIMINATION","seeding_method":"REGISTRATION_ORDER","grand_final_matches":2}'</code></pre><h3>{{ __('api.share_link_example') }}</h3><pre><code>curl -X PATCH "{{ url('/api/tournaments/{id}/share-link') }}" \
+  -d '{"name":"EasyKids 2026","competition":"Robot Challenge","division":"Junior","structure":"STANDARD","format":"DOUBLE_ELIMINATION","seeding_method":"REGISTRATION_ORDER","grand_final_matches":2}'</code></pre><h3>{{ __('api.advanced_example') }}</h3><pre><code>curl -X POST "{{ url('/api/tournaments') }}" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Advanced Cup","competition":"Robot Challenge","division":"Open","structure":"ADVANCED","format":"SINGLE_ELIMINATION","seeding_method":"REGISTRATION_ORDER","advanced_group_count":4,"advanced_group_limits":[8,8,8,8],"advanced_group_format":"ROUND_ROBIN","advanced_qualifiers_per_group":2,"advanced_playoff_format":"SINGLE_ELIMINATION","advanced_third_place":true}'</code></pre><h3>{{ __('api.group_assignment_example') }}</h3><pre><code>curl -X PUT "{{ url('/api/tournaments/{id}/group-assignments') }}" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"assignments":{"PARTICIPANT_UUID":"GROUP_UUID"}}'</code></pre><h3>{{ __('api.share_link_example') }}</h3><pre><code>curl -X PATCH "{{ url('/api/tournaments/{id}/share-link') }}" \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"share_slug":"easykids-final-26"}'</code></pre><h3>{{ __('api.status_example') }}</h3><pre><code>curl -X PATCH "{{ url('/api/tournaments/{id}/status') }}" \
@@ -45,7 +51,10 @@ Accept-Language: th-TH</code></pre><div class="api-note">{{ __('api.security_not
   -d '{"status":"LIVE"}'</code></pre><h3>{{ __('api.score_example') }}</h3><pre><code>curl -X PUT "{{ url('/api/tournaments/{id}/matches/{match}/result') }}" \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"score_a":3,"score_b":1}'</code></pre><p>{{ __('api.score_correction_help') }}</p></section>
+  -d '{"score_a":3,"score_b":1}'</code></pre><p>{{ __('api.score_correction_help') }}</p><h3>{{ __('api.ranking_example') }}</h3><pre><code>curl -X PUT "{{ url('/api/tournaments/{id}/participants/{participant}/attempts/1') }}" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"manual_score":40,"auto_score":45,"attempt_time":72.5,"is_valid":true}'</code></pre></section>
 
 <section class="card" id="codes"><h2>{{ __('api.status_codes') }}</h2><div class="table-wrap"><table><tbody>@foreach(__('api.status_code_rows') as $row)<tr><td><code>{{ $row[0] }}</code></td><td>{{ $row[1] }}</td></tr>@endforeach</tbody></table></div></section>
 </div>

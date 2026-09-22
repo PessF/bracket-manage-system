@@ -62,7 +62,8 @@ class MatchResultService
                 ->lockForUpdate()
                 ->findOrFail($matchId);
 
-            $currentMatch->load('tournament');
+            $currentMatch->load(['tournament', 'stage']);
+            $matchFormat = $currentMatch->stage?->format ?? $currentMatch->tournament->format;
 
             if ($currentMatch->tournament->status !== TournamentStatus::LIVE) {
                 throw new DomainException(__('ui.result_live_only'));
@@ -96,7 +97,7 @@ class MatchResultService
 
             $comparison = bccomp($normalizedScoreA, $normalizedScoreB, 6);
 
-            if ($comparison === 0 && $currentMatch->tournament->format->isElimination()) {
+            if ($comparison === 0 && $matchFormat->isElimination()) {
                 throw new DomainException(__('ui.elimination_tie_invalid'));
             }
 
@@ -163,13 +164,13 @@ class MatchResultService
             }
 
             if (
-                $currentMatch->tournament->format === TournamentFormat::DOUBLE_ELIMINATION
+                $matchFormat === TournamentFormat::DOUBLE_ELIMINATION
                 && (int) ($currentMatch->tournament->double_elimination_config['grand_final_matches'] ?? 2) === 2
             ) {
                 $this->synchronizeGrandFinalReset($currentMatch, $winnerId);
             }
 
-            if ($currentMatch->tournament->format !== TournamentFormat::RANKING) {
+            if ($matchFormat !== TournamentFormat::RANKING) {
                 $this->matchStandings->recompute($currentMatch->tournament);
             }
 

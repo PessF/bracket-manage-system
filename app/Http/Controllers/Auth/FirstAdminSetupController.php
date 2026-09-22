@@ -53,7 +53,7 @@ class FirstAdminSetupController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('tournaments.index')->with('success', __('ui.admin_created'));
+        return redirect()->route('events.index')->with('success', __('ui.admin_created'));
     }
 
     private function adminExists(): bool

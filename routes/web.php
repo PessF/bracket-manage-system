@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\FirstAdminSetupController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MatchProgressController;
 use App\Http\Controllers\MatchResultController;
@@ -16,7 +17,8 @@ use App\Http\Controllers\TournamentLifecycleController;
 use App\Http\Controllers\TournamentWorkspaceController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/tournaments');
+Route::redirect('/', '/events');
+Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::post('/locale/{locale}', LocaleController::class)->name('locale.update');
 
 Route::middleware('guest')->group(function (): void {
@@ -32,6 +34,11 @@ Route::view('/api/docs', 'api.docs')->name('api.docs');
 Route::get('/tournaments', [TournamentController::class, 'index'])->name('tournaments.index');
 
 Route::middleware(['auth', 'admin'])->group(function (): void {
+    Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
+    Route::post('/events', [EventController::class, 'store'])->name('events.store');
+    Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
+    Route::match(['put', 'patch'], '/events/{event}', [EventController::class, 'update'])->name('events.update');
+    Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
     Route::get('/tournaments/create', [TournamentController::class, 'create'])->name('tournaments.create');
     Route::post('/tournaments', [TournamentController::class, 'store'])->name('tournaments.store');
     Route::patch('/tournaments/display-order', [TournamentController::class, 'updateDisplayOrder'])->name('tournaments.display-order.update');
@@ -69,6 +76,8 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::post('/admin/api-token', [ApiTokenController::class, 'store'])->name('admin.api-token.store');
     Route::delete('/admin/api-token', [ApiTokenController::class, 'destroy'])->name('admin.api-token.destroy');
 });
+
+Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
 
 Route::middleware('tournament.visible')->group(function (): void {
     Route::get('/tournaments/{tournament}', [TournamentController::class, 'entry'])->name('tournaments.show');

@@ -14,7 +14,6 @@ use App\Models\Tournament;
 use App\Models\User;
 use App\Services\MatchProgressService;
 use App\Services\TournamentLifecycleService;
-use DomainException;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -58,9 +57,10 @@ class TournamentMatchProgressTest extends TestCase
         $this->assertNotNull($current->started_at);
         $this->assertSame(MatchStatus::READY, $matches[1]->refresh()->status);
 
-        $this->expectException(DomainException::class);
-        $this->expectExceptionMessage(__('ui.another_match_in_progress', ['number' => 1]));
         app(MatchProgressService::class)->markInProgress($matches[1]);
+        $this->assertSame(MatchStatus::READY, $matches[0]->refresh()->status);
+        $this->assertSame(MatchStatus::LIVE, $matches[1]->refresh()->status);
+        $this->assertSame(1, $tournament->matches()->where('status', MatchStatus::LIVE)->count());
     }
 
     public function test_admin_and_viewer_brackets_show_the_current_match_without_timing_ui(): void
@@ -86,8 +86,8 @@ class TournamentMatchProgressTest extends TestCase
             ->assertOk()
             ->assertSee(__('ui.red_side'))
             ->assertSee(__('ui.blue_side'))
-            ->assertSee(__('ui.current_match'))
-            ->assertSee('class="bracket-current"', false)
+            ->assertSee(__('ui.match_status_labels.LIVE'))
+            ->assertSee('bracket-match-node in-progress', false)
             ->assertSee('width:36px', false)
             ->assertSee('height:36px', false)
             ->assertDontSee('data-scheduled-time', false)
@@ -95,9 +95,9 @@ class TournamentMatchProgressTest extends TestCase
 
         $this->get(route('public.tournaments.show', ['tournament' => $tournament->public_token]))
             ->assertOk()
-            ->assertSee(__('ui.current_match'))
-            ->assertSee('class="bracket-current"', false)
-            ->assertDontSee('data-score-modal-trigger', false)
+            ->assertSee(__('ui.match_status_labels.LIVE'))
+            ->assertSee('bracket-match-node in-progress', false)
+            ->assertDontSee('data-action="'.route('matches.results.store', [$tournament, $match]).'"', false)
             ->assertDontSee('data-scheduled-time', false);
     }
 

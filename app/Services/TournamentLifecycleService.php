@@ -369,6 +369,11 @@ class TournamentLifecycleService
                 $match->{$labelColumn} = $participant->team_name;
             }
 
+            if ($match->is_bye) {
+                // Placeholder byes become real advances when qualifiers arrive.
+                $match->winner_id = $match->participant_a_id ?? $match->participant_b_id;
+            }
+
             if ($match->participant_a_id && $match->participant_b_id && $match->status === MatchStatus::PENDING) {
                 $match->status = MatchStatus::READY;
             }

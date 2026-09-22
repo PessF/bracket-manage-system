@@ -102,15 +102,12 @@ class BracketGenerator
                     ? $matches[$sourceBIndex]['winner_label']
                     : null;
 
-                if (! $matches[$sourceAIndex]['is_bye']) {
-                    $matches[$sourceAIndex]['winner_next_key'] = $key;
-                    $matches[$sourceAIndex]['winner_next_slot'] = MatchSlot::A;
-                }
-
-                if (! $matches[$sourceBIndex]['is_bye']) {
-                    $matches[$sourceBIndex]['winner_next_key'] = $key;
-                    $matches[$sourceBIndex]['winner_next_slot'] = MatchSlot::B;
-                }
+                // Retained bye nodes still feed round two. Their edges are needed
+                // by the renderer and by persisted participant-source metadata.
+                $matches[$sourceAIndex]['winner_next_key'] = $key;
+                $matches[$sourceAIndex]['winner_next_slot'] = MatchSlot::A;
+                $matches[$sourceBIndex]['winner_next_key'] = $key;
+                $matches[$sourceBIndex]['winner_next_slot'] = MatchSlot::B;
 
                 $matches[] = $this->draft([
                     'key' => $key,
@@ -151,6 +148,12 @@ class BracketGenerator
         ));
 
         if (count($semifinals) !== 2) {
+            return $matches;
+        }
+
+        // With three entrants one semifinal is a bye, so only one participant
+        // can finish third. A bronze match would wait forever for a bye's loser.
+        if ($semifinals[0]['is_bye'] || $semifinals[1]['is_bye']) {
             return $matches;
         }
 

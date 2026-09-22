@@ -6,14 +6,18 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\MatchStatus;
 use App\Enums\RankingType;
+use App\Enums\StageType;
 use App\Enums\TournamentStatus;
+use App\Enums\TournamentStructure;
 use App\Http\Controllers\Controller;
 use App\Models\Participant;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
+use App\Services\MatchProgressService;
 use App\Services\MatchResultService;
 use App\Services\RankingService;
 use App\Services\TournamentLifecycleService;
+use App\Services\TournamentLiveStateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -24,7 +28,31 @@ class TournamentOperationController extends Controller
         private readonly TournamentLifecycleService $lifecycle,
         private readonly MatchResultService $results,
         private readonly RankingService $ranking,
+        private readonly MatchProgressService $progressService,
+        private readonly TournamentLiveStateService $liveStateService,
     ) {}
+
+    public function liveState(Tournament $tournament): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'version' => $this->liveStateService->version($tournament),
+                'status' => $tournament->status,
+                'synced_at' => $tournament->synced_at,
+            ],
+        ]);
+    }
+
+    public function randomizeParticipants(Tournament $tournament): JsonResponse
+    {
+        return $this->execute(fn () => $this->lifecycle->randomizeParticipants($tournament));
+    }
+
+    public function prepareBracket(Tournament $tournament): JsonResponse
+    {
+        return $this->execute(fn () => $this->lifecycle->prepareBracket($tournament));
+    }
 
     public function start(Tournament $tournament): JsonResponse
     {
@@ -34,6 +62,25 @@ class TournamentOperationController extends Controller
     public function complete(Tournament $tournament): JsonResponse
     {
         return $this->execute(fn () => $this->lifecycle->complete($tournament));
+    }
+
+    public function createPlayoff(Tournament $tournament): JsonResponse
+    {
+        if ($tournament->structure === TournamentStructure::ADVANCED
+            && $tournament->stages()->where('stage_type', StageType::PLAYOFF)
+                ->whereHas('matches', fn ($query) => $query
+                    ->whereNotNull('participant_a_id')
+                    ->orWhereNotNull('participant_b_id'))
+                ->exists()) {
+            return response()->json(['success' => true, 'data' => $tournament->refresh()]);
+        }
+
+        return $this->execute(fn () => $this->lifecycle->createAdvancedPlayoff($tournament));
+    }
+
+    public function resetBracket(Tournament $tournament): JsonResponse
+    {
+        return $this->execute(fn () => $this->lifecycle->resetBracket($tournament));
     }
 
     public function archive(Tournament $tournament): JsonResponse
@@ -71,18 +118,33 @@ class TournamentOperationController extends Controller
         return $this->execute(fn () => $this->results->confirm($match, $data['score_a'], $data['score_b']));
     }
 
+    public function matchStatus(Request $request, Tournament $tournament, TournamentMatch $match): JsonResponse
+    {
+        $request->validate(['status' => ['required', 'string', 'in:LIVE']]);
+
+        return $this->progress($tournament, $match);
+    }
+
+    public function progress(Tournament $tournament, TournamentMatch $match): JsonResponse
+    {
+        abort_unless($match->tournament_id === $tournament->id, 404);
+
+        return $this->execute(fn () => $this->progressService->markInProgress($match));
+    }
+
     public function attempt(Request $request, Tournament $tournament, Participant $participant): JsonResponse
     {
         abort_unless($participant->tournament_id === $tournament->id, 404);
         $rules = [
             'attempt_number' => ['required', 'integer', 'between:1,20'],
-            'is_valid' => ['required', 'boolean'],
+            'is_valid' => ['sometimes', 'boolean'],
         ];
 
         $type = RankingType::tryFrom((string) ($tournament->ranking_config['type'] ?? ''));
 
         if ($type === RankingType::RACING_ROBOT) {
-            $rules['attempt_value'] = ['required', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
+            $rules['attempt_value'] = ['sometimes', 'required_without:attempt_time', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
+            $rules['attempt_time'] = ['sometimes', 'required_without:attempt_value', 'numeric', 'min:0', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
         } elseif ($type === RankingType::DRONE_MISSION) {
             $rules['manual_score'] = ['required', 'numeric', 'between:0,50', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
             $rules['auto_score'] = ['required', 'numeric', 'between:0,50', 'regex:/^\d{1,12}(\.\d{1,2})?$/'];
@@ -98,7 +160,7 @@ class TournamentOperationController extends Controller
             $participant,
             (int) $data['attempt_number'],
             $data['attempt_value'] ?? null,
-            (bool) $data['is_valid'],
+            (bool) ($data['is_valid'] ?? true),
             $data['manual_score'] ?? null,
             $data['auto_score'] ?? null,
             $data['attempt_time'] ?? null,
