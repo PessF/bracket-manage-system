@@ -500,8 +500,19 @@ document.addEventListener('change', (event) => {
             matchesByRound.forEach((inRound) => inRound.forEach((match, index) => {
                 y.set(match.id, ((maximumCount - inRound.length) / 2 + index) * base);
             }));
+            const edges = matches.flatMap((source) => [
+                {source, targetId:source.winnerNext, outcome:'winner'},
+                {source, targetId:source.loserNext, outcome:'loser'},
+            ])
+                .filter((edge) => edge.targetId && ids.has(edge.targetId))
+                .map((edge) => ({...edge, target:matches.find((candidate) => candidate.id === edge.targetId)}))
+                .filter((edge) => edge.target);
+
+            // Skipped rounds travel below all cards, with a separate lane per edge.
+            const detours = edges.filter((edge) => roundIndex.get(edge.target.round) !== roundIndex.get(edge.source.round) + 1);
+            const bottom = (maximumCount - 1) * base + cardHeight + HEADER;
             const width = rounds.length * columnWidth - GAP_X + PADDING * 2;
-            const height = (maximumCount - 1) * base + cardHeight + HEADER + PADDING;
+            const height = bottom + PADDING + detours.length * 16;
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
             canvas.dataset.layoutWidth = String(width);
@@ -560,15 +571,19 @@ document.addEventListener('change', (event) => {
             svg.setAttribute('height', height);
             svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
 
-            const edges = matches.flatMap((source) => [
-                {source, targetId:source.winnerNext, outcome:'winner'},
-                {source, targetId:source.loserNext, outcome:'loser'},
-            ])
-                .filter((edge) => edge.targetId && ids.has(edge.targetId))
-                .map((edge) => ({...edge, target:matches.find((candidate) => candidate.id === edge.targetId)}))
-                .filter((edge) => edge.target);
 
+            const routeGroups = new Map();
             edges.forEach((edge) => {
+                // Draw all feeder outlines before their strokes so true junctions
+                // remain joined; only unrelated crossings get a separation gap.
+                if (!routeGroups.has(edge.targetId)) {
+                    const group = document.createElementNS(SVG_NS, 'g');
+                    const layers = ['outlines', 'lines', 'ports'].map(() => document.createElementNS(SVG_NS, 'g'));
+                    group.append(...layers);
+                    svg.appendChild(group);
+                    routeGroups.set(edge.targetId, layers);
+                }
+                const [outlines, lines, ports] = routeGroups.get(edge.targetId);
                 const incoming = edges.filter((candidate) => candidate.targetId === edge.targetId);
                 const x1 = (roundIndex.get(edge.source.round) || 0) * columnWidth + PADDING + cardWidth;
                 const y1 = (y.get(edge.source.id) || 0) + HEADER + cardHeight / 2;
@@ -578,10 +593,30 @@ document.addEventListener('change', (event) => {
                 const trackX = furthestSourceX + (x2 - furthestSourceX) * .5;
                 const path = document.createElementNS(SVG_NS, 'path');
                 path.setAttribute('class', `bracket-connector is-${edge.outcome}`);
-                path.setAttribute('d', `M ${x1} ${y1} H ${trackX} V ${y2} H ${x2}`);
+                const detour = detours.indexOf(edge);
+                let route = `M ${x1} ${y1} H ${trackX} V ${y2} H ${x2}`;
+                if (detour >= 0) {
+                    const laneY = bottom + 16 * (detour + 1);
+                    // Both vertical legs stay strictly inside the column gutters.
+                    const offset = 20 + 60 * (detour + 1) / (detours.length + 1);
+                    route = `M ${x1} ${y1} H ${x1 + offset} V ${laneY} H ${x2 - offset} V ${y2} H ${x2}`;
+                }
+                path.setAttribute('d', route);
                 path.dataset.source = edge.source.id;
                 path.dataset.target = edge.target.id;
-                svg.appendChild(path);
+                const outline = document.createElementNS(SVG_NS, 'path');
+                outline.setAttribute('class', 'bracket-connector-outline');
+                outline.setAttribute('d', route);
+                outlines.appendChild(outline);
+                lines.appendChild(path);
+                for (const [cx, cy] of [[x1, y1], [x2, y2]]) {
+                    const port = document.createElementNS(SVG_NS, 'circle');
+                    port.setAttribute('class', 'bracket-connector-port');
+                    port.setAttribute('cx', cx);
+                    port.setAttribute('cy', cy);
+                    port.setAttribute('r', '3');
+                    ports.appendChild(port);
+                }
             });
             canvas.prepend(svg);
             syncZoom();

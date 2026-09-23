@@ -76,7 +76,12 @@ const audit = async () => evaluate(`(() => {
   if(paths.length!==expected) errors.push('Missing progression edges');
   for(const path of paths) {
    edgeCount++;
-   if(getComputedStyle(path.parentElement).display==='none'||getComputedStyle(path).strokeWidth!=='1px') errors.push('Invisible or heavy connector');
+   if(getComputedStyle(path.parentElement).display==='none'||getComputedStyle(path).strokeWidth!=='2px') errors.push('Invisible or low-contrast connector');
+   if(getComputedStyle(path).stroke!=='rgb(176, 181, 189)') errors.push('Reference connector color missing');
+   for(let distance=4;distance<path.getTotalLength()-4;distance+=4) {
+    const point=path.getPointAtLength(distance);
+    if(localNodes.some(node=>point.x>node.offsetLeft+1 && point.x<node.offsetLeft+node.offsetWidth-1 && point.y>node.offsetTop+1 && point.y<node.offsetTop+node.offsetHeight-1)) errors.push('Connector crosses a match box');
+   }
    const source=localNodes.find(node=>node.dataset.matchId===path.dataset.source);
    const target=localNodes.find(node=>node.dataset.matchId===path.dataset.target);
    const start=path.getPointAtLength(0),end=path.getPointAtLength(path.getTotalLength());
@@ -103,10 +108,21 @@ await evaluate(`(() => {
 })()`);
 const longNames=await audit();
 assert(!longNames.errors.length, 'Long names / actions: '+JSON.stringify(longNames));
+// Exercise a bye/skip-round edge across an occupied intermediate column.
+await evaluate(`(() => {
+ const canvas=document.querySelector('[data-bracket-canvas]');
+ const groups=[...canvas.querySelectorAll('.bracket-round-group')];
+ if(groups.length<3) throw new Error('Fixture needs at least three rounds');
+ const source=groups[0].querySelector('.bracket-match-node');
+ const target=groups[2].querySelector('.bracket-match-node');
+ source.dataset.winnerNext=target.dataset.matchId;
+ document.dispatchEvent(new CustomEvent('easykids:live-content-updated',{detail:{target:document.querySelector('[data-live-bracket]')}}));
+})()`);
+assert(!(await audit()).errors.length,'Skipped-round route must avoid every card');
 await evaluate('document.querySelector("[data-bracket-zoom-out]").click()');
 assert(await evaluate('document.querySelector("[data-bracket-zoom-level]").textContent==="80%"'), 'Zoom must change one step after repeated layout');
 assert(!(await audit()).errors.length, 'Zoom must preserve layout');
 await evaluate('document.querySelector("[data-bracket-zoom-reset]").click()');
 assert(exceptions.length===0, 'Browser errors: '+exceptions.join(', '));
-console.log('Uniform dimensions, symmetric spacing, 1px center connectors, long names, mobile, live refresh and zoom passed.');
+console.log('Uniform dimensions, symmetric spacing, 2px high-contrast connectors and obstacle-free skip routing, long names, mobile, live refresh and zoom passed.');
 ws.close();

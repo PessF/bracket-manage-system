@@ -93,7 +93,8 @@ for (const mode of ['bundled', 'fallback']) {
     trigger.click(); await delay();
     const styles=getComputedStyle(menu);
     assert(styles.animationName==='surface-enter','Shared animation missing');
-    assert(getComputedStyle(trigger).color!==getComputedStyle(trigger).backgroundColor,'Unreadable trigger');
+    assert(getComputedStyle(trigger).color==='rgb(231, 237, 244)' && getComputedStyle(trigger).backgroundColor==='rgb(12, 18, 25)','Reference trigger theme differs');
+    assert(styles.backgroundColor==='rgb(17, 24, 32)' && styles.boxShadow==='none','Reference popover theme differs');
     return 'labels, required validation, keyboard, form values, reset, option mutations, disabled states and live replacement passed';
   })()`);
   console.log(mode+': '+result);
