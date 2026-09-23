@@ -56,7 +56,7 @@ const competition=await evaluate('document.querySelector(".tournament-card").get
 const bracket=new URL(competition).pathname;
 const base=bracket.replace(/\/bracket$/,'');
 const paths=['/events',new URL(event).pathname,bracket,base+'/overview',base+'/results',base+'/matches','/login','/api/docs','/not-found'];
-for(const width of [320,390,768,1366])for(const path of paths)await audit(path,width,'viewer');
+for(const width of [320,390,768,820,1024,1366])for(const path of paths)await audit(path,width,'viewer');
 await audit(bracket,390,'viewer');
 
 
@@ -70,7 +70,7 @@ if(process.env.UI_ADMIN_EMAIL && process.env.UI_ADMIN_PASSWORD) {
  await new Promise(r=>setTimeout(r,700));
  if(await evaluate('location.pathname === "/login"')) throw new Error('Test admin login failed');
  const adminPaths=['/events/create',new URL(event).pathname+'/edit','/tournaments/create','/admin/users','/admin/api-token',base,base+'/edit',bracket,...JSON.parse(process.env.UI_EXTRA_ADMIN_PATHS || '[]')];
- for(const width of [320,390,768,1366])for(const path of adminPaths)await audit(path,width,'admin');
+ for(const width of [320,390,768,820,1024,1366])for(const path of adminPaths)await audit(path,width,'admin');
 }
 const issues=reports.filter(r=>r.body>r.width+1||r.overlaps);
 if(process.env.UI_REPORT_PATH) await fs.writeFile(process.env.UI_REPORT_PATH,JSON.stringify({reports,exceptions},null,2));

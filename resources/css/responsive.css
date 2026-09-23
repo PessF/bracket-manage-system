@@ -15,6 +15,7 @@ img, svg { max-width:100%; }
 p, h1, h2, h3, .badge, .user-card strong, .mobile-user { overflow-wrap:anywhere; }
 input, select, textarea { min-width:0; max-width:100%; }
 textarea { resize:vertical; }
+input::placeholder, textarea::placeholder { color:var(--muted); opacity:1; }
 a, button, summary { -webkit-tap-highlight-color:transparent; transition:background-color .16s ease,color .16s ease,border-color .16s ease,opacity .16s ease; }
 a:hover { opacity:1; }
 :is(a,button,summary,input,select,textarea):focus-visible { outline:2px solid var(--blue); outline-offset:3px; }
@@ -41,7 +42,7 @@ main.container-wide, .viewer-shell main.container-wide { max-width:1920px; paddi
 .grid > .card, .user-list > .card { margin-bottom:0; }
 .tournament-grid { align-items:stretch; grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr)); }
 .tournament-card { height:100%; overflow-wrap:anywhere; transform:none; }
-.tournament-card:hover { background:var(--soft); box-shadow:none; transform:none; }
+.tournament-card:hover { background:#0e151d; box-shadow:none; transform:none; }
 .tournament-card h2 { font-size:20px; font-weight:650; line-height:1.45; }
 .tournament-card p { margin:8px 0 16px; }
 .tournament-card .stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -246,6 +247,7 @@ body[data-theme="easykids"] .tabs a.active {
     }
     body[data-theme="easykids"] .tournament-card-shell .tournament-card:hover { box-shadow:none; }
 }
+.competition-progress-head, .competition-progress-head strong, .dashboard-stat small { font-size:12px; line-height:1.5; }
 @media(prefers-reduced-motion:reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
 }

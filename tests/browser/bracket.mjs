@@ -33,6 +33,7 @@ const navigate = async path => {
 };
 
 await call('Page.enable'); await call('Runtime.enable');
+await call('Network.clearBrowserCookies');
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 await navigate('/events');
 const eventUrl = await evaluate('document.querySelector(".tournament-card").getAttribute("href")');
@@ -59,14 +60,14 @@ const audit = async () => evaluate(`(() => {
   for(const group of groups) {
    const cards=[...group.querySelectorAll('.bracket-match-node')];
    const left=cards[0].offsetLeft;
-   if(lastLeft!==null&&!close(left-lastLeft,size.offsetWidth+112)) errors.push('Unequal round gap');
+   if(lastLeft!==null&&!close(left-lastLeft,size.offsetWidth+160)) errors.push('Unequal round gap');
    lastLeft=left;
    const middle=(cards[0].offsetTop+cards.at(-1).offsetTop+size.offsetHeight)/2;
    if(center!==null&&!close(middle,center)) errors.push('Round not centered');
    center=middle;
    cards.forEach((node,index)=>{
     if(!close(node.offsetLeft,left)) errors.push('Jagged round');
-    if(index&&!close(node.offsetTop-cards[index-1].offsetTop,size.offsetHeight+40)) errors.push('Unequal match gap');
+    if(index&&!close(node.offsetTop-cards[index-1].offsetTop,size.offsetHeight+64)) errors.push('Unequal match gap');
    });
   }
   const paths=[...canvas.querySelectorAll('.bracket-connector')];
@@ -92,10 +93,14 @@ const audit = async () => evaluate(`(() => {
  if(document.body.scrollWidth>innerWidth+1) errors.push('Page overflow');
  return {errors,edgeCount,width:size.offsetWidth,height:size.offsetHeight};
 })()`);
-for(const width of [320,390,768,1366]) {
+for(const width of [320,390,768,820,1024,1366]) {
  await call('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});
  await new Promise(resolve=>setTimeout(resolve,300));
  const result=await audit();
+ const scrolling=await evaluate(`(()=>{const viewport=document.querySelector('.bracket-viewport');viewport.scrollTo({left:100,behavior:'instant'});return {moved:viewport.scrollLeft>0,overflows:viewport.scrollWidth>viewport.clientWidth,width:document.querySelector('.bracket-match-node').offsetWidth};})()`);
+ await new Promise(r=>setTimeout(r,400));
+ assert(scrolling.width===360,'Cards must not shrink');
+ assert(await evaluate(`document.querySelector('.bracket-viewport').scrollLeft>0`),'Bracket must scroll independently: '+width+' '+JSON.stringify(scrolling));
  assert(result.edgeCount>0, 'Fixture must have connector lines');
  assert(!result.errors.length, width+': '+JSON.stringify(result));
 }

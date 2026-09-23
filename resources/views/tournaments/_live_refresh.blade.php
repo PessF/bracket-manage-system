@@ -4,7 +4,7 @@
         ? route('public.tournaments.live-state', ['tournament' => $tournament->public_token])
         : route('tournaments.live-state', $tournament);
 @endphp
-<div class="live-refresh" data-live-refresh data-interval="{{ $liveRefreshInterval }}" data-live-state-url="{{ $liveStateUrl }}" @if(isset($refreshTarget)) data-refresh-target="{{ $refreshTarget }}" @endif>
+<div hidden class="live-refresh" data-live-refresh data-interval="{{ $liveRefreshInterval }}" data-live-state-url="{{ $liveStateUrl }}" @if(isset($refreshTarget)) data-refresh-target="{{ $refreshTarget }}" @endif>
     <button class="btn secondary small" type="button" data-refresh-now>{{ __('ui.refresh_now') }}</button>
 </div>
 
@@ -67,8 +67,7 @@
                 });
                 requestAnimationFrame(() => {
                     current.querySelectorAll('.bracket-viewport').forEach((element, index) => {
-                        element.scrollLeft = Number(bracketPositions[index]?.left || 0);
-                        element.scrollTop = Number(bracketPositions[index]?.top || 0);
+                        element.scrollTo({ left: Number(bracketPositions[index]?.left || 0), top: Number(bracketPositions[index]?.top || 0), behavior: 'instant' });
                     });
                 });
             }
@@ -113,7 +112,7 @@
         if (saved) requestAnimationFrame(() => {
             window.scrollTo(0, Number(saved.y || 0));
             document.querySelectorAll('.bracket-viewport').forEach((element, index) => {
-                element.scrollLeft = Number(saved.brackets?.[index] || 0);
+                element.scrollTo({ left: Number(saved.brackets?.[index] || 0), behavior: 'instant' });
             });
             sessionStorage.removeItem(storageKey);
         });

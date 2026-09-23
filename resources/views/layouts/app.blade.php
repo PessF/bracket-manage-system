@@ -39,7 +39,7 @@
     @endif
     @stack('styles')
 </head>
-<body class="{{ $isPublicViewer ? 'viewer-shell' : '' }}" data-theme="easykids" data-processing-label="{{ __('ui.processing') }}">
+<body class="{{ $isPublicViewer ? 'viewer-shell' : '' }} @yield('body-class')" data-theme="easykids" data-processing-label="{{ __('ui.processing') }}">
 <a class="skip-link" href="#main-content">{{ __('ui.skip_to_content') }}</a>
 <header class="top">
     <div class="inner">

@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('title', __('ui.title_bracket').' · '.$tournament->name)
 @section('container-class', 'container-wide')
+@section('body-class', 'bracket-page')
 
 
 @section('content')
@@ -409,11 +410,11 @@ document.addEventListener('change', (event) => {
 
 (() => {
     const SVG_NS = 'http://www.w3.org/2000/svg';
-    const HEADER = 64;
-    const GAP_X = 112;
-    const GAP_Y = 40;
-    const CARD_WIDTH = 336;
-    const PADDING = 24;
+    const HEADER = 88;
+    const GAP_X = 160;
+    const GAP_Y = 64;
+    const CARD_WIDTH = 360;
+    const PADDING = 36;
     const ROUND_LABEL = @json(__('ui.round'));
     const FINAL_LABEL = @json(__('ui.final'));
     const GRAND_FINAL_LABEL = @json(__('ui.grand_final'));
@@ -489,7 +490,7 @@ document.addEventListener('change', (event) => {
         const roundIndex = new Map(rounds.map((round, index) => [round, index]));
         const layout = () => {
             canvas.querySelectorAll('.bracket-round-group').forEach((group) => group.replaceWith(...group.childNodes));
-            canvas.querySelectorAll('.bracket-connectors, .bracket-round-title').forEach((element) => element.remove());
+            canvas.querySelectorAll('.bracket-connectors, .bracket-round-title, .bracket-round-lane').forEach((element) => element.remove());
             const cardWidth = CARD_WIDTH;
             const base = cardHeight + GAP_Y;
             const columnWidth = cardWidth + GAP_X;
@@ -542,6 +543,13 @@ document.addEventListener('change', (event) => {
             };
 
             rounds.forEach((round, index) => {
+                const lane = document.createElement('div');
+                lane.className = 'bracket-round-lane';
+                lane.setAttribute('aria-hidden', 'true');
+                lane.style.left = `${index * columnWidth + PADDING - 12}px`;
+                lane.style.width = `${cardWidth + 24}px`;
+                lane.style.height = `${bottom + 12}px`;
+                canvas.appendChild(lane);
                 const title = document.createElement('div');
                 title.className = 'bracket-round-title';
                 title.style.left = `${index * columnWidth + PADDING}px`;

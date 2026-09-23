@@ -150,7 +150,7 @@ If the host itself still resolves the wrong IP, also correct the Linux/network-m
 - Third-place games require two real semifinal losers. Three entrants have only one such loser, so no unplayable bronze game is created.
 - Double elimination omits bye nodes after copying their automatic advances and builds a compact upper/lower graph with `2N - 2` base games. Every upper-bracket loser has a lower path, ending at the grand final. With reset mode enabled, a lower-bracket win in the first final adds one game (`2N - 1` total).
 - Round robin schedules each unordered pair exactly once (`N(N - 1)/2`). Ranking uses attempt records, not match nodes.
-- The connected layout uses 336px-wide cards and a shared height measured to fit the fullest card. Rounds share a centerline with 112px between columns and 40px between cards. High-contrast 2px silver connectors join the centers of card edges; skipped rounds use separate lanes below the cards. The tree remains connected on phones with scrolling inside keyboard-accessible bracket regions and optional zoom; names wrap without truncation.
+- The connected layout uses 360px-wide cards and a shared height measured to fit the fullest card. Rounds share a centerline with 160px between columns and 64px between cards. High-contrast 2px silver connectors join the centers of card edges; skipped rounds use separate lanes below the cards. The tree remains connected on phones with scrolling inside keyboard-accessible bracket regions and optional zoom; names wrap without truncation.
 
 ### Frontend layout and styling
 
