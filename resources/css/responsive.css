@@ -153,13 +153,6 @@ body[data-theme="easykids"] .bracket-team { min-height:36px; }
 .bracket-destinations { flex-wrap:wrap; height:auto; }
 .bracket-destination { height:auto; min-height:24px; white-space:normal; }
 .bracket-round-group { display:contents; }
-.bracket-stacked .bracket-zoom-stage, .bracket-stacked .bracket-canvas { width:100% !important; height:auto !important; min-width:0; transform:none !important; }
-.bracket-stacked .bracket-canvas { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); align-items:start; gap:32px; padding:20px; }
-.bracket-stacked .bracket-round-group { display:flex; min-width:0; flex-direction:column; gap:20px; }
-.bracket-stacked .bracket-round-lane, .bracket-stacked .bracket-connectors { display:none; }
-body[data-theme="easykids"] .bracket-stacked .bracket-round-title { position:static; width:auto !important; height:auto; min-height:44px; padding:8px 0; justify-content:flex-start; border:0; }
-body[data-theme="easykids"] .bracket-stacked .bracket-match-node { position:relative; left:auto !important; top:auto !important; width:100% !important; height:auto !important; }
-.bracket-stacked .bracket-team-name { white-space:normal; overflow-wrap:anywhere; }
 @media (hover:hover) and (pointer:fine) {
     .btn:hover:not(:disabled):not([aria-disabled="true"]) { background:#3b86b2; }
     .btn.secondary:hover:not(:disabled):not([aria-disabled="true"]) { background:#293a49; }
@@ -212,14 +205,6 @@ body[data-theme="easykids"] .bracket-stacked .bracket-match-node { position:rela
     .ranking-entry-card { margin-inline:0; }
     .api-toc { display:flex; position:static; }
     .api-toc a { min-height:44px; }
-    .bracket-zoom-toolbar { display:none !important; }
-    .bracket-zoom-stage, .bracket-canvas { width:100% !important; height:auto !important; transform:none !important; min-width:0; }
-    .bracket-canvas { display:flex; flex-direction:column; gap:20px; padding:16px; }
-    .bracket-round-lane, .bracket-connectors { display:none; }
-    body[data-theme="easykids"] .bracket-round-title { position:static; width:auto !important; height:auto; min-height:44px; margin-top:8px; padding:8px 0; justify-content:flex-start; border:0; font-size:16px; }
-    body[data-theme="easykids"] .bracket-match-node { position:relative; left:auto !important; top:auto !important; width:100% !important; height:auto !important; padding:14px; }
-    body[data-theme="easykids"] .bracket-team-name { white-space:normal; overflow-wrap:anywhere; font-size:14px; }
-    body[data-theme="easykids"] .bracket-team { min-height:44px; padding:8px; }
     .bracket-toolbar { padding:0; }
     .bracket-legend span:last-child { display:none; }
     .score-modal-team, body[data-theme="easykids"] .score-modal-team { grid-template-columns:minmax(0,1fr); }

@@ -79,7 +79,7 @@
 @endphp
 <div class="bracket-view-select">
     <label for="bracket-view-select">{{ __('ui.bracket_view_mobile_label') }}</label>
-    <select id="bracket-view-select" data-bracket-view-select data-native-select aria-label="{{ __('ui.bracket_view_filter') }}">
+    <select id="bracket-view-select" data-bracket-view-select aria-label="{{ __('ui.bracket_view_filter') }}">
         <option value="{{ request()->fullUrlWithQuery(['view' => 'all']) }}" @selected($currentBracketView === 'all')>{{ __('ui.all_groups') }}</option>
         @foreach($bracketViewGroups as $viewGroup)
         <option value="{{ request()->fullUrlWithQuery(['view' => 'group:'.$viewGroup->id]) }}" @selected($currentBracketView === 'group:'.$viewGroup->id)>{{ $viewGroup->name }}</option>
@@ -201,7 +201,7 @@
 @endphp
 <section class="bracket-section">
     <div class="bracket-section-head"><h2>{{ $sectionLabel }}</h2><span class="bracket-count">{{ trans_choice('ui.match_count', $group->count(), ['count' => $group->count()]) }}</span></div>
-    <div class="bracket-viewport {{ $isGrid ? 'bracket-grid' : '' }}" data-bracket-section data-bracket-type="{{ $type }}" data-has-grand-final="{{ $hasGrandFinal ? 'true' : 'false' }}">
+    <div class="bracket-viewport {{ $isGrid ? 'bracket-grid' : '' }}" data-bracket-section tabindex="0" role="region" aria-label="{{ $sectionLabel }}" data-bracket-type="{{ $type }}" data-has-grand-final="{{ $hasGrandFinal ? 'true' : 'false' }}">
         @if(!$isGrid)
         <div class="bracket-zoom-stage" data-bracket-zoom-stage><div class="bracket-canvas" data-bracket-canvas></div></div>
         @endif
@@ -412,8 +412,8 @@ document.addEventListener('change', (event) => {
     const HEADER = 64;
     const GAP_X = 112;
     const GAP_Y = 40;
-    const ACTION_GUTTER = 44;
-    const ROUND_COLORS = ['#d4af37'];
+    const CARD_WIDTH = 336;
+    const PADDING = 24;
     const ROUND_LABEL = @json(__('ui.round'));
     const FINAL_LABEL = @json(__('ui.final'));
     const GRAND_FINAL_LABEL = @json(__('ui.grand_final'));
@@ -421,21 +421,26 @@ document.addEventListener('change', (event) => {
     const QUARTERFINAL_LABEL = @json(__('ui.quarterfinals'));
     const FINALS_LABEL = @json(__('ui.finals'));
     const LOSERS_ROUND_LABEL = @json(__('ui.losers_round'));
-    const MOBILE_ZOOM_QUERY = window.matchMedia('(max-width: 680px), (orientation: landscape) and (max-width: 1180px) and (max-height: 680px)');
     const MIN_ZOOM = 0.4;
     const MAX_ZOOM = 1.4;
     const ZOOM_STEP = 0.2;
-    const ZOOM_STORAGE_KEY = 'easykids-bracket-mobile-zoom';
+    const ZOOM_STORAGE_KEY = 'easykids-bracket-zoom';
     let storedZoom = Number.NaN;
     try { storedZoom = Number(sessionStorage.getItem(ZOOM_STORAGE_KEY)); } catch (_) {}
-    let mobileZoom = Number.isFinite(storedZoom) && storedZoom >= MIN_ZOOM && storedZoom <= MAX_ZOOM ? storedZoom : 0.8;
+    let bracketZoom = Number.isFinite(storedZoom) && storedZoom >= MIN_ZOOM && storedZoom <= MAX_ZOOM ? storedZoom : 1;
     let resizeObservers = [];
-    let syncActiveZoom = () => {};
 
     const clampZoom = (value) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(value * 10) / 10));
     const initializeBracket = () => {
         resizeObservers.forEach((observer) => observer.disconnect());
         resizeObservers = [];
+
+        // Measure every card before fixing one size for the entire view. Long names,
+        // translated labels and admin actions can increase the shared height.
+        const allNodes = [...document.querySelectorAll('[data-live-bracket] .bracket-match-node')];
+        allNodes.forEach((node) => { node.style.width = `${CARD_WIDTH}px`; node.style.height = 'auto'; });
+        const cardHeight = Math.ceil(Math.max(200, ...allNodes.map((node) => node.offsetHeight)));
+        allNodes.forEach((node) => { node.style.height = `${cardHeight}px`; });
 
         const zoomToolbar = document.querySelector('[data-bracket-zoom-toolbar]');
         const zoomOutButton = zoomToolbar?.querySelector('[data-bracket-zoom-out]');
@@ -444,7 +449,7 @@ document.addEventListener('change', (event) => {
         const zoomLevelLabel = zoomToolbar?.querySelector('[data-bracket-zoom-level]');
         const zoomStages = [];
         const syncZoom = () => {
-            const appliedZoom = MOBILE_ZOOM_QUERY.matches ? mobileZoom : 1;
+            const appliedZoom = bracketZoom;
             zoomStages.forEach(({ stage, canvas }) => {
                 const width = Number(canvas.dataset.layoutWidth || 0);
                 const height = Number(canvas.dataset.layoutHeight || 0);
@@ -453,22 +458,20 @@ document.addEventListener('change', (event) => {
                 if (height) stage.style.height = `${height * appliedZoom}px`;
             });
             if (zoomLevelLabel) zoomLevelLabel.textContent = `${Math.round(appliedZoom * 100)}%`;
-            if (zoomOutButton) zoomOutButton.disabled = !MOBILE_ZOOM_QUERY.matches || mobileZoom <= MIN_ZOOM;
-            if (zoomInButton) zoomInButton.disabled = !MOBILE_ZOOM_QUERY.matches || mobileZoom >= MAX_ZOOM;
-            if (zoomResetButton) zoomResetButton.disabled = !MOBILE_ZOOM_QUERY.matches || mobileZoom === 1;
+            if (zoomOutButton) zoomOutButton.disabled = bracketZoom <= MIN_ZOOM;
+            if (zoomInButton) zoomInButton.disabled = bracketZoom >= MAX_ZOOM;
+            if (zoomResetButton) zoomResetButton.disabled = bracketZoom === 1;
         };
-        const setMobileZoom = (value) => {
-            mobileZoom = clampZoom(value);
-            try { sessionStorage.setItem(ZOOM_STORAGE_KEY, String(mobileZoom)); } catch (_) {}
+        const setBracketZoom = (value) => {
+            bracketZoom = clampZoom(value);
+            try { sessionStorage.setItem(ZOOM_STORAGE_KEY, String(bracketZoom)); } catch (_) {}
             syncZoom();
         };
 
-        syncActiveZoom = syncZoom;
-        zoomOutButton?.addEventListener('click', () => setMobileZoom(mobileZoom - ZOOM_STEP));
-        zoomInButton?.addEventListener('click', () => setMobileZoom(mobileZoom + ZOOM_STEP));
-        zoomResetButton?.addEventListener('click', () => setMobileZoom(1));
+        if (zoomOutButton) zoomOutButton.onclick = () => setBracketZoom(bracketZoom - ZOOM_STEP);
+        if (zoomInButton) zoomInButton.onclick = () => setBracketZoom(bracketZoom + ZOOM_STEP);
+        if (zoomResetButton) zoomResetButton.onclick = () => setBracketZoom(1);
 
-        let nextRoundColorIndex = 0;
         document.querySelectorAll('[data-bracket-section]:not(.bracket-grid)').forEach((viewport) => {
         const canvas = viewport.querySelector('[data-bracket-canvas]');
         const stage = viewport.querySelector('[data-bracket-zoom-stage]');
@@ -479,77 +482,26 @@ document.addEventListener('change', (event) => {
         nodes.forEach((node) => canvas.appendChild(node));
         const matches = nodes.map((node) => ({
             node, id: node.dataset.matchId, round: Number(node.dataset.round), number: Number(node.dataset.number), kind: node.dataset.bracketKind,
-            winnerNext: node.dataset.winnerNext || null, loserNext: node.dataset.loserNext || null, thirdPlace: node.dataset.thirdPlace === 'true',
+            winnerNext: node.dataset.winnerNext || null, loserNext: node.dataset.loserNext || null,
         }));
         const ids = new Set(matches.map((match) => match.id));
         const rounds = [...new Set(matches.map((match) => match.round))].sort((a,b) => a-b);
         const roundIndex = new Map(rounds.map((round, index) => [round, index]));
-        const sectionColorOffset = nextRoundColorIndex;
-        nextRoundColorIndex += rounds.length;
         const layout = () => {
-            viewport.classList.remove('bracket-stacked');
             canvas.querySelectorAll('.bracket-round-group').forEach((group) => group.replaceWith(...group.childNodes));
-            canvas.querySelectorAll('.bracket-connectors, .bracket-round-title, .bracket-round-lane').forEach((element) => element.remove());
-            nodes.forEach((node) => { node.style.width = ''; });
-
-            const cardWidth = Math.max(...nodes.map((node) => node.offsetWidth));
-            const cardHeight = Math.max(...nodes.map((node) => node.offsetHeight));
+            canvas.querySelectorAll('.bracket-connectors, .bracket-round-title').forEach((element) => element.remove());
+            const cardWidth = CARD_WIDTH;
             const base = cardHeight + GAP_Y;
             const columnWidth = cardWidth + GAP_X;
             const matchesByRound = rounds.map((round) => matches.filter((match) => match.round === round).sort((a,b) => a.number-b.number));
-            const anchorIndex = matchesByRound.reduce((best, inRound, index) => inRound.length > matchesByRound[best].length ? index : best, 0);
-            const anchorCount = matchesByRound[anchorIndex].length;
+            const maximumCount = Math.max(...matchesByRound.map((inRound) => inRound.length));
             const y = new Map();
-            const fallbackY = (index, count) => ((index + .5) * anchorCount / count - .5) * base;
-            const placeRound = (inRound, ideals) => {
-                let previous = -base;
-                inRound.forEach((match, index) => {
-                    const position = Math.max(ideals[index], previous + base);
-                    y.set(match.id, position);
-                    previous = position;
-                });
-            };
-
-            placeRound(matchesByRound[anchorIndex], matchesByRound[anchorIndex].map((_, index) => index * base));
-
-            for (let index = anchorIndex + 1; index < matchesByRound.length; index++) {
-                const inRound = matchesByRound[index];
-                const ideals = inRound.map((match, matchIndex) => {
-                    const feeders = matches.filter((source) => source.winnerNext === match.id || source.loserNext === match.id);
-                    const positions = feeders.map((source) => y.get(source.id)).filter((value) => value !== undefined);
-                    return positions.length ? positions.reduce((sum, value) => sum + value, 0) / positions.length : fallbackY(matchIndex, inRound.length);
-                });
-                placeRound(inRound, ideals);
-            }
-
-            for (let index = anchorIndex - 1; index >= 0; index--) {
-                const inRound = matchesByRound[index];
-                const targets = new Map();
-                inRound.forEach((match) => {
-                    const targetId = [match.winnerNext, match.loserNext].find((id) => id && ids.has(id));
-                    if (!targetId) return;
-                    if (!targets.has(targetId)) targets.set(targetId, []);
-                    targets.get(targetId).push(match.id);
-                });
-                const ideals = inRound.map((match, matchIndex) => {
-                    const targetId = [match.winnerNext, match.loserNext].find((id) => id && y.has(id));
-                    if (!targetId) return fallbackY(matchIndex, inRound.length);
-                    const siblings = targets.get(targetId) || [match.id];
-                    const siblingIndex = siblings.indexOf(match.id);
-                    return y.get(targetId) + (siblingIndex - (siblings.length - 1) / 2) * base;
-                });
-                placeRound(inRound, ideals);
-            }
-
-            // Keep feeder-derived positions: independently centering every round
-            // misaligns paths in uneven brackets and around third-place matches.
-
-            const minY = Math.min(0, ...y.values());
-            if (minY < 0) y.forEach((value, id) => y.set(id, value - minY));
-
-            const maxY = Math.max(0, ...y.values());
-            const width = Math.max(viewport.clientWidth, rounds.length * columnWidth - GAP_X + ACTION_GUTTER + 28);
-            const height = maxY + cardHeight + HEADER + 24;
+            // Every round has the same pitch, centered on the same horizontal axis.
+            matchesByRound.forEach((inRound) => inRound.forEach((match, index) => {
+                y.set(match.id, ((maximumCount - inRound.length) / 2 + index) * base);
+            }));
+            const width = rounds.length * columnWidth - GAP_X + PADDING * 2;
+            const height = (maximumCount - 1) * base + cardHeight + HEADER + PADDING;
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
             canvas.dataset.layoutWidth = String(width);
@@ -579,21 +531,12 @@ document.addEventListener('change', (event) => {
             };
 
             rounds.forEach((round, index) => {
-                const lane = document.createElement('div');
-                lane.className = `bracket-round-lane${index % 2 ? ' is-alternate' : ''}`;
-                lane.style.left = `${index * columnWidth + 7}px`;
-                lane.style.width = `${cardWidth + 14}px`;
-                lane.style.setProperty('--round-accent', ROUND_COLORS[(sectionColorOffset + index) % ROUND_COLORS.length]);
-                canvas.appendChild(lane);
-
                 const title = document.createElement('div');
                 title.className = 'bracket-round-title';
-                title.style.left = `${index * columnWidth + 14}px`;
+                title.style.left = `${index * columnWidth + PADDING}px`;
                 title.style.top = '10px';
                 title.style.width = `${cardWidth}px`;
-                title.style.setProperty('--round-accent', ROUND_COLORS[(sectionColorOffset + index) % ROUND_COLORS.length]);
                 title.textContent = roundTitle(round, index);
-                // CSS uses the same nodes as a stacked round list on narrow screens.
                 // Keep DOM and keyboard order logical, not just visually positioned.
                 const group = document.createElement('section');
                 group.className = 'bracket-round-group';
@@ -605,17 +548,14 @@ document.addEventListener('change', (event) => {
 
             matches.forEach((match) => {
                 const index = roundIndex.get(match.round) || 0;
-                const accent = ROUND_COLORS[(sectionColorOffset + index) % ROUND_COLORS.length];
-                match.node.style.left = `${index * columnWidth + 14}px`;
+                match.node.style.left = `${index * columnWidth + PADDING}px`;
                 match.node.style.top = `${(y.get(match.id) || 0) + HEADER}px`;
                 match.node.style.width = `${cardWidth}px`;
-                match.node.style.setProperty('--round-accent', accent);
-                match.node.style.setProperty('--round-accent-border', `${accent}8c`);
-                match.node.style.setProperty('--round-accent-strong', `${accent}d1`);
             });
 
             const svg = document.createElementNS(SVG_NS, 'svg');
             svg.classList.add('bracket-connectors');
+            svg.setAttribute('aria-hidden', 'true');
             svg.setAttribute('width', width);
             svg.setAttribute('height', height);
             svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -626,38 +566,24 @@ document.addEventListener('change', (event) => {
             ])
                 .filter((edge) => edge.targetId && ids.has(edge.targetId))
                 .map((edge) => ({...edge, target:matches.find((candidate) => candidate.id === edge.targetId)}))
-                .filter((edge) => edge.target && !edge.target.thirdPlace);
+                .filter((edge) => edge.target);
 
             edges.forEach((edge) => {
                 const incoming = edges.filter((candidate) => candidate.targetId === edge.targetId);
-                const x1 = (roundIndex.get(edge.source.round) || 0) * columnWidth + 14 + cardWidth;
-                const y1 = (y.get(edge.source.id) || 0) + HEADER + edge.source.node.offsetHeight / 2;
-                const x2 = (roundIndex.get(edge.target.round) || 0) * columnWidth + 14;
-                const y2 = (y.get(edge.target.id) || 0) + HEADER + edge.target.node.offsetHeight / 2;
-                const furthestSourceX = Math.max(...incoming.map((candidate) => (roundIndex.get(candidate.source.round) || 0) * columnWidth + 14 + cardWidth));
-                const trackX = furthestSourceX + (x2 - furthestSourceX) * (incoming.length === 1 ? .66 : .5);
+                const x1 = (roundIndex.get(edge.source.round) || 0) * columnWidth + PADDING + cardWidth;
+                const y1 = (y.get(edge.source.id) || 0) + HEADER + cardHeight / 2;
+                const x2 = (roundIndex.get(edge.target.round) || 0) * columnWidth + PADDING;
+                const y2 = (y.get(edge.target.id) || 0) + HEADER + cardHeight / 2;
+                const furthestSourceX = Math.max(...incoming.map((candidate) => (roundIndex.get(candidate.source.round) || 0) * columnWidth + PADDING + cardWidth));
+                const trackX = furthestSourceX + (x2 - furthestSourceX) * .5;
                 const path = document.createElementNS(SVG_NS, 'path');
-                const outline = document.createElementNS(SVG_NS, 'path');
-                outline.setAttribute('class', `bracket-connector-outline is-${edge.outcome}`);
-                outline.setAttribute('d', `M ${x1} ${y1} H ${trackX} V ${y2} H ${x2}`);
-                svg.appendChild(outline);
                 path.setAttribute('class', `bracket-connector is-${edge.outcome}`);
                 path.setAttribute('d', `M ${x1} ${y1} H ${trackX} V ${y2} H ${x2}`);
-                path.style.stroke = '#b0b5bd';
+                path.dataset.source = edge.source.id;
+                path.dataset.target = edge.target.id;
                 svg.appendChild(path);
-
-                const port = document.createElementNS(SVG_NS, 'circle');
-                port.setAttribute('class', 'bracket-connector-port');
-                port.setAttribute('cx', x2);
-                port.setAttribute('cy', y2);
-                port.setAttribute('r', 3.5);
-                port.style.fill = path.style.stroke;
-                svg.appendChild(port);
             });
             canvas.prepend(svg);
-            // When a full diagram cannot fit, show readable round columns instead
-            // of shrinking text or forcing horizontal page/canvas scrolling.
-            viewport.classList.toggle('bracket-stacked', width > viewport.clientWidth + 1);
             syncZoom();
         };
 
@@ -678,7 +604,10 @@ document.addEventListener('change', (event) => {
         syncZoom();
     };
 
-    MOBILE_ZOOM_QUERY.addEventListener?.('change', () => syncActiveZoom());
+    document.fonts.ready.then(initializeBracket);
+    document.querySelector('[data-live-bracket]')?.addEventListener('load', (event) => {
+        if (event.target instanceof HTMLImageElement) initializeBracket();
+    }, true);
     document.addEventListener('easykids:live-content-updated', (event) => {
         if (event.detail?.target?.matches?.('[data-live-bracket]')) initializeBracket();
     });

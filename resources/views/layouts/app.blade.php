@@ -34,7 +34,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else
         {{-- The fallback shares the exact same styles as the Vite build. --}}
-        <style>{!! file_get_contents(resource_path('css/ui.css')).file_get_contents(resource_path('css/responsive.css')) !!}</style>
+        <style>{!! file_get_contents(resource_path('css/ui.css')).file_get_contents(resource_path('css/responsive.css')).file_get_contents(resource_path('css/motion.css')) !!}</style>
         <script src="{{ asset('assets/js/smart-select-fallback.js') }}" defer></script>
     @endif
     @stack('styles')

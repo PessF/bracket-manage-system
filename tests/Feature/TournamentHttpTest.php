@@ -184,11 +184,8 @@ class TournamentHttpTest extends TestCase
             ->assertSee(__('ui.source_loser_label', ['number' => 1]))
             ->assertSee(__('ui.match_destinations'))
             ->assertSee('→ #14', false)
-            ->assertSee('bracket-round-lane', false)
-            ->assertSee('const anchorIndex', false)
-            ->assertSee('const ROUND_COLORS', false)
-            ->assertSee('const trackX', false)
-            ->assertSee('bracket-connector-port', false);
+            ->assertSee('tabindex="0" role="region"', false)
+            ->assertSee('data-bracket-zoom-out', false);
     }
 
     public function test_shared_layout_uses_the_supplied_png_favicon(): void

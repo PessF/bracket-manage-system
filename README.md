@@ -141,7 +141,7 @@ If the host itself still resolves the wrong IP, also correct the Linux/network-m
 2. Admin requests validate input before saving events or competition metadata. Competition controllers create standard or advanced stage blueprints within database transactions.
 3. `TournamentLifecycleService` seeds entrants, asks `BracketGenerator` for a complete graph, assigns stable database match IDs, and persists both outgoing winner/loser destinations and incoming participant-source references.
 4. `MatchResultService` records scores and propagates winner/loser IDs atomically, recomputes standings, and starts the next playable match when no match is live. Corrections cannot change a winner once an affected downstream match has started. A playable match may therefore be READY **or LIVE**; consumers must handle both.
-5. Bracket pages load every match, group them by stage/group and bracket type, and position cards from their actual dependency edges. Live-state checks refresh displayed results. Ranking competitions use standings instead of an empty bracket.
+5. Bracket pages load every match, group them by stage/group and bracket type, and position equal-sized cards in centered round columns, with connectors following their actual dependency edges. Live-state checks refresh displayed results. Ranking competitions use standings instead of an empty bracket.
 
 ### Bracket principles
 
@@ -150,12 +150,12 @@ If the host itself still resolves the wrong IP, also correct the Linux/network-m
 - Third-place games require two real semifinal losers. Three entrants have only one such loser, so no unplayable bronze game is created.
 - Double elimination omits bye nodes after copying their automatic advances and builds a compact upper/lower graph with `2N - 2` base games. Every upper-bracket loser has a lower path, ending at the grand final. With reset mode enabled, a lower-bracket win in the first final adds one game (`2N - 1` total).
 - Round robin schedules each unordered pair exactly once (`N(N - 1)/2`). Ranking uses attempt records, not match nodes.
-- The connected layout reserves 112px between columns and 40px between cards. Successor positions follow feeder positions; rounds are not independently recentered. If the diagram cannot fit its container, it becomes readable round columns; phones show rounds vertically. The same match nodes and controls are reused, with logical DOM/keyboard order and no horizontal scrolling or miniature text.
+- The connected layout uses 336px-wide cards and a shared height measured to fit the fullest card. Rounds share a centerline with 112px between columns and 40px between cards. Muted 1px connectors join the centers of card edges. The tree remains connected on phones with scrolling inside keyboard-accessible bracket regions and optional zoom; names wrap without truncation.
 
 ### Frontend layout and styling
 
 - `resources/css/app.css` is the Vite entry point. `ui.css` contains shared primitives and feature components; `responsive.css` owns the final palette, spacing, interaction states, and adaptive layouts. Do not add another theme layer or duplicate styles in Blade. The no-build fallback reads these same two files.
-- Grids use shrinkable tracks, long names wrap, navigation follows document flow, and card reorder controls have their own row. At narrow widths, labeled table cells become cards; bracket rounds remain readable without zoom. Native tables remain available to assistive technology.
+- Grids use shrinkable tracks, long names wrap, navigation follows document flow, and card reorder controls have their own row. At narrow widths, labeled table cells become cards; bracket diagrams can be scrolled at full size or zoomed out. Native tables remain available to assistive technology.
 - `resources/js/responsive.js` associates legacy field labels and prepares mobile table labels, including after live updates. Dropdowns retain keyboard selection, Escape handling, viewport bounds, and visible focus. Reduced-motion preferences disable animation.
 - Browser regression check: seed a **disposable** local database with `php artisan migrate --seed`, serve the app, and launch a separate headless Chromium/Brave profile with remote debugging on port 9333. With Node 22+, run `UI_BASE_URL=http://127.0.0.1:8097 node tests/browser/responsive.mjs`. The check navigates demo events, competitions, brackets, results, forms, and documentation at 320, 390, 768, and 1366 pixels, failing on page overflow, overlapping match nodes, or JavaScript exceptions.
 - Set `UI_ADMIN_EMAIL` and `UI_ADMIN_PASSWORD` to a disposable test admin to include management pages. `UI_EXTRA_ADMIN_PATHS` accepts a JSON array of paths for seeded ranking/group fixtures; `UI_REPORT_PATH` optionally saves the detailed report. This check clears cookies in the dedicated browser. Never point it at your personal browser profile or use production seeding.
@@ -182,3 +182,5 @@ Event detail pages offer a **Participant or team** filter alongside competition 
 Bracket search highlights matching participant slots within the selected bracket view. **Next match** or Enter moves through matches; **Clear** or Escape removes highlights. Search remains active after live updates. Shared UI motion respects the operating system's reduced-motion preference.
 
 With the disposable app and dedicated browser described above running, use `node tests/browser/search.mjs` to verify search, live-refresh highlights, navigation, mobile layout, and reduced motion.
+
+Run `node tests/browser/bracket.mjs` against the disposable app/browser to check dimensions, spacing, connector endpoints, long names, and zoom.

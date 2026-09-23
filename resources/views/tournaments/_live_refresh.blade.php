@@ -4,10 +4,7 @@
         ? route('public.tournaments.live-state', ['tournament' => $tournament->public_token])
         : route('tournaments.live-state', $tournament);
 @endphp
-<div class="live-refresh" data-live-refresh data-interval="{{ $liveRefreshInterval }}" data-live-state-url="{{ $liveStateUrl }}" @if(isset($refreshTarget)) data-refresh-target="{{ $refreshTarget }}" @endif role="status" aria-live="polite">
-    <span class="live-dot" aria-hidden="true"></span>
-    <strong>{{ __('ui.live_updates') }}</strong>
-    <span class="muted">{{ __('ui.refresh_in') }} <span data-refresh-countdown>{{ $liveRefreshInterval }}</span> {{ __('ui.seconds_short') }}</span>
+<div class="live-refresh" data-live-refresh data-interval="{{ $liveRefreshInterval }}" data-live-state-url="{{ $liveStateUrl }}" @if(isset($refreshTarget)) data-refresh-target="{{ $refreshTarget }}" @endif>
     <button class="btn secondary small" type="button" data-refresh-now>{{ __('ui.refresh_now') }}</button>
 </div>
 
@@ -20,7 +17,6 @@
     const interval = Number(toolbar.dataset.interval || 30);
     const refreshTarget = toolbar.dataset.refreshTarget;
     const liveStateUrl = toolbar.dataset.liveStateUrl;
-    const countdown = toolbar.querySelector('[data-refresh-countdown]');
     const storageKey = `easykids-view:${location.pathname}`;
     let remaining = interval;
     let refreshing = false;
@@ -82,7 +78,6 @@
             return false;
         } finally {
             remaining = interval;
-            if (countdown) countdown.textContent = String(interval);
             refreshing = false;
         }
     };
@@ -128,7 +123,6 @@
     window.setInterval(() => {
         if (document.hidden) return;
         remaining -= 1;
-        if (countdown) countdown.textContent = String(Math.max(remaining, 0));
         if (remaining <= 0) {
             remaining = interval;
             if (liveStateUrl) void checkForUpdates();

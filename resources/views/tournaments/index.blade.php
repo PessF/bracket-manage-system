@@ -50,7 +50,7 @@
         @endif
         <div class="field status-field">
             <label for="status">{{ __('ui.status') }}</label>
-            <select id="status" name="status" data-native-select>
+            <select id="status" name="status">
                 <option value="">{{ __('ui.all_statuses') }}</option>
                 @foreach(App\Enums\TournamentStatus::cases() as $status)
                     <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ __('ui.tournament_status_labels.'.$status->value) }}</option>
