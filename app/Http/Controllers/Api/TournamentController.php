@@ -34,9 +34,12 @@ class TournamentController extends Controller
 
     public function index(Request $request, ?Event $event = null): JsonResponse
     {
+        $request->validate(['participant' => ['nullable', 'string', 'max:100']]);
+
         $data = Tournament::query()->withCount(['participants', 'matches'])
             ->when($event, fn ($query) => $query->where('event_id', $event->id))
             ->when($request->filled('event_id'), fn ($query) => $query->where('event_id', $request->string('event_id')))
+            ->withParticipantSearch((string) $request->input('participant', ''))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
             ->when($request->filled('format'), fn ($query) => $query->where('format', $request->string('format')))
             ->when($request->filled('structure'), fn ($query) => $query->where('structure', $request->string('structure')))
@@ -48,7 +51,7 @@ class TournamentController extends Controller
             ->orderByRaw('display_order IS NULL')
             ->orderBy('display_order')
             ->orderByDesc('source_created_at')
-            ->paginate(min(100, max(1, $request->integer('per_page', 20))));
+            ->paginate(min(100, max(1, $request->integer('per_page', 20))))->withQueryString();
 
         return $this->success($data);
     }

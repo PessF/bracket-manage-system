@@ -47,8 +47,8 @@ class TournamentWorkspaceController extends Controller
         }
 
         $matches = $tournament->matches()->with([
-            'participantA',
-            'participantB',
+            'participantA.members',
+            'participantB.members',
             'winner',
             'loser',
             'winnerNextMatch',

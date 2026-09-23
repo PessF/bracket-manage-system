@@ -4,7 +4,7 @@
 @php
     $isAdmin = auth()->user()?->isAdmin() ?? false;
     $canBrowseTournaments = $canBrowseTournaments ?? true;
-    $canReorder = $isAdmin && $tournaments->count() > 1 && !request()->filled('q') && !request()->filled('status');
+    $canReorder = $isAdmin && $tournaments->count() > 1 && !request()->filled('participant') && !request()->filled('q') && !request()->filled('status');
 @endphp
 
 <section class="dashboard-hero" aria-labelledby="dashboard-title">
@@ -42,6 +42,12 @@
                 <input id="q" name="q" type="search" value="{{ request('q') }}" placeholder="{{ __('ui.search_competitions_placeholder') }}" maxlength="100" autocomplete="off" data-competition-search>
             </div>
         </div>
+        @if($event)
+        <div class="field search-field">
+            <label for="participant">{{ __('search.participant_label') }}</label>
+            <input id="participant" name="participant" type="search" value="{{ request('participant') }}" placeholder="{{ __('search.participant_placeholder') }}" maxlength="100" autocomplete="off">
+        </div>
+        @endif
         <div class="field status-field">
             <label for="status">{{ __('ui.status') }}</label>
             <select id="status" name="status" data-native-select>
@@ -53,7 +59,7 @@
         </div>
         <div class="filter-actions">
             <button class="btn">{{ __('ui.filter') }}</button>
-            @if(request()->filled('q') || request()->filled('status'))
+            @if(request()->filled('q') || request()->filled('status') || request()->filled('participant'))
                 <a class="btn secondary" href="{{ $event ? route('events.show', $event) : route('tournaments.index') }}">{{ __('ui.clear_filters') }}</a>
             @endif
         </div>

@@ -1,0 +1,53 @@
+/* Short, non-spring motion shared by controls and surfaces. */
+:root { --motion-duration: 240ms; --motion-easing: ease-in-out; }
+body :is(button, .btn, a, summary, input, select, textarea, .smart-select-trigger, .smart-select-option, .tournament-card, .bracket-team, .bracket-match-node, .score-modal-team) {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: var(--motion-duration);
+    transition-timing-function: var(--motion-easing);
+}
+@keyframes surface-enter {
+    from { opacity: 0; transform: translateY(4px) scale(.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes page-enter { from { opacity: 0; } to { opacity: 1; } }
+#main-content { animation: page-enter 280ms ease-in-out; }
+.language-popover, .smart-select-popover.open, .mobile-menu[open] > :not(summary),
+.participant-item details[open] > :not(summary), .user-card[open] > :not(summary), dialog[open] {
+    animation: surface-enter var(--motion-duration) var(--motion-easing);
+    transform-origin: center top;
+}
+dialog[open]::backdrop { animation: page-enter var(--motion-duration) var(--motion-easing); }
+/* Modern browsers also retain dialogs in the top layer during their exit. */
+@supports (transition-behavior: allow-discrete) {
+    dialog {
+        opacity: 0;
+        transform: translateY(4px) scale(.98);
+        transition: opacity 240ms ease-in-out, transform 240ms ease-in-out, overlay 240ms allow-discrete, display 240ms allow-discrete;
+    }
+    dialog[open] { opacity: 1; transform: none; }
+    dialog::backdrop {
+        opacity: 0;
+        transition: opacity 240ms ease-in-out, overlay 240ms allow-discrete, display 240ms allow-discrete;
+    }
+    dialog[open]::backdrop { opacity: 1; }
+}
+/* Keep status indicators quiet; loading indicators still convey activity. */
+.live-dot { animation: none; }
+.bracket-search { display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; margin:18px 0; }
+.bracket-search .field { flex:1 1 260px; min-width:0; margin:0; }
+.bracket-search [role="status"] { flex-basis:100%; font-size:13px; }
+body .bracket-team.is-search-match {
+    background:color-mix(in srgb, var(--card, #fff) 86%, #d4af37) !important;
+    outline:1px solid #b79935;
+    outline-offset:1px;
+    box-shadow:0 0 0 3px rgb(212 175 55 / .10) !important;
+}
+body .bracket-team.is-search-current { outline-width:2px; outline-offset:2px; }
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration:.01ms !important;
+        animation-iteration-count:1 !important;
+        transition-duration:.01ms !important;
+        scroll-behavior:auto !important;
+    }
+}

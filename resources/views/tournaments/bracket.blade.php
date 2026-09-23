@@ -96,6 +96,16 @@
 </nav>
 @endif
 
+<div class="bracket-search" role="search" data-bracket-search>
+    <div class="field">
+        <label for="bracket-search">{{ __('search.bracket_label') }}</label>
+        <input id="bracket-search" type="search" maxlength="100" autocomplete="off" placeholder="{{ __('search.participant_placeholder') }}" aria-describedby="bracket-search-status" data-bracket-search-input>
+    </div>
+    <button type="button" class="btn secondary" data-bracket-search-next disabled>{{ __('search.next') }}</button>
+    <button type="button" class="btn secondary" data-bracket-search-clear disabled>{{ __('search.clear') }}</button>
+    <span id="bracket-search-status" class="muted" role="status" aria-live="polite" data-bracket-search-status data-count="{{ __('search.count') }}" data-empty="{{ __('search.empty') }}" data-hint="{{ __('search.hint') }}">{{ __('search.hint') }}</span>
+</div>
+
 <div data-live-bracket>
 @if($matches->isNotEmpty())
 <div class="bracket-zoom-toolbar" data-bracket-zoom-toolbar hidden>
@@ -232,7 +242,7 @@
                 <span class="badge {{ $match->is_bye ? 'BYE' : $match->status->value }}">{{ $match->is_bye ? __('ui.bye') : ($match->status === App\Enums\MatchStatus::READY && $tournament->status !== App\Enums\TournamentStatus::LIVE ? __('ui.match_waiting_to_start') : __('ui.match_status_labels.'.$match->status->value)) }}</span>
                 @endif
             </div>
-            <div class="bracket-team {{ $match->winner_id && $match->winner_id === $match->participant_a_id ? 'winner' : '' }} {{ $match->winner_id && $match->winner_id === $match->participant_a_id && $match->winner_next_match_id ? 'advancing' : '' }} {{ !$match->participant_a_id ? 'waiting' : '' }}" data-bracket-slot-state="{{ $match->participant_a_id ? 'confirmed' : 'waiting' }}">
+            <div class="bracket-team {{ $match->winner_id && $match->winner_id === $match->participant_a_id ? 'winner' : '' }} {{ $match->winner_id && $match->winner_id === $match->participant_a_id && $match->winner_next_match_id ? 'advancing' : '' }} {{ !$match->participant_a_id ? 'waiting' : '' }}" @if($match->participantA) data-participant-search="{{ json_encode([$match->participantA->team_name, ...$match->participantA->members->pluck('name')->all()], JSON_UNESCAPED_UNICODE) }}" @endif data-bracket-slot-state="{{ $match->participant_a_id ? 'confirmed' : 'waiting' }}">
                 <span class="bracket-team-name">
                     <i class="match-side red">{{ __('ui.red_side') }}</i>
                     @if($match->participantA?->seed_number)
@@ -242,7 +252,7 @@
                 </span>
                 <span class="bracket-score">{{ $match->score_a !== null ? (float)$match->score_a : '—' }}</span>
             </div>
-            <div class="bracket-team {{ $match->winner_id && $match->winner_id === $match->participant_b_id ? 'winner' : '' }} {{ $match->winner_id && $match->winner_id === $match->participant_b_id && $match->winner_next_match_id ? 'advancing' : '' }} {{ !$match->participant_b_id ? 'waiting' : '' }}" data-bracket-slot-state="{{ $match->participant_b_id ? 'confirmed' : 'waiting' }}">
+            <div class="bracket-team {{ $match->winner_id && $match->winner_id === $match->participant_b_id ? 'winner' : '' }} {{ $match->winner_id && $match->winner_id === $match->participant_b_id && $match->winner_next_match_id ? 'advancing' : '' }} {{ !$match->participant_b_id ? 'waiting' : '' }}" @if($match->participantB) data-participant-search="{{ json_encode([$match->participantB->team_name, ...$match->participantB->members->pluck('name')->all()], JSON_UNESCAPED_UNICODE) }}" @endif data-bracket-slot-state="{{ $match->participant_b_id ? 'confirmed' : 'waiting' }}">
                 <span class="bracket-team-name">
                     <i class="match-side blue">{{ __('ui.blue_side') }}</i>
                     @if($match->participantB?->seed_number)

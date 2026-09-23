@@ -174,3 +174,11 @@ Before deploying in Atomhost/Plesk, back up the production database and use the 
 - Event model and controllers: `app/Models/Event.php`, `app/Http/Controllers/EventController.php`, `app/Http/Controllers/Api/EventController.php`
 - Ranking and Round Robin standings: `app/Services/RankingService.php`, `app/Services/MatchStandingsService.php`
 - Demo data: `database/seeders/DatabaseSeeder.php`
+
+### Participant search
+
+Event detail pages offer a **Participant or team** filter alongside competition text and status filters. The API supports the same optional `participant` parameter on `GET /api/events/{event}/competitions` and `GET /api/tournaments` (up to 100 characters). It matches partial team names and individual member names, treats `%` and `_` literally, and preserves filters in pagination links.
+
+Bracket search highlights matching participant slots within the selected bracket view. **Next match** or Enter moves through matches; **Clear** or Escape removes highlights. Search remains active after live updates. Shared UI motion respects the operating system's reduced-motion preference.
+
+With the disposable app and dedicated browser described above running, use `node tests/browser/search.mjs` to verify search, live-refresh highlights, navigation, mobile layout, and reduced motion.

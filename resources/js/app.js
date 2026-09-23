@@ -448,3 +448,5 @@ document.querySelectorAll('.tabs').forEach((tabs) => {
         if (activeSelect && !activeSelect.menu.contains(event.target)) closeSelect(activeSelect);
     }, true);
 })();
+
+import './bracket-search';

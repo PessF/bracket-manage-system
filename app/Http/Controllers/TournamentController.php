@@ -33,6 +33,8 @@ class TournamentController extends Controller
 {
     public function index(Request $request, ?Event $event = null): View
     {
+        $request->validate(['participant' => ['nullable', 'string', 'max:100']]);
+
         $canBrowseTournaments = true;
         $search = trim((string) $request->query('q', ''));
 
@@ -44,6 +46,7 @@ class TournamentController extends Controller
                 'matches as progress_total_matches_count' => fn ($query) => $query->where('is_bye', false),
                 'matches as progress_completed_matches_count' => fn ($query) => $query->where('is_bye', false)->whereIn('status', [MatchStatus::FINISHED->value, MatchStatus::DQ->value]),
             ])
+                ->withParticipantSearch((string) $request->input('participant', ''))
                 ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
                 ->when($search !== '', function ($query) use ($search): void {
                     $query->where(function ($query) use ($search): void {

@@ -9,6 +9,7 @@ use App\Enums\SeedingMethod;
 use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
 use App\Enums\TournamentStructure;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +20,22 @@ use Illuminate\Support\Str;
 class Tournament extends Model
 {
     use HasFactory, HasUuids;
+
+    /** Match team names or individual members without duplicating competitions. */
+    public function scopeWithParticipantSearch(Builder $query, string $search): void
+    {
+        $search = trim($search);
+        if ($search === '') {
+            return;
+        }
+
+        // Use an explicit escape character so %, _ and ! are literal search text.
+        $term = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($search)).'%';
+        $query->whereHas('participants', fn ($participants) => $participants->where(
+            fn ($names) => $names->whereRaw("LOWER(team_name) LIKE ? ESCAPE '!'", [$term])
+                ->orWhereHas('members', fn ($members) => $members->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$term]))
+        ));
+    }
 
     protected $table = 'external_tournaments';
 
