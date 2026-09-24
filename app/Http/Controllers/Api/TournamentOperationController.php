@@ -179,9 +179,9 @@ class TournamentOperationController extends Controller
         try {
             return response()->json(['success' => true, 'data' => $callback()]);
         } catch (Throwable $exception) {
-            report($exception);
+            $message = $this->userErrorMessage($exception);
 
-            return response()->json(['success' => false, 'error' => ['message' => $exception->getMessage()]], 422);
+            return response()->json(['success' => false, 'error' => ['message' => $message]], $this->isUserError($exception) ? 422 : 500);
         }
     }
 

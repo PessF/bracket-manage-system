@@ -29,9 +29,9 @@ class ParticipantImportController extends Controller
                 ]))
                 ->with('import_errors', array_slice($result['errors'], 0, 20));
         } catch (Throwable $exception) {
-            report($exception);
+            $message = $this->userErrorMessage($exception);
 
-            return back()->withErrors($exception->getMessage());
+            return back()->withErrors($message);
         }
     }
 

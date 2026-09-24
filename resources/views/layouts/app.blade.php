@@ -39,7 +39,7 @@
     @endif
     @stack('styles')
 </head>
-<body class="{{ $isPublicViewer ? 'viewer-shell' : '' }} @yield('body-class')" data-theme="easykids" data-processing-label="{{ __('ui.processing') }}">
+<body class="{{ trim(($isPublicViewer ? 'viewer-shell ' : '').$__env->yieldContent('body-class')) }}" data-theme="easykids" data-processing-label="{{ __('ui.processing') }}">
 <a class="skip-link" href="#main-content">{{ __('ui.skip_to_content') }}</a>
 <header class="top">
     <div class="inner">
@@ -103,7 +103,7 @@
 <div class="toast-region" aria-live="polite" aria-atomic="true" data-toast-region></div>
 @stack('scripts')
 @unless(file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-    <script>{!! file_get_contents(resource_path('js/responsive.js')) !!}</script>
+    <script>{!! file_get_contents(resource_path('js/responsive.js')).file_get_contents(resource_path('js/ui.js')).file_get_contents(resource_path('js/bracket-search.js')) !!}</script>
 @endunless
 </body>
 </html>

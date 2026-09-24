@@ -23,9 +23,9 @@ class MatchProgressController extends Controller
 
             return back()->with('success', __('ui.match_marked_in_progress', ['number' => $match->match_number]));
         } catch (Throwable $exception) {
-            report($exception);
+            $message = $this->userErrorMessage($exception);
 
-            return back()->withErrors($exception->getMessage());
+            return back()->withErrors($message);
         }
     }
 }

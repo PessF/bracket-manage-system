@@ -141,7 +141,7 @@
             <span class="podium-rank">#{{ $row['rank'] }}</span>
             @endif
             <div>
-                <div class="podium-team" title="{{ $row['participant']->team_name }}">{{ $row['participant']->team_name }}</div>
+                <div class="podium-team" title="{{ $row['participant']?->team_name ?? __('ui.participant_unavailable') }}">{{ $row['participant']?->team_name ?? __('ui.participant_unavailable') }}</div>
                 @if($row['source'])
                 <div class="podium-source">{{ __('ui.match') }} #{{ $row['source']->match_number }}</div>
                 @endif

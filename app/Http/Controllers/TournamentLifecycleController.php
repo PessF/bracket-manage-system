@@ -55,9 +55,9 @@ class TournamentLifecycleController extends Controller
 
             return back()->with('success', $message);
         } catch (Throwable $exception) {
-            report($exception);
+            $message = $this->userErrorMessage($exception);
 
-            return back()->withErrors($exception->getMessage());
+            return back()->withErrors($message);
         }
     }
 }

@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'participant_unavailable' => 'Participant unavailable',
+    'attempt_saved_refresh_failed' => 'The result was saved, but the display could not refresh. Reload the page to see the latest results.',
+    'invalid_filters_help' => 'Some filters are invalid. Continue to clear them and try again.',
+    'error_help_419' => 'Your session has expired. Please reopen the page and try again.',
+    'error_help_429' => 'Too many requests. Please wait a moment before trying again.',
+    'continue' => 'Continue',
+
     'app_name' => 'EasyKids Robotics Competition System', 'dashboard_order_hint' => 'Drag cards to set the display order.', 'all_tournaments' => 'All competitions', 'create' => 'Create',
     'tournaments' => 'Competitions', 'tournaments_help' => 'Dashboard for competitions, status, and results.',
     'new_tournament' => 'New competition', 'all_statuses' => 'All statuses', 'filter' => 'Filter', 'teams' => 'Teams',
@@ -195,7 +202,7 @@ return [
     'forbidden_title' => 'Administrator permission required', 'forbidden_logged_in_help' => 'You are signed in with the :role role. Ask an administrator to change your role if you need management access.',
     'forbidden_guest_help' => 'Sign in with an administrator account to open this page.', 'not_found_title' => 'Competition not available',
     'not_found_help' => 'The link is incorrect, or this competition has not prepared a viewer bracket.', 'server_error_title' => 'The page could not be opened',
-    'server_error_help' => 'Please try again. If this happened after deployment, the administrator should run the database migrations and clear the application cache.',
+    'server_error_help' => 'We could not complete this request. Please try again shortly. If the problem continues, contact the administrator.',
     'back_to_tournaments' => 'Back to competitions', 'admin_login_short' => 'Administrator login',
     'share_only_notice' => 'This page lists competitions in view-only mode. Editing data and system settings is restricted to administrators.',
     'share_link_required' => 'No competitions are listed publicly. Please use the viewer link provided by the competition administrator.',

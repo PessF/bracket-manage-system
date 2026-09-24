@@ -43,9 +43,9 @@ class MatchResultController extends Controller
         } catch (ValidationException $exception) {
             return back()->withErrors($exception->validator)->withInput();
         } catch (Throwable $exception) {
-            report($exception);
+            $message = $this->userErrorMessage($exception);
 
-            return back()->withErrors($exception->getMessage())->withInput();
+            return back()->withErrors($message)->withInput();
         }
     }
 

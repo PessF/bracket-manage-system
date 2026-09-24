@@ -19,11 +19,9 @@ use App\Models\Stage;
 use App\Models\Tournament;
 use App\Services\AdvancedTournamentBuilderService;
 use App\Services\MatchStandingsService;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -33,61 +31,50 @@ class TournamentController extends Controller
 {
     public function index(Request $request, ?Event $event = null): View
     {
-        $request->validate(['participant' => ['nullable', 'string', 'max:100']]);
+        $request->validate([
+            'q' => ['nullable', 'string', 'max:200'],
+            'participant' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', Rule::enum(TournamentStatus::class)],
+            'page' => ['nullable', 'integer', 'min:1'],
+        ]);
 
         $canBrowseTournaments = true;
         $search = trim((string) $request->query('q', ''));
 
-        try {
-            $tournaments = Tournament::query()->when($event, fn ($query) => $query->where('event_id', $event->id))->withCount([
-                'participants',
-                'matches',
-                'rankingAttempts',
-                'matches as progress_total_matches_count' => fn ($query) => $query->where('is_bye', false),
-                'matches as progress_completed_matches_count' => fn ($query) => $query->where('is_bye', false)->whereIn('status', [MatchStatus::FINISHED->value, MatchStatus::DQ->value]),
-            ])
-                ->withParticipantSearch((string) $request->input('participant', ''))
-                ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
-                ->when($search !== '', function ($query) use ($search): void {
-                    $query->where(function ($query) use ($search): void {
-                        $term = '%'.$search.'%';
+        $tournaments = Tournament::query()->when($event, fn ($query) => $query->where('event_id', $event->id))->withCount([
+            'participants',
+            'matches',
+            'rankingAttempts',
+            'matches as progress_total_matches_count' => fn ($query) => $query->where('is_bye', false),
+            'matches as progress_completed_matches_count' => fn ($query) => $query->where('is_bye', false)->whereIn('status', [MatchStatus::FINISHED->value, MatchStatus::DQ->value]),
+        ])
+            ->withParticipantSearch((string) $request->input('participant', ''))
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($query) use ($search): void {
+                    $term = '%'.$search.'%';
 
-                        $query->where('name', 'like', $term)
-                            ->orWhere('competition', 'like', $term)
-                            ->orWhere('division', 'like', $term)
-                            ->orWhere('venue', 'like', $term);
-                    });
-                })
-                ->orderByRaw('display_order IS NULL')
-                ->orderBy('display_order')
-                ->orderByDesc('source_created_at')->paginate(12)->withQueryString();
+                    $query->where('name', 'like', $term)
+                        ->orWhere('competition', 'like', $term)
+                        ->orWhere('division', 'like', $term)
+                        ->orWhere('venue', 'like', $term);
+                });
+            })
+            ->orderByRaw('display_order IS NULL')
+            ->orderBy('display_order')
+            ->orderByDesc('source_created_at')->paginate(12)->withQueryString();
 
-            $statusCounts = Tournament::query()
-                ->when($event, fn ($query) => $query->where('event_id', $event->id))
-                ->selectRaw('status, count(*) as aggregate')
-                ->groupBy('status')
-                ->pluck('aggregate', 'status');
-            $dashboardCounts = [
-                'total' => (int) $statusCounts->sum(),
-                'live' => (int) ($statusCounts[TournamentStatus::LIVE->value] ?? 0),
-                'ready' => (int) ($statusCounts[TournamentStatus::READY->value] ?? 0),
-                'completed' => (int) ($statusCounts[TournamentStatus::COMPLETED->value] ?? 0),
-            ];
-        } catch (QueryException $exception) {
-            throw_unless(app()->isLocal(), $exception);
-
-            $tournaments = new LengthAwarePaginator(
-                items: [],
-                total: 0,
-                perPage: 12,
-                currentPage: LengthAwarePaginator::resolveCurrentPage(),
-                options: [
-                    'path' => $request->url(),
-                    'query' => $request->query(),
-                ],
-            );
-            $dashboardCounts = ['total' => 0, 'live' => 0, 'ready' => 0, 'completed' => 0];
-        }
+        $statusCounts = Tournament::query()
+            ->when($event, fn ($query) => $query->where('event_id', $event->id))
+            ->selectRaw('status, count(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+        $dashboardCounts = [
+            'total' => (int) $statusCounts->sum(),
+            'live' => (int) ($statusCounts[TournamentStatus::LIVE->value] ?? 0),
+            'ready' => (int) ($statusCounts[TournamentStatus::READY->value] ?? 0),
+            'completed' => (int) ($statusCounts[TournamentStatus::COMPLETED->value] ?? 0),
+        ];
 
         return view('tournaments.index', compact('tournaments', 'canBrowseTournaments', 'dashboardCounts', 'event'));
     }

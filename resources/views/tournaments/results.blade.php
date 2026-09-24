@@ -183,7 +183,7 @@
     <article class="ranking-leader rank-{{ $leaderRank }}">
         <span class="ranking-leader-rank">#{{ $leaderRank }}</span>
         <div>
-            <strong>{{ $leader->participant->team_name }}</strong>
+            <strong>{{ $leader->participant?->team_name ?? __('ui.participant_unavailable') }}</strong>
             <span>
                 @if($isDroneMission)
                 {{ __('ui.total_score') }} {{ $formatRankingValue($leader->best_value) }} · {{ $formatDroneTime($leader->format_data['attempt_time'] ?? null) }}
@@ -239,7 +239,7 @@
                         <strong>{{ $standing->rank_number ?: '—' }}</strong>
                         @endif
                     </td>
-                    <td data-label="{{ __('ui.participant') }}">{{ $standing->participant->team_name }}</td>
+                    <td data-label="{{ __('ui.participant') }}">{{ $standing->participant?->team_name ?? __('ui.participant_unavailable') }}</td>
                     @if($isRanking)
                         @if($isDroneMission)
                         <td data-label="{{ __('ui.total_score') }}"><strong class="best-value">{{ $formatRankingValue($standing->best_value) }}</strong></td>
@@ -363,15 +363,16 @@ document.addEventListener('DOMContentLoaded', () => {
             credentials: 'same-origin',
             headers: { Accept: 'text/html', 'X-Requested-With': 'XMLHttpRequest' },
         });
-        if (!response.ok) throw new Error(requestFailedLabel);
+        if (!response.ok || response.redirected) throw new Error(requestFailedLabel);
 
         const replacementDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
         const selectors = ['.ranking-entry-list', '[data-live-results]'];
-        selectors.forEach((contentSelector) => {
-            const current = document.querySelector(contentSelector);
-            const replacement = replacementDocument.querySelector(contentSelector);
-            if (current && replacement) current.replaceChildren(...replacement.cloneNode(true).childNodes);
-        });
+        const fragments = selectors.map((contentSelector) => ({
+            current: document.querySelector(contentSelector),
+            replacement: replacementDocument.querySelector(contentSelector),
+        }));
+        if (fragments.some(({ current, replacement }) => !current || !replacement)) throw new Error(requestFailedLabel);
+        fragments.forEach(({ current, replacement }) => current.replaceChildren(...replacement.cloneNode(true).childNodes));
         syncRound();
         document.dispatchEvent(new CustomEvent('easykids:live-content-updated', { detail: { target: document } }));
         requestAnimationFrame(() => window.scrollTo({ top: scrollY, left: window.scrollX, behavior: 'auto' }));
@@ -414,8 +415,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const form = event.target instanceof HTMLFormElement && event.target.matches('[data-ranking-async-form]') ? event.target : null;
         if (!form) return;
         event.preventDefault();
+        if (form.dataset.saving === 'true') return;
+        form.dataset.saving = 'true';
 
-        const submit = form.querySelector('button[type="submit"]');
+        const submit = event.submitter || form.querySelector('button[type="submit"], button:not([type])');
         const originalLabel = submit?.textContent;
         if (submit) { submit.disabled = true; submit.textContent = processingLabel; }
         try {
@@ -425,18 +428,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             });
-            const payload = await response.json().catch(() => ({}));
+            const payload = await response.json().catch(() => null);
+            if (response.redirected || !payload || typeof payload !== 'object') throw new Error(requestFailedLabel);
             if (!response.ok) {
                 const validationMessage = Object.values(payload.errors || {}).flat()[0];
-                throw new Error(validationMessage || payload.message || requestFailedLabel);
+                throw new Error(response.status === 422 ? (validationMessage || payload.message || requestFailedLabel) : requestFailedLabel);
             }
 
             if (dialog?.open) dialog.close();
-            await refreshRankingContent();
+            try {
+                await refreshRankingContent();
+            } catch (_) {
+                showStatus(@json(__('ui.attempt_saved_refresh_failed')), true);
+                return;
+            }
             showStatus(payload.message || @json(__('ui.attempt_saved', ['number' => '__NUMBER__'])).replace('__NUMBER__', form.elements.attempt_number.value));
         } catch (error) {
             showStatus(error instanceof Error ? error.message : requestFailedLabel, true);
         } finally {
+            delete form.dataset.saving;
             if (submit) { submit.disabled = false; submit.textContent = originalLabel; }
         }
     });

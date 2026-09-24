@@ -22,11 +22,15 @@ class FrontendRenderingTest extends TestCase
         $this->get('/events')->assertOk()
             ->assertSee('One restrained dark palette', false)
             ->assertSee('prepareResponsiveContent', false)
+            ->assertSee('data-copy-target', false)
+            ->assertSee('data-ranking-async-form', false)
             ->assertSee('skip-link', false);
 
         $this->actingAs(User::factory()->create(['role' => UserRole::ADMIN]))
             ->get('/tournaments/create')->assertOk()
             ->assertSee('class="date-time-grid"', false)
             ->assertSee('smart-select-fallback.js', false);
+
+        $this->assertDoesNotMatchRegularExpression('/^import /m', file_get_contents(resource_path('js/ui.js')));
     }
 }

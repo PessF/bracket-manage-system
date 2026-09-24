@@ -57,7 +57,7 @@ class LiveViewerTest extends TestCase
         $this->get($shareUrl)
             ->assertOk()
             ->assertSee($live->name)
-            ->assertSee('class="viewer-shell"', false)
+            ->assertSee('class="viewer-shell bracket-page"', false)
             ->assertSee('class="viewer-event-head"', false)
             ->assertDontSee('class="tabs"', false)
             ->assertDontSee(__('ui.overview_participants'))

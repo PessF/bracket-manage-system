@@ -14,6 +14,8 @@ class EventController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $request->validate(['page' => ['nullable', 'integer', 'min:1'], 'per_page' => ['nullable', 'integer', 'min:1']]);
+
         return response()->json(['success' => true, 'data' => Event::query()
             ->withCount('competitions')->orderByDesc('starts_on')->orderBy('name')->orderBy('id')
             ->paginate(min(100, max(1, $request->integer('per_page', 20))))]);

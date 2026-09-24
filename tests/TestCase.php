@@ -15,6 +15,7 @@ abstract class TestCase extends BaseTestCase
     public function createApplication(): Application
     {
         foreach ([
+            'APP_ENV' => 'testing',
             'DB_CONNECTION' => 'sqlite',
             'DB_DATABASE' => ':memory:',
             'DB_URL' => '',

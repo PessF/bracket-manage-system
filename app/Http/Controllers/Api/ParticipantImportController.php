@@ -25,12 +25,12 @@ class ParticipantImportController extends Controller
                 'data' => $this->importer->import($tournament, $request->file('csv_file')),
             ]);
         } catch (Throwable $exception) {
-            report($exception);
+            $message = $this->userErrorMessage($exception);
 
             return response()->json([
                 'success' => false,
-                'error' => ['message' => $exception->getMessage()],
-            ], 422);
+                'error' => ['message' => $message],
+            ], $this->isUserError($exception) ? 422 : 500);
         }
     }
 }

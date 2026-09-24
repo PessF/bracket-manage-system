@@ -25,7 +25,9 @@
 
     const rememberPosition = () => {
         const brackets = [...document.querySelectorAll('.bracket-viewport')].map((element) => element.scrollLeft);
-        sessionStorage.setItem(storageKey, JSON.stringify({ y: window.scrollY, brackets }));
+        try { sessionStorage.setItem(storageKey, JSON.stringify({ y: window.scrollY, brackets })); } catch (_) {
+            // Storage may be disabled; refreshing must still work.
+        }
     };
     const reloadPage = () => {
         rememberPosition();

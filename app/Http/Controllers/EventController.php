@@ -14,6 +14,8 @@ class EventController extends Controller
 {
     public function index(Request $request): View
     {
+        $request->validate(['q' => ['nullable', 'string', 'max:200'], 'page' => ['nullable', 'integer', 'min:1']]);
+
         $events = Event::query()->withCount('competitions')
             ->when($request->filled('q'), fn ($query) => $query->where('name', 'like', '%'.$request->string('q').'%'))
             ->orderByDesc('starts_on')->orderBy('name')->orderBy('id')

@@ -68,13 +68,13 @@ class RankingAttemptController extends Controller
 
             return back()->with('success', $message);
         } catch (Throwable $exception) {
-            report($exception);
+            $message = $this->userErrorMessage($exception);
 
             if ($request->expectsJson()) {
-                return response()->json(['message' => $exception->getMessage()], 422);
+                return response()->json(['message' => $message], $this->isUserError($exception) ? 422 : 500);
             }
 
-            return back()->withErrors($exception->getMessage());
+            return back()->withErrors($message);
         }
     }
 }

@@ -5,12 +5,16 @@
     $routePrefix = $usePublicRoutes ? 'public.tournaments.' : 'tournaments.';
     $routeParameter = $usePublicRoutes ? ['tournament' => $tournament->public_token] : $tournament;
     $overviewRoute = $isAdmin ? 'tournaments.show' : 'tournaments.overview';
+    $parentEvent = $tournament->event;
+    $eventUrl = $parentEvent ? route('events.show', $parentEvent) : route('events.index');
 @endphp
 
 <nav aria-label="{{ __('events.title') }}" class="breadcrumbs">
     <a href="{{ route('events.index') }}">{{ __('events.title') }}</a>
+    @if($parentEvent)
     <span aria-hidden="true">/</span>
-    <a href="{{ route('events.show', $tournament->event_id) }}">{{ $tournament->event->name }}</a>
+    <a href="{{ $eventUrl }}">{{ $parentEvent->name }}</a>
+    @endif
     <span aria-hidden="true">/</span><span aria-current="page">{{ $tournament->name }}</span>
 </nav>
 @if($isPublicView && !$isAdmin)
@@ -23,7 +27,7 @@
 @endif
 @else
 <nav class="tabs {{ $isAdmin ? 'admin-control-tabs' : 'viewer-control-tabs' }}" aria-label="{{ __('ui.tournament_navigation') }}">
-    <a class="tab-all all-tournaments-tab" href="{{ route('events.show', $tournament->event_id) }}">{{ __('events.back') }}</a>
+    <a class="tab-all all-tournaments-tab" href="{{ $eventUrl }}">{{ __('events.back') }}</a>
     @if($isAdmin)
     <a class="tab-overview {{ request()->routeIs('tournaments.show', 'tournaments.overview') ? 'active' : '' }}" href="{{ route($overviewRoute, $tournament) }}" @if(request()->routeIs('tournaments.show', 'tournaments.overview')) aria-current="page" @endif>{{ __('ui.overview_participants') }}</a>
     @endif

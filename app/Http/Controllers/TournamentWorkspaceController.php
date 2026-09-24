@@ -35,6 +35,8 @@ class TournamentWorkspaceController extends Controller
 
     public function bracket(Request $request, Tournament $tournament): View|RedirectResponse
     {
+        $request->validate(['view' => ['nullable', 'string', 'regex:/^(all|playoff|group:[a-zA-Z0-9-]+)$/']]);
+
         if ($tournament->format === TournamentFormat::RANKING) {
             $route = $request->routeIs('public.tournaments.*')
                 ? 'public.tournaments.results'
@@ -188,7 +190,12 @@ class TournamentWorkspaceController extends Controller
             return [];
         }
 
-        $time = CarbonImmutable::createFromFormat('H:i', substr((string) $tournament->bracket_schedule_start_time, 0, 5));
+        $startTime = substr((string) $tournament->bracket_schedule_start_time, 0, 5);
+        if (! preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $startTime) || (int) $tournament->bracket_match_duration_minutes <= 0) {
+            return [];
+        }
+
+        $time = CarbonImmutable::createFromFormat('H:i', $startTime);
         $duration = (int) $tournament->bracket_match_duration_minutes;
         $estimatedStartTimes = [];
 

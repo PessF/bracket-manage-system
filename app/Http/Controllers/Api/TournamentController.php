@@ -34,7 +34,17 @@ class TournamentController extends Controller
 
     public function index(Request $request, ?Event $event = null): JsonResponse
     {
-        $request->validate(['participant' => ['nullable', 'string', 'max:100']]);
+        $request->validate([
+            'participant' => ['nullable', 'string', 'max:100'],
+            'search' => ['nullable', 'string', 'max:200'],
+            'division' => ['nullable', 'string', 'max:200'],
+            'event_id' => ['nullable', 'uuid'],
+            'status' => ['nullable', Rule::enum(TournamentStatus::class)],
+            'format' => ['nullable', Rule::enum(TournamentFormat::class)],
+            'structure' => ['nullable', Rule::enum(TournamentStructure::class)],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1'],
+        ]);
 
         $data = Tournament::query()->withCount(['participants', 'matches'])
             ->when($event, fn ($query) => $query->where('event_id', $event->id))
