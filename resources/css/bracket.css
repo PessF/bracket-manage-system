@@ -1,8 +1,7 @@
 /* Gold is local to the bracket page; other pages use the d7f81ba palette. */
 body.bracket-page {
     --ink:#f5f6f7; --muted:#a6abb3; --line:#2a2f37; --line-strong:#3a4049;
-    --card:#181d24; --bg:#0f1115; --soft:#20262e; --brand:#d4af37;
-    --card-accent-gradient:linear-gradient(90deg,rgb(212 175 55 / .8),rgb(212 175 55 / .3),rgb(212 175 55 / .08));
+    --card:#181d24; --soft:#20262e; --brand:#d4af37;
     --surface-page:var(--bg); --surface-card:var(--card); --surface-subtle:var(--soft);
 }
 body.bracket-page .btn:not(.secondary):not(.danger) { color:#171a20; }
@@ -11,7 +10,7 @@ body.bracket-page[data-theme="easykids"] .tabs a.active { background:#3f3518; co
     body.bracket-page .btn:hover:not(.secondary):not(.danger):not(:disabled) { background:#e5c45d; }
 }
 /* A single connected diagram at every viewport size; scroll within the region. */
-body[data-theme] .bracket-viewport { padding:0; overflow:auto; min-width:0; max-width:100%; scroll-behavior:smooth; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; border:1px solid #2a2f37; border-top:2px solid #d4af37; border-radius:6px; background:#0f1115; scrollbar-color:#d4af37 transparent; box-shadow:0 10px 26px rgb(0 0 0 / .22); }
+body[data-theme] .bracket-viewport { padding:0; overflow:auto; min-width:0; max-width:100%; scroll-behavior:smooth; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; border:1px solid #2a2f37; border-top:2px solid #d4af37; border-radius:6px; background:var(--bg); scrollbar-color:#d4af37 transparent; box-shadow:0 10px 26px rgb(0 0 0 / .22); }
 body[data-theme] .bracket-canvas { position:relative; padding:0; }
 .bracket-zoom-stage { overflow:clip; margin-inline:auto; }
 body[data-theme] .bracket-zoom-toolbar:not([hidden]) { display:flex; flex-wrap:wrap; }
