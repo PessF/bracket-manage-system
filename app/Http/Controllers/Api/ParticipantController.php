@@ -18,93 +18,117 @@ class ParticipantController extends Controller
 {
     public function store(Request $request, Tournament $tournament): JsonResponse
     {
-        if (! $this->editable($tournament)) {
-            return $this->error(__('ui.roster_locked'), 422);
-        }
+        return DB::transaction(function () use ($request, $tournament): JsonResponse {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
 
-        $data = $request->validate($this->rules());
-        $participant = $tournament->participants()->create(array_merge($data, [
-            'status' => $data['status'] ?? ParticipantStatus::ACTIVE,
-            'source_created_at' => now(),
-            'synced_at' => now(),
-        ]));
-        $this->syncCount($tournament);
+            if (! $this->editable($tournament)) {
+                return $this->error(__('ui.roster_locked'), 422);
+            }
 
-        return $this->success($participant, 201);
+            $data = $request->validate($this->rules());
+            $participant = $tournament->participants()->create(array_merge($data, [
+                'status' => $data['status'] ?? ParticipantStatus::ACTIVE,
+                'source_created_at' => now(),
+                'synced_at' => now(),
+            ]));
+            $this->syncCount($tournament);
+
+            return $this->success($participant, 201);
+        }, 3);
     }
 
     public function bulkStore(Request $request, Tournament $tournament): JsonResponse
     {
-        if (! $this->editable($tournament)) {
-            return $this->error(__('ui.roster_locked'), 422);
-        }
+        return DB::transaction(function () use ($request, $tournament): JsonResponse {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
 
-        $data = $request->validate([
-            'participants' => ['required', 'array', 'min:1', 'max:1000'],
-            'participants.*.team_name' => ['required', 'string', 'max:200'],
-            'participants.*.team_code' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'participants.*.school' => ['sometimes', 'nullable', 'string', 'max:200'],
-            'participants.*.coach_name' => ['sometimes', 'nullable', 'string', 'max:200'],
-            'participants.*.seed_number' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'participants.*.status' => ['sometimes', 'nullable', Rule::enum(ParticipantStatus::class)],
-        ]);
-
-        $participants = DB::transaction(function () use ($tournament, $data) {
-            $created = collect();
-            $nextSeed = ((int) $tournament->participants()->max('seed_number')) + 1;
-
-            foreach ($data['participants'] as $index => $row) {
-                $created->push($tournament->participants()->create(array_merge($row, [
-                    'seed_number' => $row['seed_number'] ?? ($nextSeed + $index),
-                    'status' => $row['status'] ?? ParticipantStatus::ACTIVE,
-                    'source_created_at' => now(),
-                    'synced_at' => now(),
-                ])));
+            if (! $this->editable($tournament)) {
+                return $this->error(__('ui.roster_locked'), 422);
             }
 
-            $this->syncCount($tournament);
+            $data = $request->validate([
+                'participants' => ['required', 'array', 'min:1', 'max:1000'],
+                'participants.*.team_name' => ['required', 'string', 'max:200'],
+                'participants.*.team_code' => ['sometimes', 'nullable', 'string', 'max:100'],
+                'participants.*.school' => ['sometimes', 'nullable', 'string', 'max:200'],
+                'participants.*.coach_name' => ['sometimes', 'nullable', 'string', 'max:200'],
+                'participants.*.seed_number' => ['sometimes', 'nullable', 'integer', 'min:1'],
+                'participants.*.status' => ['sometimes', 'nullable', Rule::enum(ParticipantStatus::class)],
+            ]);
 
-            return $created;
+            $participants = DB::transaction(function () use ($tournament, $data) {
+                $created = collect();
+                $nextSeed = ((int) $tournament->participants()->max('seed_number')) + 1;
+
+                foreach ($data['participants'] as $index => $row) {
+                    $created->push($tournament->participants()->create(array_merge($row, [
+                        'seed_number' => $row['seed_number'] ?? ($nextSeed + $index),
+                        'status' => $row['status'] ?? ParticipantStatus::ACTIVE,
+                        'source_created_at' => now(),
+                        'synced_at' => now(),
+                    ])));
+                }
+
+                $this->syncCount($tournament);
+
+                return $created;
+            }, 3);
+
+            return $this->success($participants, 201);
         }, 3);
-
-        return $this->success($participants, 201);
     }
 
     public function update(Request $request, Tournament $tournament, Participant $participant): JsonResponse
     {
-        $this->assertOwner($tournament, $participant);
-        $rules = $this->rules(! $request->isMethod('put'));
-        if (! $this->editable($tournament)) {
-            unset($rules['seed_number'], $rules['status']);
-        }
-        $participant->fill($request->validate($rules) + ['synced_at' => now()])->save();
+        return DB::transaction(function () use ($request, $tournament, $participant): JsonResponse {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
 
-        return $this->success($participant->fresh());
+            $this->assertOwner($tournament, $participant);
+            $rules = $this->rules(! $request->isMethod('put'));
+            if (! $this->editable($tournament)) {
+                unset($rules['seed_number'], $rules['status']);
+            }
+            $data = $request->validate($rules);
+            if (($data['status'] ?? null) === null) {
+                unset($data['status']);
+            }
+            $participant->fill($data + ['synced_at' => now()])->save();
+
+            return $this->success($participant->fresh());
+        }, 3);
     }
 
     public function destroy(Tournament $tournament, Participant $participant): JsonResponse
     {
-        $this->assertOwner($tournament, $participant);
-        if (! $this->editable($tournament)) {
-            return $this->error(__('ui.roster_locked'), 422);
-        }
-        $participant->delete();
-        $this->syncCount($tournament);
+        return DB::transaction(function () use ($tournament, $participant): JsonResponse {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
 
-        return $this->success(['deleted' => true]);
+            $this->assertOwner($tournament, $participant);
+            if (! $this->editable($tournament)) {
+                return $this->error(__('ui.roster_locked'), 422);
+            }
+            $participant->delete();
+            $this->syncCount($tournament);
+
+            return $this->success(['deleted' => true]);
+        }, 3);
     }
 
     public function destroyAll(Tournament $tournament): JsonResponse
     {
-        if (! $this->editable($tournament)) {
-            return $this->error(__('ui.roster_locked'), 422);
-        }
+        return DB::transaction(function () use ($tournament): JsonResponse {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
 
-        $deleted = $tournament->participants()->count();
-        $tournament->participants()->delete();
-        $this->syncCount($tournament);
+            if (! $this->editable($tournament)) {
+                return $this->error(__('ui.roster_locked'), 422);
+            }
 
-        return $this->success(['deleted' => $deleted]);
+            $deleted = $tournament->participants()->count();
+            $tournament->participants()->delete();
+            $this->syncCount($tournament);
+
+            return $this->success(['deleted' => $deleted]);
+        }, 3);
     }
 
     /** @return array<string, mixed> */

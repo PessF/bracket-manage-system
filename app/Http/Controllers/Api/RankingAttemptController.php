@@ -36,20 +36,22 @@ class RankingAttemptController extends Controller
     {
         $this->assertParticipantOwner($tournament, $participant);
 
-        if ($tournament->format !== TournamentFormat::RANKING || $tournament->status !== TournamentStatus::LIVE) {
-            return response()->json([
-                'success' => false,
-                'error' => ['message' => __('ui.ranking_live_only')],
-            ], 422);
-        }
+        return DB::transaction(function () use ($tournament, $participant, $attemptNumber): JsonResponse {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
 
-        DB::transaction(function () use ($tournament, $participant, $attemptNumber): void {
+            if ($tournament->format !== TournamentFormat::RANKING || $tournament->status !== TournamentStatus::LIVE) {
+                return response()->json([
+                    'success' => false,
+                    'error' => ['message' => __('ui.ranking_live_only')],
+                ], 422);
+            }
+
             $this->findAttempt($tournament, $participant, $attemptNumber)->delete();
             $this->ranking->recompute($tournament);
             $tournament->forceFill(['source_updated_at' => now(), 'synced_at' => now()])->save();
-        }, 3);
 
-        return $this->success(['deleted' => true]);
+            return $this->success(['deleted' => true]);
+        }, 3);
     }
 
     private function findAttempt(Tournament $tournament, Participant $participant, int $attemptNumber): RankingAttempt

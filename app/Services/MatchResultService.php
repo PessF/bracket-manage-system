@@ -52,17 +52,23 @@ class MatchResultService
         $normalizedScoreA = $this->normalizeScore($scoreA, 'score_a');
         $normalizedScoreB = $this->normalizeScore($scoreB, 'score_b');
 
+        $tournamentId = TournamentMatch::query()->findOrFail($matchId)->tournament_id;
+
         return DB::transaction(function () use (
             $matchId,
+            $tournamentId,
             $normalizedScoreA,
             $normalizedScoreB,
         ): TournamentMatch {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournamentId);
+
             /** @var TournamentMatch $currentMatch */
             $currentMatch = TournamentMatch::query()
                 ->lockForUpdate()
                 ->findOrFail($matchId);
 
-            $currentMatch->load(['tournament', 'stage']);
+            $currentMatch->setRelation('tournament', $tournament);
+            $currentMatch->load('stage');
             $matchFormat = $currentMatch->stage?->format ?? $currentMatch->tournament->format;
 
             if ($currentMatch->tournament->status !== TournamentStatus::LIVE) {

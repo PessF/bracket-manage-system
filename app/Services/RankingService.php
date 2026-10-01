@@ -62,16 +62,31 @@ class RankingService
 
     public function recompute(Tournament $tournament): void
     {
+        DB::transaction(function () use ($tournament): void {
+            $locked = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
+            $this->recomputeLocked($locked);
+        }, 3);
+    }
+
+    private function recomputeLocked(Tournament $tournament): void
+    {
         $configuredType = RankingType::tryFrom((string) ($tournament->ranking_config['type'] ?? ''));
         $comparator = (string) ($tournament->ranking_config['comparator'] ?? 'BEST_SCORE_HIGHER');
         $rows = [];
 
-        foreach ($tournament->participants()->get() as $participant) {
-            $attempts = $participant->rankingAttempts()
+        $participants = $tournament->participants()->with(['rankingAttempts' => function ($query) use ($tournament, $configuredType): void {
+            $query->where('tournament_id', $tournament->id)
                 ->where('is_valid', true)
                 ->whereNotNull('attempt_value')
-                ->orderBy('attempt_number')
-                ->get();
+                ->orderBy('attempt_number');
+
+            if ($configuredType === RankingType::DRONE_MISSION) {
+                $query->whereNotNull('manual_score')->whereNotNull('auto_score')->whereNotNull('attempt_time');
+            }
+        }])->get();
+
+        foreach ($participants as $participant) {
+            $attempts = $participant->rankingAttempts;
             $bestAttempt = $this->bestAttempt($attempts, $configuredType, $comparator);
             $best = $bestAttempt?->attempt_value;
             $secondary = $configuredType === RankingType::DRONE_MISSION ? $bestAttempt?->attempt_time : null;
@@ -88,6 +103,8 @@ class RankingService
 
         $lastKey = null;
         $lastRank = 0;
+
+        $standings = [];
 
         foreach ($rows as $index => $row) {
             $rank = 0;
@@ -119,8 +136,8 @@ class RankingService
                 $formatData['attempt_time'] = (string) ($bestAttempt->attempt_time ?? $bestAttempt->attempt_value);
             }
 
-            Standing::query()->updateOrCreate(
-                ['tournament_id' => $tournament->id, 'participant_id' => $row['participant_id']],
+            $standings[] = (new Standing(
+                ['tournament_id' => $tournament->id, 'participant_id' => $row['participant_id']] +
                 [
                     'rank_number' => $rank,
                     'best_value' => $row['best'],
@@ -135,7 +152,11 @@ class RankingService
                     'format_data' => $formatData,
                     'synced_at' => now(),
                 ],
-            );
+            ))->getAttributes();
+        }
+
+        foreach (array_chunk($standings, 100) as $chunk) {
+            Standing::query()->upsert($chunk, ['tournament_id', 'participant_id']);
         }
     }
 

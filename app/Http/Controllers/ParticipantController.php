@@ -18,123 +18,147 @@ class ParticipantController extends Controller
 {
     public function store(Request $request, Tournament $tournament): RedirectResponse
     {
-        if (! $this->editable($tournament)) {
-            return $this->returnToAddParticipant($tournament)->withErrors(__('ui.roster_locked'));
-        }
+        return DB::transaction(function () use ($request, $tournament): RedirectResponse {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
 
-        try {
-            $data = $this->validated($request);
-        } catch (ValidationException $exception) {
-            return $this->returnToAddParticipant($tournament)
-                ->withErrors($exception->validator)
-                ->withInput();
-        }
+            if (! $this->editable($tournament)) {
+                return $this->returnToAddParticipant($tournament)->withErrors(__('ui.roster_locked'));
+            }
 
-        $tournament->participants()->create($data + [
-            'status' => $data['status'] ?? ParticipantStatus::ACTIVE,
-            'source_created_at' => now(), 'synced_at' => now(),
-        ]);
-        $this->syncCount($tournament);
+            try {
+                $data = $this->validated($request);
+            } catch (ValidationException $exception) {
+                return $this->returnToAddParticipant($tournament)
+                    ->withErrors($exception->validator)
+                    ->withInput();
+            }
 
-        return $this->returnToAddParticipant($tournament)->with('success', __('ui.participant_added'));
+            $data['status'] ??= ParticipantStatus::ACTIVE;
+            $tournament->participants()->create($data + [
+                'status' => $data['status'] ?? ParticipantStatus::ACTIVE,
+                'source_created_at' => now(), 'synced_at' => now(),
+            ]);
+            $this->syncCount($tournament);
+
+            return $this->returnToAddParticipant($tournament)->with('success', __('ui.participant_added'));
+        }, 3);
     }
 
     public function bulkStore(Request $request, Tournament $tournament): RedirectResponse
     {
-        if (! $this->editable($tournament)) {
-            return $this->returnToAddParticipant($tournament)->withErrors(__('ui.roster_locked'));
-        }
+        return DB::transaction(function () use ($request, $tournament): RedirectResponse {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
 
-        try {
-            $data = $request->validate([
-                'bulk_participants' => ['required', 'string', 'max:20000'],
-            ]);
-        } catch (ValidationException $exception) {
-            return $this->returnToAddParticipant($tournament)
-                ->withErrors($exception->validator)
-                ->withInput();
-        }
-
-        $names = collect(preg_split('/\R/u', (string) $data['bulk_participants']))
-            ->map(fn (string $line): string => trim($line))
-            ->filter()
-            ->map(function (string $line): string {
-                $line = preg_replace('/^\s*(?:[-*]|\d+[.)])\s*/u', '', $line) ?? $line;
-
-                return trim(str_getcsv($line)[0] ?? $line);
-            })
-            ->filter()
-            ->unique(fn (string $name): string => mb_strtolower($name))
-            ->values();
-
-        if ($names->isEmpty()) {
-            return $this->returnToAddParticipant($tournament)->withErrors(__('ui.bulk_participants_empty'))->withInput();
-        }
-
-        $existing = $tournament->participants()
-            ->whereIn('team_name', $names->all())
-            ->pluck('team_name')
-            ->map(fn (string $name): string => mb_strtolower($name))
-            ->all();
-
-        $names = $names->reject(fn (string $name): bool => in_array(mb_strtolower($name), $existing, true))->values();
-
-        if ($names->isEmpty()) {
-            return $this->returnToAddParticipant($tournament)->withErrors(__('ui.bulk_participants_all_duplicates'))->withInput();
-        }
-
-        DB::transaction(function () use ($tournament, $names): void {
-            $nextSeed = ((int) $tournament->participants()->max('seed_number')) + 1;
-
-            foreach ($names as $index => $name) {
-                $tournament->participants()->create([
-                    'team_name' => mb_substr($name, 0, 200),
-                    'seed_number' => $nextSeed + $index,
-                    'status' => ParticipantStatus::ACTIVE,
-                    'source_created_at' => now(),
-                    'synced_at' => now(),
-                ]);
+            if (! $this->editable($tournament)) {
+                return $this->returnToAddParticipant($tournament)->withErrors(__('ui.roster_locked'));
             }
 
-            $this->syncCount($tournament);
-        });
+            try {
+                $data = $request->validate([
+                    'bulk_participants' => ['required', 'string', 'max:20000'],
+                ]);
+            } catch (ValidationException $exception) {
+                return $this->returnToAddParticipant($tournament)
+                    ->withErrors($exception->validator)
+                    ->withInput();
+            }
 
-        return $this->returnToAddParticipant($tournament)->with('success', __('ui.bulk_participants_added', ['count' => $names->count()]));
+            $names = collect(preg_split('/\R/u', (string) $data['bulk_participants']))
+                ->map(fn (string $line): string => trim($line))
+                ->filter()
+                ->map(function (string $line): string {
+                    $line = preg_replace('/^\s*(?:[-*]|\d+[.)])\s*/u', '', $line) ?? $line;
+
+                    return trim(str_getcsv($line)[0] ?? $line);
+                })
+                ->filter()
+                ->unique(fn (string $name): string => mb_strtolower($name))
+                ->values();
+
+            if ($names->isEmpty()) {
+                return $this->returnToAddParticipant($tournament)->withErrors(__('ui.bulk_participants_empty'))->withInput();
+            }
+
+            $existing = $tournament->participants()
+                ->whereIn('team_name', $names->all())
+                ->pluck('team_name')
+                ->map(fn (string $name): string => mb_strtolower($name))
+                ->all();
+
+            $names = $names->reject(fn (string $name): bool => in_array(mb_strtolower($name), $existing, true))->values();
+
+            if ($names->isEmpty()) {
+                return $this->returnToAddParticipant($tournament)->withErrors(__('ui.bulk_participants_all_duplicates'))->withInput();
+            }
+
+            DB::transaction(function () use ($tournament, $names): void {
+                $nextSeed = ((int) $tournament->participants()->max('seed_number')) + 1;
+
+                foreach ($names as $index => $name) {
+                    $tournament->participants()->create([
+                        'team_name' => mb_substr($name, 0, 200),
+                        'seed_number' => $nextSeed + $index,
+                        'status' => ParticipantStatus::ACTIVE,
+                        'source_created_at' => now(),
+                        'synced_at' => now(),
+                    ]);
+                }
+
+                $this->syncCount($tournament);
+            });
+
+            return $this->returnToAddParticipant($tournament)->with('success', __('ui.bulk_participants_added', ['count' => $names->count()]));
+        }, 3);
     }
 
     public function update(Request $request, Tournament $tournament, Participant $participant): RedirectResponse
     {
-        $this->assertOwner($tournament, $participant);
-        $data = $this->editable($tournament)
-            ? $this->validated($request)
-            : $this->validatedIdentity($request);
-        $participant->fill($data + ['synced_at' => now()])->save();
+        return DB::transaction(function () use ($request, $tournament, $participant): RedirectResponse {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
 
-        return back()->with('success', __('ui.participant_updated'));
+            $this->assertOwner($tournament, $participant);
+            $data = $this->editable($tournament)
+                ? $this->validated($request)
+                : $this->validatedIdentity($request);
+            if (($data['status'] ?? null) === null) {
+                unset($data['status']);
+            }
+            $participant->fill($data + ['synced_at' => now()])->save();
+
+            return back()->with('success', __('ui.participant_updated'));
+        }, 3);
     }
 
     public function destroy(Tournament $tournament, Participant $participant): RedirectResponse
     {
-        $this->assertOwner($tournament, $participant);
-        if (! $this->editable($tournament)) {
-            return back()->withErrors(__('ui.roster_locked'));
-        }
-        $participant->delete();
-        $this->syncCount($tournament);
+        return DB::transaction(function () use ($tournament, $participant): RedirectResponse {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
 
-        return back()->with('success', __('ui.participant_removed'));
+            $this->assertOwner($tournament, $participant);
+            if (! $this->editable($tournament)) {
+                return back()->withErrors(__('ui.roster_locked'));
+            }
+            $participant->delete();
+            $this->syncCount($tournament);
+
+            return back()->with('success', __('ui.participant_removed'));
+        }, 3);
     }
 
     public function destroyAll(Tournament $tournament): RedirectResponse
     {
-        if (! $this->editable($tournament)) {
-            return back()->withErrors(__('ui.roster_locked'));
-        }
+        return DB::transaction(function () use ($tournament): RedirectResponse {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
 
-        $tournament->participants()->delete();
-        $this->syncCount($tournament);
+            if (! $this->editable($tournament)) {
+                return back()->withErrors(__('ui.roster_locked'));
+            }
 
-        return back()->with('success', __('ui.all_participants_removed'));
+            $tournament->participants()->delete();
+            $this->syncCount($tournament);
+
+            return back()->with('success', __('ui.all_participants_removed'));
+        }, 3);
     }
 
     /** @return array<string, mixed> */
@@ -160,7 +184,8 @@ class ParticipantController extends Controller
 
     private function editable(Tournament $tournament): bool
     {
-        return in_array($tournament->status, [TournamentStatus::DRAFT, TournamentStatus::READY], true);
+        return in_array($tournament->status, [TournamentStatus::DRAFT, TournamentStatus::READY], true)
+            && ! $tournament->matches()->exists();
     }
 
     private function assertOwner(Tournament $tournament, Participant $participant): void

@@ -11,6 +11,7 @@ use App\Models\Standing;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class MatchStandingsService
 {
@@ -23,6 +24,14 @@ class MatchStandingsService
     private const UNREACHABLE_DISTANCE = 1_000_000;
 
     public function recompute(Tournament $tournament): void
+    {
+        DB::transaction(function () use ($tournament): void {
+            $locked = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
+            $this->recomputeLocked($locked);
+        }, 3);
+    }
+
+    private function recomputeLocked(Tournament $tournament): void
     {
         $rows = [];
 
@@ -65,7 +74,7 @@ class MatchStandingsService
 
             if ($match->winner_id !== null && isset($rows[$match->winner_id])) {
                 $rows[$match->winner_id]['wins']++;
-            } elseif ($participantAId !== '' && $participantBId !== '') {
+            } elseif ($match->winner_id === null && isset($rows[$participantAId], $rows[$participantBId])) {
                 $rows[$participantAId]['draws']++;
                 $rows[$participantBId]['draws']++;
             }
@@ -93,9 +102,11 @@ class MatchStandingsService
             unset($row);
         }
 
+        $standings = [];
+
         foreach ($rows as $row) {
-            Standing::query()->updateOrCreate(
-                ['tournament_id' => $tournament->id, 'participant_id' => $row['participant_id']],
+            $standings[] = (new Standing(
+                ['tournament_id' => $tournament->id, 'participant_id' => $row['participant_id']] +
                 [
                     'rank_number' => $row['rank_number'],
                     'best_value' => null,
@@ -108,7 +119,11 @@ class MatchStandingsService
                     'format_data' => $row['format_data'],
                     'synced_at' => now(),
                 ],
-            );
+            ))->getAttributes();
+        }
+
+        foreach (array_chunk($standings, 100) as $chunk) {
+            Standing::query()->upsert($chunk, ['tournament_id', 'participant_id']);
         }
     }
 

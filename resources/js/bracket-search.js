@@ -1,10 +1,10 @@
 const search = document.querySelector('[data-bracket-search]');
-if (search) {
+if (search && ['input', 'status', 'next', 'clear'].every((name) => search.querySelector(`[data-bracket-search-${name}]`))) {
     const input = search.querySelector('[data-bracket-search-input]');
     const status = search.querySelector('[data-bracket-search-status]');
     const next = search.querySelector('[data-bracket-search-next]');
     const clear = search.querySelector('[data-bracket-search-clear]');
-    const normalize = (value) => value.normalize('NFC').trim().toLocaleLowerCase();
+    const normalize = (value) => (typeof value === 'string' ? value : '').normalize('NFC').trim().toLocaleLowerCase();
     let matches = [];
     let current = -1;
     let composing = false;
@@ -13,14 +13,20 @@ if (search) {
         matches = [];
         current = -1;
         document.querySelectorAll('[data-live-bracket] [data-participant-search]').forEach((slot) => {
-            const names = JSON.parse(slot.dataset.participantSearch);
+            let names = [];
+            try {
+                const parsed = JSON.parse(slot.dataset.participantSearch || '[]');
+                if (Array.isArray(parsed)) names = parsed;
+            } catch (_) {
+                // A malformed slot must not disable search for the rest of the bracket.
+            }
             const matched = !!term && names.some((name) => normalize(name).includes(term));
             slot.classList.toggle('is-search-match', matched);
             slot.classList.remove('is-search-current');
             if (matched) matches.push(slot);
         });
         status.textContent = !term ? status.dataset.hint : matches.length
-            ? status.dataset.count.replace(':count', matches.length) : status.dataset.empty;
+            ? (status.dataset.count || ':count').replace(':count', matches.length) : status.dataset.empty;
         next.disabled = matches.length === 0;
         clear.disabled = input.value.length === 0;
     };

@@ -17,12 +17,17 @@ class MatchProgressService
     {
         $matchId = $match instanceof TournamentMatch ? (string) $match->getKey() : $match;
 
-        return DB::transaction(function () use ($matchId): TournamentMatch {
+        $tournamentId = TournamentMatch::query()->findOrFail($matchId)->tournament_id;
+
+        return DB::transaction(function () use ($matchId, $tournamentId): TournamentMatch {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournamentId);
+
             /** @var TournamentMatch $current */
             $current = TournamentMatch::query()
-                ->with('tournament')
                 ->lockForUpdate()
                 ->findOrFail($matchId);
+
+            $current->setRelation('tournament', $tournament);
 
             if ($current->tournament->status !== TournamentStatus::LIVE) {
                 throw new DomainException(__('ui.match_progress_live_tournament_only'));
@@ -64,6 +69,12 @@ class MatchProgressService
     public function startNextReadyMatch(Tournament $tournament): ?TournamentMatch
     {
         return DB::transaction(function () use ($tournament): ?TournamentMatch {
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
+
+            if ($tournament->status !== TournamentStatus::LIVE) {
+                return null;
+            }
+
             if ($tournament->matches()->where('status', MatchStatus::LIVE)->exists()) {
                 return null;
             }

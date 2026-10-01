@@ -40,7 +40,7 @@ class ParticipantCsvImportService
 
             $delimiter = $this->detectDelimiter($firstLine);
             $rawHeaders = str_getcsv($firstLine, $delimiter, '"', '');
-            $headers = array_map(fn (string $header): string => $this->normalizeHeader($header), $rawHeaders);
+            $headers = array_map(fn (?string $header): string => $this->normalizeHeader($header ?? ''), $rawHeaders);
 
             if (! in_array('team_name', $headers, true)) {
                 throw new DomainException(__('ui.csv_missing_team_header'));
@@ -84,6 +84,12 @@ class ParticipantCsvImportService
      */
     private function persist(Tournament $tournament, array $rows): array
     {
+        $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
+        if (! in_array($tournament->status, [TournamentStatus::DRAFT, TournamentStatus::READY], true)
+            || $tournament->matches()->exists()) {
+            throw new DomainException(__('ui.roster_locked'));
+        }
+
         $existingNames = $tournament->participants()->pluck('team_name')->mapWithKeys(
             fn (string $name): array => [mb_strtolower(trim($name)) => true],
         )->all();
